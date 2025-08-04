@@ -22,3 +22,4 @@
 [04-Aug-2025 18:20:04 Europe/Madrid] Error logging response: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'review_data' in 'field list'
 [04-Aug-2025 18:20:37 Europe/Madrid] Error logging response: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'review_data' in 'field list'
 [04-Aug-2025 18:21:15 Europe/Madrid] Error logging response: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'review_data' in 'field list'
+[05-Aug-2025 00:04:12 Europe/Madrid] Error logging response: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'review_data' in 'field list'

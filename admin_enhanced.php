@@ -548,46 +548,6 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-history"></i> Historial de Extracciones</h2>
-                </div>
-                <div id="extraction-history">
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Hoteles</th>
-                                    <th>Reseñas</th>
-                                    <th>Estado</th>
-                                    <th>Costo</th>
-                                    <th>Duración</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>03/08/2025 14:30</td>
-                                    <td>Kavia Cancún, Plaza Kokai</td>
-                                    <td>450</td>
-                                    <td><span class="status-badge status-active">Completado</span></td>
-                                    <td>$6.75</td>
-                                    <td>8 min</td>
-                                </tr>
-                                <tr>
-                                    <td>02/08/2025 09:15</td>
-                                    <td>Imperial Las Perlas</td>
-                                    <td>120</td>
-                                    <td><span class="status-badge status-active">Completado</span></td>
-                                    <td>$1.80</td>
-                                    <td>3 min</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Tab IA -->
@@ -600,85 +560,9 @@
                     </button>
                 </div>
                 <div id="ia-list">
-                    <div class="provider-card">
-                        <h4>
-                            OpenAI GPT-4
-                            <span class="status-badge status-active">
-                                <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
-                                ACTIVO
-                            </span>
-                        </h4>
-                        <div class="provider-info">
-                            <p><strong>Tipo:</strong> OPENAI</p>
-                            <p><strong>Modelo:</strong> gpt-4-turbo</p>
-                            <p><strong>API Key:</strong> sk-proj1234...</p>
-                            <p><strong>Descripción:</strong> Proveedor principal para generación de respuestas a reseñas</p>
-                        </div>
-                        <div class="provider-actions">
-                            <button class="btn btn-sm btn-primary" onclick="showNotification('info', 'Función de editar disponible próximamente')">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button class="btn btn-sm btn-warning" onclick="showNotification('success', 'Conexión exitosa con OpenAI API')">
-                                <i class="fas fa-vial"></i> Probar
-                            </button>
-                            <button class="btn btn-sm btn-secondary" onclick="showNotification('info', 'Proveedor desactivado')">
-                                <i class="fas fa-power-off"></i> Desactivar
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="provider-card">
-                        <h4>
-                            Anthropic Claude
-                            <span class="status-badge status-inactive">
-                                <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
-                                Inactivo
-                            </span>
-                        </h4>
-                        <div class="provider-info">
-                            <p><strong>Tipo:</strong> ANTHROPIC</p>
-                            <p><strong>Modelo:</strong> claude-3-sonnet</p>
-                            <p><strong>API Key:</strong> sk-ant-abc123...</p>
-                            <p><strong>Descripción:</strong> Proveedor alternativo para respuestas más detalladas</p>
-                        </div>
-                        <div class="provider-actions">
-                            <button class="btn btn-sm btn-primary" onclick="showNotification('info', 'Función de editar disponible próximamente')">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button class="btn btn-sm btn-warning" onclick="showNotification('success', 'Conexión exitosa con Anthropic API')">
-                                <i class="fas fa-vial"></i> Probar
-                            </button>
-                            <button class="btn btn-sm btn-success" onclick="showNotification('info', 'Proveedor activado')">
-                                <i class="fas fa-power-off"></i> Activar
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="provider-card">
-                        <h4>
-                            DeepSeek V2
-                            <span class="status-badge status-inactive">
-                                <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
-                                Inactivo
-                            </span>
-                        </h4>
-                        <div class="provider-info">
-                            <p><strong>Tipo:</strong> DEEPSEEK</p>
-                            <p><strong>Modelo:</strong> deepseek-chat</p>
-                            <p><strong>API Key:</strong> No configurada</p>
-                            <p><strong>Descripción:</strong> Proveedor económico para volúmenes altos</p>
-                        </div>
-                        <div class="provider-actions">
-                            <button class="btn btn-sm btn-primary" onclick="showNotification('info', 'Función de editar disponible próximamente')">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button class="btn btn-sm btn-warning" onclick="showNotification('warning', 'Configure primero la API Key')">
-                                <i class="fas fa-vial"></i> Probar
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="showNotification('info', 'Proveedor eliminado')">
-                                <i class="fas fa-trash"></i> Eliminar
-                            </button>
-                        </div>
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i>
+                        <p>Cargando proveedores IA...</p>
                     </div>
                 </div>
             </div>
@@ -694,99 +578,9 @@
                     </button>
                 </div>
                 <div id="prompts-list">
-                    <div class="provider-card" style="border-color: var(--success); background: #f0fdf4;">
-                        <h4>
-                            Respuesta Estándar Español
-                            <span class="status-badge status-active">
-                                <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
-                                ACTIVO
-                            </span>
-                        </h4>
-                        <div class="provider-info">
-                            <p><strong>Tipo:</strong> RESPONSE</p>
-                            <p><strong>Idioma:</strong> ES</p>
-                            <p><strong>Contenido:</strong> Eres un asistente virtual de Kavia Hoteles. Responde de manera cordial y profesional...</p>
-                        </div>
-                        <div class="provider-actions">
-                            <button class="btn btn-sm btn-primary" onclick="showNotification('info', 'Función de editar disponible próximamente')">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button class="btn btn-sm btn-secondary" onclick="showNotification('info', 'Este prompt ya está activo')">
-                                <i class="fas fa-check"></i> Activo
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="provider-card">
-                        <h4>
-                            Respuesta Formal English
-                            <span class="status-badge status-inactive">
-                                <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
-                                Inactivo
-                            </span>
-                        </h4>
-                        <div class="provider-info">
-                            <p><strong>Tipo:</strong> RESPONSE</p>
-                            <p><strong>Idioma:</strong> EN</p>
-                            <p><strong>Contenido:</strong> You are a virtual assistant for Kavia Hotels. Please respond in a professional manner...</p>
-                        </div>
-                        <div class="provider-actions">
-                            <button class="btn btn-sm btn-primary" onclick="showNotification('info', 'Función de editar disponible próximamente')">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button class="btn btn-sm btn-success" onclick="showNotification('success', 'Prompt activado para respuestas en inglés')">
-                                <i class="fas fa-check"></i> Activar
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="provider-card">
-                        <h4>
-                            Resumen de Reseñas
-                            <span class="status-badge status-inactive">
-                                <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
-                                Inactivo
-                            </span>
-                        </h4>
-                        <div class="provider-info">
-                            <p><strong>Tipo:</strong> SUMMARY</p>
-                            <p><strong>Idioma:</strong> ES</p>
-                            <p><strong>Contenido:</strong> Analiza las siguientes reseñas y proporciona un resumen ejecutivo destacando...</p>
-                        </div>
-                        <div class="provider-actions">
-                            <button class="btn btn-sm btn-primary" onclick="showNotification('info', 'Función de editar disponible próximamente')">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button class="btn btn-sm btn-success" onclick="showNotification('success', 'Prompt activado para resúmenes')">
-                                <i class="fas fa-check"></i> Activar
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="showNotification('info', 'Prompt eliminado')">
-                                <i class="fas fa-trash"></i> Eliminar
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="provider-card">
-                        <h4>
-                            Traducción Automática
-                            <span class="status-badge status-active">
-                                <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
-                                ACTIVO
-                            </span>
-                        </h4>
-                        <div class="provider-info">
-                            <p><strong>Tipo:</strong> TRANSLATION</p>
-                            <p><strong>Idioma:</strong> MULTI</p>
-                            <p><strong>Contenido:</strong> Traduce el siguiente texto manteniendo el tono profesional y la información específica...</p>
-                        </div>
-                        <div class="provider-actions">
-                            <button class="btn btn-sm btn-primary" onclick="showNotification('info', 'Función de editar disponible próximamente')">
-                                <i class="fas fa-edit"></i> Editar
-                            </button>
-                            <button class="btn btn-sm btn-secondary" onclick="showNotification('info', 'Prompt desactivado')">
-                                <i class="fas fa-times"></i> Desactivar
-                            </button>
-                        </div>
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i>
+                        <p>Cargando prompts...</p>
                     </div>
                 </div>
             </div>
@@ -807,76 +601,9 @@
                     </div>
                 </div>
                 <div id="logs-list">
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Nivel</th>
-                                    <th>Acción</th>
-                                    <th>Mensaje</th>
-                                    <th>Usuario</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>04/08/2025 10:30:15</td>
-                                    <td><span class="status-badge status-active">INFO</span></td>
-                                    <td>API_CALL</td>
-                                    <td>Extracción de reseñas completada exitosamente</td>
-                                    <td>admin</td>
-                                </tr>
-                                <tr>
-                                    <td>04/08/2025 10:25:42</td>
-                                    <td><span class="status-badge status-active">INFO</span></td>
-                                    <td>HOTEL_UPDATE</td>
-                                    <td>Hotel "Kavia Cancún" actualizado</td>
-                                    <td>admin</td>
-                                </tr>
-                                <tr>
-                                    <td>04/08/2025 09:45:18</td>
-                                    <td><span class="status-badge" style="background: #fef3c7; color: #92400e;">WARNING</span></td>
-                                    <td>API_ERROR</td>
-                                    <td>Rate limit alcanzado en OpenAI API</td>
-                                    <td>Sistema</td>
-                                </tr>
-                                <tr>
-                                    <td>04/08/2025 09:12:33</td>
-                                    <td><span class="status-badge status-active">INFO</span></td>
-                                    <td>PROVIDER_TEST</td>
-                                    <td>Test exitoso de proveedor Anthropic</td>
-                                    <td>admin</td>
-                                </tr>
-                                <tr>
-                                    <td>04/08/2025 08:55:21</td>
-                                    <td><span class="status-badge status-inactive">ERROR</span></td>
-                                    <td>DB_CONNECTION</td>
-                                    <td>Error temporal de conexión a base de datos</td>
-                                    <td>Sistema</td>
-                                </tr>
-                                <tr>
-                                    <td>03/08/2025 16:22:45</td>
-                                    <td><span class="status-badge status-active">INFO</span></td>
-                                    <td>REVIEW_SYNC</td>
-                                    <td>Sincronización de reseñas completada - 450 nuevas reseñas</td>
-                                    <td>admin</td>
-                                </tr>
-                                <tr>
-                                    <td>03/08/2025 15:30:12</td>
-                                    <td><span class="status-badge status-active">INFO</span></td>
-                                    <td>PROMPT_UPDATE</td>
-                                    <td>Prompt "Respuesta Estándar Español" activado</td>
-                                    <td>admin</td>
-                                </tr>
-                                <tr>
-                                    <td>03/08/2025 14:18:56</td>
-                                    <td><span class="status-badge" style="background: #fef3c7; color: #92400e;">WARNING</span></td>
-                                    <td>DUPLICATE_SCAN</td>
-                                    <td>Encontrados 23 duplicados en la base de datos</td>
-                                    <td>Sistema</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i>
+                        <p>Cargando logs...</p>
                     </div>
                 </div>
             </div>
@@ -890,30 +617,10 @@
                 </div>
                 
                 <!-- Estadísticas -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-                    <div style="background: white; border-radius: 0.5rem; padding: 1.5rem; box-shadow: var(--shadow); text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">5</div>
-                        <div style="font-size: 0.875rem; color: var(--gray);">Total Hoteles</div>
-                    </div>
-                    <div style="background: white; border-radius: 0.5rem; padding: 1.5rem; box-shadow: var(--shadow); text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 700; color: var(--success); margin-bottom: 0.5rem;">4</div>
-                        <div style="font-size: 0.875rem; color: var(--gray);">Hoteles Activos</div>
-                    </div>
-                    <div style="background: white; border-radius: 0.5rem; padding: 1.5rem; box-shadow: var(--shadow); text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 700; color: var(--info); margin-bottom: 0.5rem;">1,351</div>
-                        <div style="font-size: 0.875rem; color: var(--gray);">Total Reseñas</div>
-                    </div>
-                    <div style="background: white; border-radius: 0.5rem; padding: 1.5rem; box-shadow: var(--shadow); text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 700; color: var(--warning); margin-bottom: 0.5rem;">7.8</div>
-                        <div style="font-size: 0.875rem; color: var(--gray);">Rating Promedio</div>
-                    </div>
-                    <div style="background: white; border-radius: 0.5rem; padding: 1.5rem; box-shadow: var(--shadow); text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 700; color: var(--secondary); margin-bottom: 0.5rem;">3</div>
-                        <div style="font-size: 0.875rem; color: var(--gray);">APIs Configuradas</div>
-                    </div>
-                    <div style="background: white; border-radius: 0.5rem; padding: 1.5rem; box-shadow: var(--shadow); text-align: center;">
-                        <div style="font-size: 2rem; font-weight: 700; color: var(--success); margin-bottom: 0.5rem;">2</div>
-                        <div style="font-size: 0.875rem; color: var(--gray);">APIs Activas</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;" id="stats-grid">
+                    <div class="loading">
+                        <i class="fas fa-spinner"></i>
+                        <p>Cargando estadísticas...</p>
                     </div>
                 </div>
                 
@@ -931,10 +638,7 @@
                             </button>
                         </div>
                         <div id="duplicates-result" style="margin-top: 1rem;">
-                            <div style="background: #fffbeb; color: #92400e; padding: 1rem; border-radius: 0.5rem; border: 1px solid #fcd34d;">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                Último escaneo: 23 duplicados encontrados (hace 2 horas)
-                            </div>
+                            <!-- Resultados aquí -->
                         </div>
                     </div>
                     
@@ -950,30 +654,8 @@
                             </button>
                         </div>
                         <div id="optimization-result" style="margin-top: 1rem;">
-                            <div style="background: #f0fdf4; color: #166534; padding: 1rem; border-radius: 0.5rem; border: 1px solid #86efac;">
-                                <i class="fas fa-check-circle"></i>
-                                Última optimización: 3 tablas optimizadas (hace 1 día)
-                            </div>
+                            <!-- Resultados aquí -->
                         </div>
-                    </div>
-                </div>
-
-                <!-- Herramientas adicionales -->
-                <div class="card">
-                    <h3><i class="fas fa-chart-bar"></i> Análisis y Reportes</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem;">
-                        <button class="btn btn-primary" onclick="generateHotelReport()">
-                            <i class="fas fa-file-pdf"></i> Reporte de Hoteles
-                        </button>
-                        <button class="btn btn-primary" onclick="generateReviewAnalysis()">
-                            <i class="fas fa-chart-line"></i> Análisis de Reseñas
-                        </button>
-                        <button class="btn btn-primary" onclick="exportData()">
-                            <i class="fas fa-download"></i> Exportar Datos
-                        </button>
-                        <button class="btn btn-primary" onclick="backupDatabase()">
-                            <i class="fas fa-server"></i> Backup BD
-                        </button>
                     </div>
                 </div>
             </div>
@@ -984,9 +666,67 @@
         // Variables globales
         let currentTab = 'hotels';
 
+        // FUNCIÓN MEJORADA PARA HACER PETICIONES AJAX
+        async function apiCall(action, data = {}) {
+            try {
+                // Para GET requests simples
+                if (Object.keys(data).length === 0) {
+                    const response = await fetch(`admin_api.php?action=${action}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const text = await response.text();
+                    console.log('Response text:', text); // Debug
+                    
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('Error parsing JSON:', text);
+                        throw new Error('Respuesta del servidor no válida');
+                    }
+                } else {
+                    // Para POST con JSON
+                    const response = await fetch('admin_api.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({action, ...data})
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const text = await response.text();
+                    console.log('Response text:', text);
+                    
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error('Error parsing JSON:', text);
+                        throw new Error('Respuesta del servidor no válida');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error en API call:', error);
+                return {
+                    success: false, 
+                    error: error.message || 'Error de conexión'
+                };
+            }
+        }
+
         // SISTEMA DE NOTIFICACIONES
-        function showNotification(type, message) {
-            // Remover notificación anterior
+        function showNotification(type, message, duration = 5000) {
             const oldNotification = document.querySelector('.notification');
             if (oldNotification) {
                 oldNotification.remove();
@@ -1013,34 +753,7 @@
                 if (notification.parentNode) {
                     notification.remove();
                 }
-            }, 5000);
-        }
-
-        // FUNCIÓN PARA HACER PETICIONES AJAX SIMPLES
-        async function apiCall(action, data = {}) {
-            try {
-                const response = await fetch('admin_api.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({action: action, ...data})
-                });
-                
-                const text = await response.text();
-                const cleanText = text.trim();
-                
-                try {
-                    return JSON.parse(cleanText);
-                } catch (e) {
-                    const jsonMatch = cleanText.match(/\{.*\}/s);
-                    if (jsonMatch) {
-                        return JSON.parse(jsonMatch[0]);
-                    }
-                    throw new Error('Respuesta no válida del servidor');
-                }
-            } catch (error) {
-                console.error('Error en API call:', error);
-                return {success: false, error: error.message};
-            }
+            }, duration);
         }
 
         // SISTEMA DE TABS
@@ -1094,21 +807,20 @@
                     loadApiProviders();
                     break;
                 case 'extraction':
-                    // Actualizar estado de Apify cuando se carga el extractor
-                    updateApifyStatus();
                     loadExtractionHotels();
+                    updateApifyStatus();
                     break;
                 case 'ia':
-                    // El contenido ya está cargado estáticamente
+                    loadAiProviders();
                     break;
                 case 'prompts':
-                    // El contenido ya está cargado estáticamente
+                    loadPrompts();
                     break;
                 case 'logs':
-                    // El contenido ya está cargado estáticamente
+                    loadLogs();
                     break;
                 case 'tools':
-                    // El contenido ya está cargado estáticamente
+                    loadDbStats();
                     break;
             }
         }
@@ -1117,14 +829,31 @@
         async function loadHotels() {
             const list = document.getElementById('hotels-list');
             
+            if (!list) {
+                console.error('Elemento hotels-list no encontrado');
+                return;
+            }
+            
+            list.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Cargando hoteles...</p>
+                </div>`;
+            
             try {
+                console.log('Llamando a getHotels...');
                 const result = await apiCall('getHotels');
+                console.log('Resultado getHotels:', result);
                 
                 if (!result.success) {
                     list.innerHTML = `
                         <div class="error">
                             <i class="fas fa-exclamation-circle"></i> 
                             Error: ${result.error || 'Error desconocido'}
+                            <br><br>
+                            <button class="btn btn-primary" onclick="loadHotels()">
+                                <i class="fas fa-redo"></i> Reintentar
+                            </button>
                         </div>`;
                     return;
                 }
@@ -1136,6 +865,9 @@
                         <div class="empty-state">
                             <i class="fas fa-hotel"></i>
                             <p>No hay hoteles configurados</p>
+                            <p style="font-size: 0.875rem; color: var(--gray);">
+                                Haz clic en "Agregar Hotel" para comenzar
+                            </p>
                         </div>`;
                     return;
                 }
@@ -1161,11 +893,12 @@
                     const rating = hotel.avg_rating ? parseFloat(hotel.avg_rating).toFixed(1) : 'N/A';
                     const status = hotel.activo == 1 ? 'Activo' : 'Inactivo';
                     const statusClass = hotel.activo == 1 ? 'status-active' : 'status-inactive';
+                    const hotelName = (hotel.hotel_name || '').replace(/'/g, "\\'");
                     
                     html += `
                         <tr>
                             <td>${hotel.id}</td>
-                            <td><strong>${hotel.hotel_name || ''}</strong></td>
+                            <td><strong>${hotel.hotel_name || 'Sin nombre'}</strong></td>
                             <td>${hotel.hotel_destination || 'Sin definir'}</td>
                             <td>${hotel.total_reviews || 0}</td>
                             <td>
@@ -1180,10 +913,10 @@
                                 </span>
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-info" onclick="editHotel(${hotel.id}, '${hotel.hotel_name.replace(/'/g, "\\'")}')">
+                                <button class="btn btn-sm btn-info" onclick="editHotel(${hotel.id}, '${hotelName}')">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteHotel(${hotel.id}, '${hotel.hotel_name.replace(/'/g, "\\'")}')">
+                                <button class="btn btn-sm btn-danger" onclick="deleteHotel(${hotel.id}, '${hotelName}')">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -1193,7 +926,10 @@
                 html += '</tbody></table></div>';
                 list.innerHTML = html;
                 
+                showNotification('success', `${hotels.length} hoteles cargados correctamente`);
+                
             } catch (error) {
+                console.error('Error en loadHotels:', error);
                 list.innerHTML = `
                     <div class="error">
                         <i class="fas fa-exclamation-circle"></i> 
@@ -1209,6 +945,17 @@
         // CARGAR PROVEEDORES API
         async function loadApiProviders() {
             const list = document.getElementById('apis-list');
+            
+            if (!list) {
+                console.error('Elemento apis-list no encontrado');
+                return;
+            }
+            
+            list.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Cargando proveedores API...</p>
+                </div>`;
             
             try {
                 const result = await apiCall('getApiProviders');
@@ -1229,9 +976,6 @@
                     return;
                 }
                 
-                // Guardar proveedores para uso global
-                currentApiProviders = providers;
-                
                 let html = '';
                 providers.forEach(provider => {
                     html += `
@@ -1245,13 +989,17 @@
                             <div class="provider-info">
                                 <p><strong>Tipo:</strong> ${provider.provider_type.toUpperCase()}</p>
                                 <p><strong>API Key:</strong> ${provider.api_key ? provider.api_key.substring(0, 10) + '...' : 'No configurada'}</p>
+                                <p><strong>Descripción:</strong> ${provider.description || 'Sin descripción'}</p>
                             </div>
                             <div class="provider-actions">
-                                <button class="btn btn-sm btn-primary" onclick="showNotification('info', 'Función disponible próximamente')">
+                                <button class="btn btn-sm btn-primary" onclick="editApiProvider(${provider.id})">
                                     <i class="fas fa-edit"></i> Editar
                                 </button>
-                                <button class="btn btn-sm btn-warning" onclick="showNotification('info', 'Función disponible próximamente')">
+                                <button class="btn btn-sm btn-warning" onclick="testApiProvider(${provider.id})">
                                     <i class="fas fa-vial"></i> Probar
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteApiProvider(${provider.id})">
+                                    <i class="fas fa-trash"></i> Eliminar
                                 </button>
                             </div>
                         </div>
@@ -1261,6 +1009,7 @@
                 list.innerHTML = html;
                 
             } catch (error) {
+                console.error('Error en loadApiProviders:', error);
                 list.innerHTML = `<div class="error">Error cargando APIs: ${error.message}</div>`;
             }
         }
@@ -1269,10 +1018,32 @@
         async function loadExtractionHotels() {
             const container = document.getElementById('hotels-extraction-container');
             
+            if (!container) {
+                console.error('Elemento hotels-extraction-container no encontrado');
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Cargando hoteles para extracción...</p>
+                </div>`;
+            
             try {
-                const result = await apiCall('getHotels');
+                const result = await apiCall('getExtractionHotels');
                 
-                if (!result.success || !result.hotels || result.hotels.length === 0) {
+                if (!result.success) {
+                    container.innerHTML = `
+                        <div class="error">
+                            <i class="fas fa-exclamation-circle"></i> 
+                            Error: ${result.error}
+                        </div>`;
+                    return;
+                }
+                
+                const hotels = result.hotels || [];
+                
+                if (hotels.length === 0) {
                     container.innerHTML = `
                         <div class="empty-state">
                             <i class="fas fa-hotel"></i>
@@ -1283,35 +1054,25 @@
                 }
                 
                 let html = '';
-                result.hotels.forEach(hotel => {
-                    const hasGoogleId = hotel.google_place_id && hotel.google_place_id.trim() !== '';
-                    const canExtract = hasGoogleId && hotel.activo == 1;
+                hotels.forEach(hotel => {
+                    const canExtract = hotel.activo == 1;
                     
                     html += `
                         <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; border-bottom: 1px solid #f3f4f6;">
                             <div>
                                 <h5 style="margin: 0; font-weight: 600;">${hotel.hotel_name}</h5>
                                 <p style="margin: 0; font-size: 0.875rem; color: var(--gray);">
+                                    Destino: ${hotel.hotel_destination || 'Sin definir'} | 
                                     Estado: <span class="status-badge ${hotel.activo == 1 ? 'status-active' : 'status-inactive'}">
                                         ${hotel.activo == 1 ? 'Activo' : 'Inactivo'}
                                     </span>
-                                    ${hasGoogleId ? 
-                                        `<span style="color: var(--success); margin-left: 0.5rem;"><i class="fas fa-check"></i> Place ID Configurado</span>` : 
-                                        `<span style="color: var(--danger); margin-left: 0.5rem;"><i class="fas fa-times"></i> Sin Place ID</span>`
-                                    }
                                 </p>
                                 <p style="margin: 0; font-size: 0.75rem; color: var(--gray);">
                                     Reseñas actuales: ${hotel.total_reviews || 0} | 
-                                    Extraídas: ${hotel.reviews_extracted || 0} |
-                                    Rating: ${hotel.avg_rating ? parseFloat(hotel.avg_rating).toFixed(1) : 'N/A'}
+                                    Recientes (30 días): ${hotel.recent_reviews || 0}
                                 </p>
                             </div>
                             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                ${!hasGoogleId ? `
-                                    <button class="btn btn-sm btn-warning" onclick="addGooglePlaceId(${hotel.id})">
-                                        <i class="fas fa-plus"></i> Place ID
-                                    </button>
-                                ` : ''}
                                 <input type="checkbox" class="hotel-select" data-id="${hotel.id}" ${canExtract ? 'checked' : 'disabled'}>
                             </div>
                         </div>
@@ -1321,21 +1082,617 @@
                 container.innerHTML = html;
                 
             } catch (error) {
+                console.error('Error en loadExtractionHotels:', error);
                 container.innerHTML = `
                     <div class="error">
                         <i class="fas fa-exclamation-circle"></i> 
-                        Error cargando hoteles para extracción: ${error.message}
+                        Error cargando hoteles: ${error.message}
                     </div>`;
             }
         }
 
-        // FUNCIÓN PARA EDITAR HOTEL
-        function editHotel(id, name) {
-            showNotification('info', `Editando hotel: ${name}`, 3000);
-            // Aquí iría la lógica real de edición cuando se implemente
+        // CARGAR PROVEEDORES IA
+        async function loadAiProviders() {
+            const list = document.getElementById('ia-list');
+            
+            if (!list) {
+                console.error('Elemento ia-list no encontrado');
+                return;
+            }
+            
+            list.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Cargando proveedores IA...</p>
+                </div>`;
+            
+            try {
+                const result = await apiCall('getProviders');
+                
+                if (!result.success) {
+                    list.innerHTML = `<div class="error">Error: ${result.error}</div>`;
+                    return;
+                }
+                
+                const providers = result.providers || [];
+                
+                let html = '';
+                providers.forEach(provider => {
+                    html += `
+                        <div class="provider-card">
+                            <h4>
+                                ${provider.name}
+                                <span class="status-badge ${provider.is_active == 1 ? 'status-active' : 'status-inactive'}">
+                                    <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                                    ${provider.is_active == 1 ? 'ACTIVO' : 'Inactivo'}
+                                </span>
+                            </h4>
+                            <div class="provider-info">
+                                <p><strong>Tipo:</strong> ${provider.provider_type.toUpperCase()}</p>
+                                <p><strong>Modelo:</strong> ${provider.model_name || 'Por defecto'}</p>
+                                <p><strong>API Key:</strong> ${provider.api_key ? provider.api_key.substring(0, 10) + '...' : 'No configurada'}</p>
+                                <p><strong>URL:</strong> ${provider.api_url || 'Por defecto'}</p>
+                            </div>
+                            <div class="provider-actions">
+                                <button class="btn btn-sm btn-primary" onclick="editAiProvider(${provider.id})">
+                                    <i class="fas fa-edit"></i> Editar
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="testAiProvider(${provider.id})">
+                                    <i class="fas fa-vial"></i> Probar
+                                </button>
+                                <button class="btn btn-sm ${provider.is_active == 1 ? 'btn-secondary' : 'btn-success'}" onclick="toggleAiProvider(${provider.id}, ${provider.is_active == 1 ? 0 : 1})">
+                                    <i class="fas fa-power-off"></i> ${provider.is_active == 1 ? 'Desactivar' : 'Activar'}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                list.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error en loadAiProviders:', error);
+                list.innerHTML = `<div class="error">Error cargando proveedores IA: ${error.message}</div>`;
+            }
         }
 
-        // FUNCIÓN PARA ELIMINAR HOTEL
+        // CARGAR PROMPTS
+        async function loadPrompts() {
+            const list = document.getElementById('prompts-list');
+            
+            if (!list) {
+                console.error('Elemento prompts-list no encontrado');
+                return;
+            }
+            
+            list.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Cargando prompts...</p>
+                </div>`;
+            
+            try {
+                const result = await apiCall('getPrompts');
+                
+                if (!result.success) {
+                    list.innerHTML = `<div class="error">Error: ${result.error}</div>`;
+                    return;
+                }
+                
+                const prompts = result.prompts || [];
+                
+                let html = '';
+                prompts.forEach(prompt => {
+                    const isActive = prompt.is_active == 1;
+                    html += `
+                        <div class="provider-card" style="border-color: ${isActive ? 'var(--success)' : '#e5e7eb'}; background: ${isActive ? '#f0fdf4' : 'white'};">
+                            <h4>
+                                ${prompt.name}
+                                <span class="status-badge ${isActive ? 'status-active' : 'status-inactive'}">
+                                    <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                                    ${isActive ? 'ACTIVO' : 'Inactivo'}
+                                </span>
+                            </h4>
+                            <div class="provider-info">
+                                <p><strong>Tipo:</strong> ${prompt.prompt_type.toUpperCase()}</p>
+                                <p><strong>Idioma:</strong> ${prompt.language.toUpperCase()}</p>
+                                <p><strong>Contenido:</strong> ${prompt.prompt_text.substring(0, 100)}${prompt.prompt_text.length > 100 ? '...' : ''}</p>
+                            </div>
+                            <div class="provider-actions">
+                                <button class="btn btn-sm btn-primary" onclick="editPrompt(${prompt.id})">
+                                    <i class="fas fa-edit"></i> Editar
+                                </button>
+                                <button class="btn btn-sm ${isActive ? 'btn-secondary' : 'btn-success'}" onclick="togglePrompt(${prompt.id}, ${isActive ? 0 : 1})">
+                                    <i class="fas fa-check"></i> ${isActive ? 'Desactivar' : 'Activar'}
+                                </button>
+                                ${!isActive ? `<button class="btn btn-sm btn-danger" onclick="deletePrompt(${prompt.id})">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                list.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error en loadPrompts:', error);
+                list.innerHTML = `<div class="error">Error cargando prompts: ${error.message}</div>`;
+            }
+        }
+
+        // CARGAR LOGS
+        async function loadLogs() {
+            const list = document.getElementById('logs-list');
+            
+            if (!list) {
+                console.error('Elemento logs-list no encontrado');
+                return;
+            }
+            
+            list.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>Cargando logs...</p>
+                </div>`;
+            
+            try {
+                const result = await apiCall('getLogs');
+                
+                if (!result.success) {
+                    list.innerHTML = `
+                        <div class="error">
+                            <i class="fas fa-exclamation-circle"></i>
+                            Error: ${result.error}
+                            <br><br>
+                            <button class="btn btn-primary" onclick="loadLogs()">
+                                <i class="fas fa-redo"></i> Reintentar
+                            </button>
+                        </div>`;
+                    return;
+                }
+                
+                const logs = result.logs || [];
+                
+                if (logs.length === 0) {
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-chart-line"></i>
+                            <p>No hay logs registrados</p>
+                            <p style="font-size: 0.875rem; color: var(--gray);">Los logs aparecerán cuando se generen respuestas con IA</p>
+                        </div>`;
+                    return;
+                }
+                
+                let html = `
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Hotel</th>
+                                    <th>Proveedor</th>
+                                    <th>Tokens</th>
+                                    <th>Respuesta (Preview)</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                
+                logs.forEach(log => {
+                    const date = new Date(log.created_at).toLocaleString('es-ES');
+                    const responsePreview = log.response_text ? log.response_text.substring(0, 50) + '...' : 'Sin respuesta';
+                    
+                    html += `
+                        <tr>
+                            <td>${date}</td>
+                            <td>${log.hotel_name || 'Sin especificar'}</td>
+                            <td>
+                                <span class="status-badge status-active">
+                                    ${log.provider_name || 'Sistema'}
+                                </span>
+                            </td>
+                            <td>${log.tokens_used || 0}</td>
+                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${responsePreview}</td>
+                        </tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+                list.innerHTML = html;
+                
+                showNotification('success', `${logs.length} logs cargados correctamente`);
+                
+            } catch (error) {
+                console.error('Error en loadLogs:', error);
+                list.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Error cargando logs: ${error.message}
+                        <br><br>
+                        <button class="btn btn-primary" onclick="loadLogs()">
+                            <i class="fas fa-redo"></i> Reintentar
+                        </button>
+                    </div>`;
+            }
+        }
+
+        // ACTUALIZAR ESTADO DE APIFY
+        async function updateApifyStatus() {
+            const statusElement = document.getElementById('apifyStatus');
+            
+            if (!statusElement) return;
+            
+            try {
+                const result = await apiCall('getApifyStatus');
+                
+                if (result.success) {
+                    statusElement.className = `status-badge ${result.configured ? 'status-active' : 'status-inactive'}`;
+                    statusElement.innerHTML = `
+                        <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                        ${result.status}
+                    `;
+                }
+            } catch (error) {
+                console.error('Error actualizando estado Apify:', error);
+            }
+        }
+        async function loadDbStats() {
+            const grid = document.getElementById('stats-grid');
+            
+            if (!grid) return;
+            
+            try {
+                const result = await apiCall('getDbStats');
+                
+                if (!result.success) {
+                    grid.innerHTML = `<div class="error">Error cargando estadísticas: ${result.error}</div>`;
+                    return;
+                }
+                
+                const stats = result.stats || {};
+                
+                grid.innerHTML = `
+                    <div style="background: white; border-radius: 0.5rem; padding: 1.5rem; box-shadow: var(--shadow); text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">${stats.total_hotels || 0}</div>
+                        <div style="font-size: 0.875rem; color: var(--gray);">Total Hoteles</div>
+                    </div>
+                    <div style="background: white; border-radius: 0.5rem; padding: 1.5rem; box-shadow: var(--shadow); text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--success); margin-bottom: 0.5rem;">${stats.active_hotels || 0}</div>
+                        <div style="font-size: 0.875rem; color: var(--gray);">Hoteles Activos</div>
+                    </div>
+                    <div style="background: white; border-radius: 0.5rem; padding: 1.5rem; box-shadow: var(--shadow); text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--info); margin-bottom: 0.5rem;">${stats.total_reviews || 0}</div>
+                        <div style="font-size: 0.875rem; color: var(--gray);">Total Reseñas</div>
+                    </div>
+                    <div style="background: white; border-radius: 0.5rem; padding: 1.5rem; box-shadow: var(--shadow); text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--warning); margin-bottom: 0.5rem;">${stats.avg_rating || 0}</div>
+                        <div style="font-size: 0.875rem; color: var(--gray);">Rating Promedio</div>
+                    </div>
+                    <div style="background: white; border-radius: 0.5rem; padding: 1.5rem; box-shadow: var(--shadow); text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--secondary); margin-bottom: 0.5rem;">${stats.total_api_providers || 0}</div>
+                        <div style="font-size: 0.875rem; color: var(--gray);">APIs Configuradas</div>
+                    </div>
+                    <div style="background: white; border-radius: 0.5rem; padding: 1.5rem; box-shadow: var(--shadow); text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--success); margin-bottom: 0.5rem;">${stats.active_api_providers || 0}</div>
+                        <div style="font-size: 0.875rem; color: var(--gray);">APIs Activas</div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                grid.innerHTML = `<div class="error">Error cargando estadísticas: ${error.message}</div>`;
+            }
+        }
+
+        function editAiProvider(id) {
+            showNotification('info', `Editando proveedor IA ID: ${id}`);
+        }
+
+        function testAiProvider(id) {
+            showNotification('success', `Probando conexión con proveedor IA ID: ${id}`);
+        }
+
+        function toggleAiProvider(id, newStatus) {
+            showNotification('info', `Proveedor IA ${newStatus ? 'activado' : 'desactivado'}`);
+            setTimeout(() => loadAiProviders(), 500);
+        }
+
+        function editPrompt(id) {
+            showEditPromptModal(id);
+        }
+
+        function togglePrompt(id, newStatus) {
+            apiCall('togglePrompt', {id: id, active: newStatus})
+                .then(result => {
+                    if (result.success) {
+                        showNotification('success', result.message);
+                        setTimeout(() => loadPrompts(), 500);
+                    } else {
+                        showNotification('error', `Error: ${result.error}`);
+                    }
+                })
+                .catch(error => {
+                    showNotification('error', `Error: ${error.message}`);
+                });
+        }
+
+        function deletePrompt(id) {
+            if (confirm('¿Estás seguro de eliminar este prompt?')) {
+                apiCall('deletePrompt', {id: id})
+                    .then(result => {
+                        if (result.success) {
+                            showNotification('success', 'Prompt eliminado correctamente');
+                            setTimeout(() => loadPrompts(), 500);
+                        } else {
+                            showNotification('error', `Error: ${result.error}`);
+                        }
+                    })
+                    .catch(error => {
+                        showNotification('error', `Error: ${error.message}`);
+                    });
+            }
+        }
+
+        function showEditPromptModal(id) {
+            // Obtener datos del prompt usando GET
+            fetch(`admin_api.php?action=editPrompt&id=${id}`)
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        const prompt = result.prompt;
+                        
+                        // Crear modal
+                        const modal = document.createElement('div');
+                        modal.style.cssText = `
+                            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                            background: rgba(0,0,0,0.5); z-index: 10000;
+                            display: flex; align-items: center; justify-content: center;
+                        `;
+                        
+                        modal.innerHTML = `
+                            <div style="background: white; padding: 2rem; border-radius: 0.75rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                                <h3 style="margin-bottom: 1.5rem;">✏️ Editar Prompt IA</h3>
+                                
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Nombre:</label>
+                                    <input type="text" id="editPromptName" value="${prompt.name || ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.25rem;">
+                                </div>
+                                
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                    <div>
+                                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Tipo:</label>
+                                        <select id="editPromptType" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.25rem;">
+                                            <option value="response" ${prompt.prompt_type === 'response' ? 'selected' : ''}>Respuesta</option>
+                                            <option value="translation" ${prompt.prompt_type === 'translation' ? 'selected' : ''}>Traducción</option>
+                                            <option value="summary" ${prompt.prompt_type === 'summary' ? 'selected' : ''}>Resumen</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Idioma:</label>
+                                        <select id="editPromptLanguage" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.25rem;">
+                                            <option value="es" ${prompt.language === 'es' ? 'selected' : ''}>Español</option>
+                                            <option value="en" ${prompt.language === 'en' ? 'selected' : ''}>English</option>
+                                            <option value="multi" ${prompt.language === 'multi' ? 'selected' : ''}>Multi-idioma</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Contenido del Prompt:</label>
+                                    <textarea id="editPromptText" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.25rem; height: 150px; font-family: monospace; font-size: 0.875rem;">${prompt.prompt_text || ''}</textarea>
+                                </div>
+                                
+                                <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 0.25rem; font-size: 0.875rem;">
+                                    <strong>Variables disponibles:</strong><br>
+                                    <code>{hotel_name}</code>, <code>{guest_name}</code>, <code>{rating}</code>, <code>{positive}</code>, <code>{negative}</code>, <code>{date}</code>, <code>{title}</code>, <code>{trip_type}</code>, <code>{country}</code>
+                                </div>
+                                
+                                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                    <button class="btn btn-secondary" onclick="closePromptModal()">Cancelar</button>
+                                    <button class="btn btn-primary" onclick="savePrompt(${prompt.id})">💾 Guardar</button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Cerrar modal al hacer clic fuera
+                        modal.addEventListener('click', (e) => {
+                            if (e.target === modal) {
+                                modal.remove();
+                            }
+                        });
+                        
+                        document.body.appendChild(modal);
+                        
+                        // Función global para cerrar modal
+                        window.closePromptModal = () => modal.remove();
+                        
+                        // Función global para guardar
+                        window.savePrompt = (id) => {
+                            const data = {
+                                id: id,
+                                name: document.getElementById('editPromptName').value,
+                                prompt_type: document.getElementById('editPromptType').value,
+                                language: document.getElementById('editPromptLanguage').value,
+                                prompt_text: document.getElementById('editPromptText').value
+                            };
+                            
+                            if (!data.name || !data.prompt_text) {
+                                showNotification('error', 'Por favor completa todos los campos obligatorios');
+                                return;
+                            }
+                            
+                            apiCall('updatePrompt', data)
+                                .then(result => {
+                                    if (result.success) {
+                                        showNotification('success', 'Prompt actualizado correctamente');
+                                        modal.remove();
+                                        loadPrompts();
+                                    } else {
+                                        showNotification('error', `Error: ${result.error}`);
+                                    }
+                                })
+                                .catch(error => {
+                                    showNotification('error', `Error: ${error.message}`);
+                                });
+                        };
+                        
+                    } else {
+                        showNotification('error', `Error cargando prompt: ${result.error}`);
+                    }
+                })
+                .catch(error => {
+                    showNotification('error', `Error: ${error.message}`);
+                });
+        }
+        function editHotel(id, name) {
+            showNotification('info', `Editando hotel: ${name} (ID: ${id})`);
+        }
+
+        function editApiProvider(id) {
+            // Crear modal de edición
+            showEditApiModal(id);
+        }
+
+        function testApiProvider(id) {
+            showNotification('info', 'Probando conexión...');
+            
+            // Crear FormData para enviar el ID
+            const formData = new FormData();
+            formData.append('action', 'testApiProvider');
+            formData.append('id', id);
+            
+            fetch('admin_api.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showNotification('success', `✅ ${result.test_message} (${result.response_time})`);
+                } else {
+                    showNotification('error', `❌ Error: ${result.error}`);
+                }
+            })
+            .catch(error => {
+                showNotification('error', `❌ Error de conexión: ${error.message}`);
+            });
+        }
+
+        function deleteApiProvider(id) {
+            if (confirm('¿Estás seguro de eliminar este proveedor API?')) {
+                apiCall('deleteApiProvider', {id: id})
+                    .then(result => {
+                        if (result.success) {
+                            showNotification('success', 'Proveedor eliminado correctamente');
+                            loadApiProviders();
+                        } else {
+                            showNotification('error', `Error: ${result.error}`);
+                        }
+                    })
+                    .catch(error => {
+                        showNotification('error', `Error: ${error.message}`);
+                    });
+            }
+        }
+
+        function showEditApiModal(id) {
+            // Obtener datos del proveedor usando GET
+            fetch(`admin_api.php?action=editApiProvider&id=${id}`)
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        const provider = result.provider;
+                        
+                        // Crear modal
+                        const modal = document.createElement('div');
+                        modal.style.cssText = `
+                            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                            background: rgba(0,0,0,0.5); z-index: 10000;
+                            display: flex; align-items: center; justify-content: center;
+                        `;
+                        
+                        modal.innerHTML = `
+                            <div style="background: white; padding: 2rem; border-radius: 0.75rem; max-width: 500px; width: 90%;">
+                                <h3 style="margin-bottom: 1.5rem;">✏️ Editar Proveedor API</h3>
+                                
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Nombre:</label>
+                                    <input type="text" id="editApiName" value="${provider.name || ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.25rem;">
+                                </div>
+                                
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Tipo:</label>
+                                    <select id="editApiType" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.25rem;">
+                                        <option value="apify" ${provider.provider_type === 'apify' ? 'selected' : ''}>Apify</option>
+                                        <option value="openai" ${provider.provider_type === 'openai' ? 'selected' : ''}>OpenAI</option>
+                                        <option value="anthropic" ${provider.provider_type === 'anthropic' ? 'selected' : ''}>Anthropic</option>
+                                        <option value="google" ${provider.provider_type === 'google' ? 'selected' : ''}>Google</option>
+                                        <option value="other" ${provider.provider_type === 'other' ? 'selected' : ''}>Otro</option>
+                                    </select>
+                                </div>
+                                
+                                <div style="margin-bottom: 1rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">API Key:</label>
+                                    <input type="password" id="editApiKey" value="${provider.api_key || ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.25rem;">
+                                </div>
+                                
+                                <div style="margin-bottom: 1.5rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Descripción:</label>
+                                    <textarea id="editApiDescription" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.25rem; height: 80px;">${provider.description || ''}</textarea>
+                                </div>
+                                
+                                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                    <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                                    <button class="btn btn-primary" onclick="saveApiProvider(${provider.id})">💾 Guardar</button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Cerrar modal al hacer clic fuera
+                        modal.addEventListener('click', (e) => {
+                            if (e.target === modal) {
+                                modal.remove();
+                            }
+                        });
+                        
+                        document.body.appendChild(modal);
+                        
+                        // Función global para cerrar modal
+                        window.closeModal = () => modal.remove();
+                        
+                        // Función global para guardar
+                        window.saveApiProvider = (id) => {
+                            const data = {
+                                id: id,
+                                name: document.getElementById('editApiName').value,
+                                provider_type: document.getElementById('editApiType').value,
+                                api_key: document.getElementById('editApiKey').value,
+                                description: document.getElementById('editApiDescription').value
+                            };
+                            
+                            apiCall('updateApiProvider', data)
+                                .then(result => {
+                                    if (result.success) {
+                                        showNotification('success', 'Proveedor actualizado correctamente');
+                                        modal.remove();
+                                        loadApiProviders();
+                                    } else {
+                                        showNotification('error', `Error: ${result.error}`);
+                                    }
+                                })
+                                .catch(error => {
+                                    showNotification('error', `Error: ${error.message}`);
+                                });
+                        };
+                        
+                    } else {
+                        showNotification('error', `Error cargando proveedor: ${result.error}`);
+                    }
+                })
+                .catch(error => {
+                    showNotification('error', `Error: ${error.message}`);
+                });
+        }
+
         async function deleteHotel(id, name) {
             if (!confirm(`¿Estás seguro de eliminar el hotel "${name}"?\n\nEsto también eliminará todas sus reseñas asociadas.`)) {
                 return;
@@ -1346,220 +1703,61 @@
                 
                 if (result.success) {
                     showNotification('success', 'Hotel eliminado correctamente');
-                    loadHotels(); // Recargar la lista
-                    loadExtractionHotels(); // Actualizar también en extractor
+                    loadHotels();
+                    loadExtractionHotels();
                 } else {
                     showNotification('error', result.error || 'Error al eliminar hotel');
                 }
             } catch (error) {
-                showNotification('error', 'Error al eliminar el hotel');
+                showNotification('error', 'Error al eliminar el hotel: ' + error.message);
             }
         }
 
-        // FUNCIÓN PARA AGREGAR GOOGLE PLACE ID
-        function addGooglePlaceId(hotelId) {
-            const placeId = prompt('Ingresa el Google Place ID para este hotel:');
-            if (!placeId || placeId.trim() === '') return;
-            
-            showNotification('info', 'Guardando Google Place ID...');
-            
-            // Simular guardado
-            setTimeout(() => {
-                showNotification('success', 'Google Place ID guardado correctamente');
-                loadExtractionHotels(); // Recargar lista
-            }, 1000);
-        }
-
-        // FUNCIONES PARA GENERAR REPORTES
-        async function generateHotelReport() {
-            showNotification('info', 'Generando reporte de hoteles...');
-            
-            try {
-                const result = await apiCall('generateHotelReport');
-                
-                if (result.success) {
-                    // Crear y descargar el reporte
-                    const reportData = result.report || {
-                        total_hotels: 5,
-                        active_hotels: 4,
-                        total_reviews: 1351,
-                        avg_rating: 7.8,
-                        hotels: [
-                            {name: 'Luma', reviews: 400, rating: 8.6, status: 'Activo'},
-                            {name: 'Plaza Kokai', reviews: 400, rating: 8.1, status: 'Activo'},
-                            {name: 'Kavia Plus', reviews: 0, rating: 'N/A', status: 'Activo'},
-                            {name: 'Kavia Cancún', reviews: 400, rating: 8.1, status: 'Activo'},
-                            {name: 'Imperial Las Perlas', reviews: 151, rating: 6.6, status: 'Activo'}
-                        ]
-                    };
-                    
-                    downloadReport('reporte_hoteles', reportData);
-                    showNotification('success', 'Reporte de hoteles generado correctamente');
-                } else {
-                    showNotification('error', result.error || 'Error generando reporte');
-                }
-            } catch (error) {
-                showNotification('error', 'Error al generar reporte de hoteles');
-            }
-        }
-
-        async function generateReviewAnalysis() {
-            showNotification('info', 'Generando análisis de reseñas...');
-            
-            try {
-                const result = await apiCall('generateReviewAnalysis');
-                
-                if (result.success) {
-                    const analysisData = result.analysis || {
-                        total_reviews: 1351,
-                        avg_rating: 7.8,
-                        rating_distribution: {
-                            '5_stars': 245,
-                            '4_stars': 421,
-                            '3_stars': 385,
-                            '2_stars': 200,
-                            '1_star': 100
-                        },
-                        top_keywords: ['excelente', 'limpio', 'ubicación', 'servicio', 'desayuno'],
-                        sentiment_analysis: {
-                            positive: 65,
-                            neutral: 25,
-                            negative: 10
-                        },
-                        monthly_trends: [
-                            {month: 'Enero', reviews: 120, avg_rating: 7.9},
-                            {month: 'Febrero', reviews: 108, avg_rating: 7.7},
-                            {month: 'Marzo', reviews: 135, avg_rating: 8.1}
-                        ]
-                    };
-                    
-                    downloadReport('analisis_reseñas', analysisData);
-                    showNotification('success', 'Análisis de reseñas generado correctamente');
-                } else {
-                    showNotification('error', result.error || 'Error generando análisis');
-                }
-            } catch (error) {
-                showNotification('error', 'Error al generar análisis de reseñas');
-            }
-        }
-
-        function exportData() {
-            showNotification('info', 'Exportando datos...');
-            
-            setTimeout(() => {
-                const exportData = {
-                    export_date: new Date().toISOString(),
-                    hotels: 5,
-                    reviews: 1351,
-                    apis_configured: 3,
-                    last_extraction: '2025-08-04T10:30:00Z'
-                };
-                
-                downloadReport('export_datos', exportData);
-                showNotification('success', 'Datos exportados correctamente');
-            }, 1500);
-        }
-
-        function backupDatabase() {
-            showNotification('info', 'Creando backup de la base de datos...');
-            
-            setTimeout(() => {
-                const backupInfo = {
-                    backup_date: new Date().toISOString(),
-                    tables_backed_up: ['hoteles', 'reviews', 'api_providers', 'ai_providers'],
-                    total_records: 1856,
-                    backup_size: '2.4 MB'
-                };
-                
-                downloadReport('backup_bd', backupInfo);
-                showNotification('success', 'Backup de base de datos creado correctamente');
-            }, 2000);
-        }
-
-        // FUNCIÓN HELPER PARA DESCARGAR REPORTES
-        function downloadReport(filename, data) {
-            const jsonData = JSON.stringify(data, null, 2);
-            const blob = new Blob([jsonData], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${filename}_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            URL.revokeObjectURL(url);
-        }
         function startExtraction() {
-            const mode = document.getElementById('extractionMode').value;
-            const maxReviews = document.getElementById('maxReviews').value;
-            
-            if (!confirm(`¿Deseas iniciar la extracción de reseñas?\n\nModo: ${mode}\nMáximo reseñas: ${maxReviews}\n\nEsto consumirá créditos de tu cuenta de Apify.`)) {
-                return;
-            }
-            
-            showNotification('info', 'Iniciando extracción de reseñas...');
-            
-            setTimeout(() => {
-                showNotification('success', 'Extracción completada: 245 reseñas nuevas agregadas');
-            }, 3000);
+            showNotification('info', 'Función de extracción disponible próximamente');
         }
 
         function previewExtraction() {
-            const mode = document.getElementById('extractionMode').value;
-            const maxReviews = document.getElementById('maxReviews').value;
-            
-            const message = `Vista Previa de Extracción:
-
-📊 Configuración:
-- Modo: ${mode}
-- Hoteles a extraer: 3
-- Máximo reseñas por hotel: ${maxReviews}
-- Costo estimado: $4.50
-
-🏨 Hoteles incluidos:
-• Kavia Cancún
-• Plaza Kokai
-• Imperial Las Perlas
-
-🔄 Plataformas de extracción:
-• Booking.com
-• Tripadvisor  
-• Google Maps
-• Expedia
-
-¿Todo se ve correcto?`;
-            
-            alert(message);
+            showNotification('info', 'Vista previa de extracción disponible próximamente');
         }
 
-        // FUNCIONES PARA HERRAMIENTAS
-        function scanDuplicates() {
+        function loadExtraction() {
+            loadExtractionHotels();
+        }
+
+        async function scanDuplicates() {
             const btn = document.getElementById('scanDuplicatesBtn');
             const resultDiv = document.getElementById('duplicates-result');
             
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Escaneando...';
             
-            setTimeout(() => {
-                const duplicatesFound = Math.floor(Math.random() * 50) + 5;
-                resultDiv.innerHTML = `
-                    <div style="background: #fef2f2; color: #991b1b; padding: 1rem; border-radius: 0.5rem; border: 1px solid #fecaca;">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Escaneo completado: ${duplicatesFound} duplicados encontrados
-                    </div>
-                `;
+            try {
+                const result = await apiCall('scanDuplicateReviews');
                 
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-search"></i> Escanear Duplicados';
-                
-                showNotification('warning', `Encontrados ${duplicatesFound} duplicados`);
-            }, 2000);
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div style="background: #fef2f2; color: #991b1b; padding: 1rem; border-radius: 0.5rem; border: 1px solid #fecaca;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            Escaneo completado: ${result.duplicates_found} grupos de duplicados encontrados
+                        </div>
+                    `;
+                    showNotification('warning', `Encontrados ${result.duplicates_found} grupos de duplicados`);
+                } else {
+                    resultDiv.innerHTML = `<div class="error">Error: ${result.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-search"></i> Escanear Duplicados';
         }
 
         function deleteDuplicates() {
-            if (!confirm('¿Estás seguro de eliminar todos los duplicados encontrados?')) return;
+            if (!confirm('¿Estás seguro de eliminar todos los duplicados encontrados?\n\nEsta acción eliminará las reseñas duplicadas y no se puede deshacer.')) {
+                return;
+            }
             
             const btn = document.getElementById('deleteDuplicatesBtn');
             const resultDiv = document.getElementById('duplicates-result');
@@ -1567,57 +1765,137 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
             
-            setTimeout(() => {
-                const deletedCount = Math.floor(Math.random() * 30) + 10;
-                resultDiv.innerHTML = `
-                    <div style="background: #f0fdf4; color: #166534; padding: 1rem; border-radius: 0.5rem; border: 1px solid #86efac;">
-                        <i class="fas fa-check-circle"></i>
-                        ${deletedCount} duplicados eliminados correctamente
-                    </div>
-                `;
-                
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-trash"></i> Eliminar Duplicados';
-                
-                showNotification('success', `${deletedCount} duplicados eliminados`);
-            }, 1500);
+            apiCall('deleteDuplicateReviews')
+                .then(result => {
+                    if (result.success) {
+                        resultDiv.innerHTML = `
+                            <div style="background: #f0fdf4; color: #166534; padding: 1rem; border-radius: 0.5rem; border: 1px solid #86efac;">
+                                <i class="fas fa-check-circle"></i>
+                                ${result.message}
+                            </div>
+                        `;
+                        showNotification('success', `${result.deleted_count} duplicados eliminados correctamente`);
+                        
+                        // Actualizar estadísticas si estamos en la pestaña herramientas
+                        if (currentTab === 'tools') {
+                            setTimeout(() => loadDbStats(), 1000);
+                        }
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div style="background: #fef2f2; color: #991b1b; padding: 1rem; border-radius: 0.5rem; border: 1px solid #fecaca;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                Error: ${result.error}
+                            </div>
+                        `;
+                        showNotification('error', `Error eliminando duplicados: ${result.error}`);
+                    }
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = `
+                        <div style="background: #fef2f2; color: #991b1b; padding: 1rem; border-radius: 0.5rem; border: 1px solid #fecaca;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            Error: ${error.message}
+                        </div>
+                    `;
+                    showNotification('error', `Error: ${error.message}`);
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-trash"></i> Eliminar Duplicados';
+                });
         }
 
-        function optimizeTables() {
+        async function optimizeTables() {
             const resultDiv = document.getElementById('optimization-result');
             
             showNotification('info', 'Optimizando tablas de la base de datos...');
             
-            setTimeout(() => {
+            try {
+                const result = await apiCall('optimizeTables');
+                
+                if (result.success) {
+                    let resultHtml = `
+                        <div style="background: #f0fdf4; color: #166534; padding: 1rem; border-radius: 0.5rem; border: 1px solid #86efac;">
+                            <i class="fas fa-check-circle"></i>
+                            ${result.message}
+                        </div>
+                    `;
+                    
+                    // Mostrar detalles adicionales si existen
+                    if (result.optimized_tables && result.optimized_tables.length > 0) {
+                        resultHtml += `
+                            <div style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--gray);">
+                                Tablas optimizadas: ${result.optimized_tables.join(', ')}
+                            </div>
+                        `;
+                    }
+                    
+                    if (result.errors && result.errors.length > 0) {
+                        resultHtml += `
+                            <div style="margin-top: 0.5rem; font-size: 0.875rem; color: #f59e0b;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Advertencias: ${result.errors.join(', ')}
+                            </div>
+                        `;
+                    }
+                    
+                    resultDiv.innerHTML = resultHtml;
+                    showNotification('success', `${result.tables_optimized} tablas optimizadas exitosamente`);
+                } else {
+                    resultDiv.innerHTML = `
+                        <div style="background: #fef2f2; color: #991b1b; padding: 1rem; border-radius: 0.5rem; border: 1px solid #fecaca;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            Error: ${result.error}
+                        </div>
+                    `;
+                    showNotification('error', `Error: ${result.error}`);
+                }
+            } catch (error) {
                 resultDiv.innerHTML = `
-                    <div style="background: #f0fdf4; color: #166534; padding: 1rem; border-radius: 0.5rem; border: 1px solid #86efac;">
-                        <i class="fas fa-check-circle"></i>
-                        Optimización completada: 5 tablas optimizadas exitosamente
+                    <div style="background: #fef2f2; color: #991b1b; padding: 1rem; border-radius: 0.5rem; border: 1px solid #fecaca;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        Error de conexión: ${error.message}
                     </div>
                 `;
-                
-                showNotification('success', '5 tablas optimizadas exitosamente');
-            }, 2000);
+                showNotification('error', `Error: ${error.message}`);
+            }
         }
 
-        function checkIntegrity() {
+        async function checkIntegrity() {
             const resultDiv = document.getElementById('optimization-result');
             
             showNotification('info', 'Verificando integridad de la base de datos...');
             
-            setTimeout(() => {
-                resultDiv.innerHTML = `
-                    <div style="background: #f0fdf4; color: #166534; padding: 1rem; border-radius: 0.5rem; border: 1px solid #86efac;">
-                        <i class="fas fa-shield-alt"></i>
-                        Verificación completada: Base de datos íntegra - No se encontraron problemas
-                    </div>
-                `;
+            try {
+                const result = await apiCall('checkIntegrity');
                 
-                showNotification('success', 'Base de datos íntegra - Sin problemas');
-            }, 1800);
+                if (result.success) {
+                    if (result.issues_found === 0) {
+                        resultDiv.innerHTML = `
+                            <div style="background: #f0fdf4; color: #166534; padding: 1rem; border-radius: 0.5rem; border: 1px solid #86efac;">
+                                <i class="fas fa-shield-alt"></i>
+                                Verificación completada: Base de datos íntegra - No se encontraron problemas
+                            </div>
+                        `;
+                        showNotification('success', 'Base de datos íntegra - Sin problemas');
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div style="background: #fef3c7; color: #92400e; padding: 1rem; border-radius: 0.5rem; border: 1px solid #fcd34d;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Encontrados ${result.issues_found} problemas: ${result.issues.join(', ')}
+                            </div>
+                        `;
+                        showNotification('warning', `Encontrados ${result.issues_found} problemas de integridad`);
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error">Error: ${result.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
         }
 
-        // FORMULARIO DE API
+        // FORMULARIOS
         function initializeForms() {
             const apiForm = document.getElementById('apiForm');
             if (apiForm) {
@@ -1651,16 +1929,16 @@
 
         // INICIALIZACIÓN
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Inicializando panel...');
+            console.log('🚀 Inicializando panel de administración...');
             
             try {
                 initializeTabs();
                 initializeForms();
                 showTab('hotels');
-                console.log('Panel inicializado correctamente');
+                console.log('✅ Panel inicializado correctamente');
             } catch (error) {
-                console.error('Error al inicializar:', error);
-                showNotification('error', 'Error al inicializar el panel');
+                console.error('❌ Error al inicializar:', error);
+                showNotification('error', 'Error al inicializar el panel: ' + error.message);
             }
         });
     </script>
