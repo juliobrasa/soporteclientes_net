@@ -1,0 +1,416 @@
+/* ==========================================================================
+   ADMIN TABLES CSS - Kavia Hoteles Panel de Administración
+   Estilos específicos para tablas, listas y visualización de datos
+   ========================================================================== */
+
+/* Contenedor de tablas responsivas */
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    background: white;
+    box-shadow: var(--shadow);
+}
+
+/* Estilos básicos de tabla */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    font-size: var(--font-size-sm);
+}
+
+.table th,
+.table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.table th {
+    background: var(--light-gray);
+    font-weight: 600;
+    color: var(--dark);
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.table tbody tr:hover {
+    background: #f9fafb;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Variantes de tabla */
+.table-striped tbody tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.table-striped tbody tr:nth-child(even):hover {
+    background: #f9fafb;
+}
+
+.table-bordered {
+    border: 1px solid var(--border-color);
+}
+
+.table-bordered th,
+.table-bordered td {
+    border: 1px solid var(--border-color);
+}
+
+.table-sm th,
+.table-sm td {
+    padding: 0.5rem 0.75rem;
+}
+
+/* Columnas especiales */
+.table th.text-center,
+.table td.text-center {
+    text-align: center;
+}
+
+.table th.text-right,
+.table td.text-right {
+    text-align: right;
+}
+
+.table .col-actions {
+    width: 120px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.table .col-status {
+    width: 100px;
+    text-align: center;
+}
+
+.table .col-id {
+    width: 60px;
+    text-align: center;
+    color: var(--gray);
+    font-family: monospace;
+    font-size: var(--font-size-xs);
+}
+
+.table .col-date {
+    width: 140px;
+    color: var(--gray);
+    font-size: var(--font-size-xs);
+}
+
+/* Estados especiales de filas */
+.table tbody tr.row-selected {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.table tbody tr.row-disabled {
+    opacity: 0.6;
+    background: var(--light-gray);
+}
+
+.table tbody tr.row-highlighted {
+    background: rgba(16, 185, 129, 0.1);
+    border-left: 4px solid var(--success);
+}
+
+.table tbody tr.row-error {
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 4px solid var(--danger);
+}
+
+/* Loading y estados vacíos */
+.table-loading {
+    position: relative;
+    min-height: 200px;
+}
+
+.table-loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+.loading-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--gray);
+}
+
+.loading-state .spinner {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--primary);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--gray);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+    color: var(--gray);
+}
+
+.empty-state h3 {
+    margin-bottom: 0.5rem;
+    color: var(--dark);
+    font-weight: 600;
+}
+
+.empty-state p {
+    margin-bottom: 1.5rem;
+    color: var(--gray);
+}
+
+/* Error state */
+.error-state {
+    background: #fef2f2;
+    color: var(--danger);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin: 1rem 0;
+    border: 1px solid #fecaca;
+    text-align: center;
+}
+
+.error-state i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* Paginación */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.pagination-info {
+    font-size: var(--font-size-sm);
+    color: var(--gray);
+    margin-right: auto;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.pagination .btn {
+    min-width: 2.5rem;
+    justify-content: center;
+}
+
+.pagination .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Filtros de tabla */
+.table-filters {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: var(--light-gray);
+    border-radius: var(--border-radius);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.table-search {
+    flex: 1;
+    min-width: 200px;
+}
+
+.table-filters .form-control {
+    max-width: 200px;
+}
+
+.table-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-left: auto;
+}
+
+/* Cards para datos en móvil */
+@media (max-width: 768px) {
+    .table-responsive-cards .table-wrapper {
+        display: none;
+    }
+    
+    .table-responsive-cards .data-cards {
+        display: block;
+    }
+    
+    .data-card {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-md);
+        box-shadow: var(--shadow);
+    }
+    
+    .data-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-md);
+        padding-bottom: var(--spacing-sm);
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .data-card-title {
+        font-weight: 600;
+        color: var(--dark);
+    }
+    
+    .data-card-actions {
+        display: flex;
+        gap: var(--spacing-sm);
+    }
+    
+    .data-card-body {
+        display: grid;
+        gap: var(--spacing-sm);
+    }
+    
+    .data-card-field {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .data-card-label {
+        font-weight: 500;
+        color: var(--gray);
+        font-size: var(--font-size-sm);
+    }
+    
+    .data-card-value {
+        color: var(--dark);
+        text-align: right;
+    }
+}
+
+@media (min-width: 769px) {
+    .data-cards {
+        display: none;
+    }
+}
+
+/* Acciones en hover */
+.table tbody tr .actions-hover {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.table tbody tr:hover .actions-hover {
+    opacity: 1;
+}
+
+/* Sorting */
+.table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.table th.sortable:hover {
+    background: #e5e7eb;
+}
+
+.table th.sortable::after {
+    content: '\f0dc';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 0.5rem;
+    opacity: 0.3;
+    font-size: 0.8em;
+}
+
+.table th.sort-asc::after {
+    content: '\f0de';
+    opacity: 1;
+    color: var(--primary);
+}
+
+.table th.sort-desc::after {
+    content: '\f0dd';
+    opacity: 1;
+    color: var(--primary);
+}
+
+/* Checkboxes en tabla */
+.table-checkbox {
+    width: 40px;
+    text-align: center;
+}
+
+.table-checkbox input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Expansión de filas */
+.table tbody tr.expandable {
+    cursor: pointer;
+}
+
+.table tbody tr.expandable td {
+    position: relative;
+}
+
+.table tbody tr.expandable td::before {
+    content: '\f054';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    left: 0.5rem;
+    color: var(--gray);
+    transition: transform 0.2s ease;
+}
+
+.table tbody tr.expandable.expanded td::before {
+    transform: rotate(90deg);
+}
+
+.table tbody tr.expanded-content {
+    background: var(--light-gray);
+}
+
+.table tbody tr.expanded-content td {
+    padding: 1.5rem;
+    border-top: none;
+}
