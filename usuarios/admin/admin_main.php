@@ -208,6 +208,7 @@
     <script src="assets/js/core/config.js"></script>
     <script src="assets/js/core/api-client.js"></script>
     <script src="assets/js/core/notification-system.js"></script>
+    <script src="assets/js/core/modal-manager.js"></script>
 
     <!-- JavaScript Principal -->
     <script>
@@ -543,6 +544,45 @@
             }
         }
         
+        // Función para mostrar errores de dependencias
+        function showDependencyError(dependency) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-state';
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: #fef2f2;
+                color: #991b1b;
+                padding: 2rem;
+                border-radius: 0.5rem;
+                border: 1px solid #fecaca;
+                max-width: 500px;
+                text-align: center;
+                z-index: 9999;
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            `;
+            
+            errorDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem; color: #dc2626;"></i>
+                <h2>Error de Inicialización</h2>
+                <p>No se pudo cargar el panel de administración</p>
+                <p><strong>Error:</strong> Dependencia requerida no encontrada: ${dependency}</p>
+                <button onclick="location.reload()" style="
+                    background: #dc2626;
+                    color: white;
+                    border: none;
+                    padding: 0.5rem 1rem;
+                    border-radius: 0.25rem;
+                    cursor: pointer;
+                    margin-top: 1rem;
+                ">Recargar Página</button>
+            `;
+            
+            document.body.appendChild(errorDiv);
+        }
+        
         // Inicializar aplicación cuando el DOM esté listo
         let adminApp;
         
@@ -550,16 +590,25 @@
             // Verificar dependencias
             if (typeof AdminConfig === 'undefined') {
                 console.error('❌ AdminConfig no encontrado');
+                showDependencyError('AdminConfig');
                 return;
             }
             
             if (typeof apiClient === 'undefined') {
                 console.error('❌ apiClient no encontrado');
+                showDependencyError('apiClient');
                 return;
             }
             
             if (typeof notificationSystem === 'undefined') {
                 console.error('❌ notificationSystem no encontrado');
+                showDependencyError('notificationSystem');
+                return;
+            }
+            
+            if (typeof modalManager === 'undefined') {
+                console.error('❌ modalManager no encontrado');
+                showDependencyError('modalManager');
                 return;
             }
             
