@@ -176,7 +176,8 @@ window.AdminConfig = {
         enabled: true, // Cambiar a false en producción
         logLevel: 'info', // 'error', 'warn', 'info', 'debug'
         logToConsole: true,
-        logToServer: false
+        logToServer: false,
+        simulateData: true  // Activar simulación hasta que backend esté listo
     },
     
     // Mensajes del sistema

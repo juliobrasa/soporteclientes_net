@@ -56,23 +56,7 @@
     <div class="container">
         <!-- Tab de Hoteles (Activo por defecto) -->
         <div id="hotels-tab" class="tab-content">
-            <div class="card">
-                <div class="card-header flex justify-between items-center">
-                    <h2><i class="fas fa-hotel"></i> Gestión de Hoteles</h2>
-                    <button class="btn btn-success" onclick="showInfo('Función disponible próximamente')">
-                        <i class="fas fa-plus"></i> Agregar Hotel
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div id="hotels-list">
-                        <div class="loading-state">
-                            <i class="fas fa-spinner fa-spin spinner"></i>
-                            <h3>Cargando hoteles...</h3>
-                            <p>Por favor espera mientras cargamos la información</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <?php include 'modules/hotels/hotels-tab.php'; ?>
         </div>
 
         <!-- Tab de APIs (Oculto inicialmente) -->
@@ -209,6 +193,10 @@
     <script src="assets/js/core/api-client.js"></script>
     <script src="assets/js/core/notification-system.js"></script>
     <script src="assets/js/core/modal-manager.js"></script>
+    <script src="assets/js/core/tab-manager.js"></script>
+    
+    <!-- JavaScript Modules -->
+    <script src="assets/js/modules/hotels-module.js"></script>
 
     <!-- JavaScript Principal -->
     <script>
@@ -217,9 +205,6 @@
          */
         class AdminApp {
             constructor() {
-                this.currentTab = 'hotels';
-                this.modules = new Map();
-                
                 this.init();
             }
             
@@ -230,9 +215,8 @@
                 console.log('🚀 Inicializando Kavia Admin Panel v2.0...');
                 
                 try {
-                    this.initializeTabs();
-                    this.bindEvents();
-                    this.showTab('hotels');
+                    // La navegación ahora es manejada por tabManager
+                    // Los módulos se cargan automáticamente
                     
                     // Mostrar notificación de bienvenida
                     setTimeout(() => {
@@ -246,280 +230,6 @@
                     console.error('❌ Error al inicializar:', error);
                     showError('Error al inicializar el panel: ' + error.message);
                 }
-            }
-            
-            /**
-             * Inicializa el sistema de tabs
-             */
-            initializeTabs() {
-                const tabs = document.querySelectorAll('.tab-button');
-                tabs.forEach(tab => {
-                    tab.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const tabName = tab.getAttribute('data-tab');
-                        this.showTab(tabName);
-                    });
-                });
-            }
-            
-            /**
-             * Vincula eventos globales
-             */
-            bindEvents() {
-                // Manejar teclas de acceso rápido
-                document.addEventListener('keydown', (e) => {
-                    if (e.ctrlKey || e.metaKey) {
-                        switch(e.key) {
-                            case '1':
-                                e.preventDefault();
-                                this.showTab('hotels');
-                                break;
-                            case '2':
-                                e.preventDefault();
-                                this.showTab('apis');
-                                break;
-                            case '3':
-                                e.preventDefault();
-                                this.showTab('extraction');
-                                break;
-                            case 'r':
-                                e.preventDefault();
-                                this.refreshCurrentTab();
-                                break;
-                        }
-                    }
-                });
-                
-                // Manejar visibilidad de la página
-                document.addEventListener('visibilitychange', () => {
-                    if (!document.hidden) {
-                        this.refreshCurrentTab();
-                    }
-                });
-            }
-            
-            /**
-             * Muestra un tab específico
-             */
-            showTab(tabName) {
-                console.log(`📋 Cambiando a tab: ${tabName}`);
-                
-                // Ocultar todos los tabs
-                const allTabs = document.querySelectorAll('.tab-content');
-                allTabs.forEach(tab => {
-                    tab.style.display = 'none';
-                });
-                
-                // Desactivar todos los botones
-                const allButtons = document.querySelectorAll('.tab-button');
-                allButtons.forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                
-                // Mostrar el tab seleccionado
-                const targetTab = document.getElementById(`${tabName}-tab`);
-                const targetButton = document.querySelector(`[data-tab="${tabName}"]`);
-                
-                if (targetTab && targetButton) {
-                    targetTab.style.display = 'block';
-                    targetButton.classList.add('active');
-                    
-                    this.currentTab = tabName;
-                    
-                    // Cargar datos del tab si es necesario
-                    this.loadTabData(tabName);
-                    
-                    // Actualizar URL sin recargar
-                    if (history.pushState) {
-                        const newUrl = `${window.location.pathname}?tab=${tabName}`;
-                        history.pushState({ tab: tabName }, '', newUrl);
-                    }
-                } else {
-                    console.error(`Tab no encontrado: ${tabName}`);
-                    showError(`Error: Tab "${tabName}" no encontrado`);
-                }
-            }
-            
-            /**
-             * Carga los datos de un tab específico
-             */
-            loadTabData(tabName) {
-                switch(tabName) {
-                    case 'hotels':
-                        this.loadHotels();
-                        break;
-                    case 'apis':
-                        this.loadApiProviders();
-                        break;
-                    case 'ia':
-                        this.loadAiProviders();
-                        break;
-                    case 'prompts':
-                        this.loadPrompts();
-                        break;
-                    case 'logs':
-                        this.loadLogs();
-                        break;
-                    case 'tools':
-                        this.loadDbStats();
-                        break;
-                    case 'extraction':
-                        this.loadExtractionData();
-                        break;
-                    default:
-                        console.log(`No hay carga específica para: ${tabName}`);
-                }
-            }
-            
-            /**
-             * Refresca el tab actual
-             */
-            refreshCurrentTab() {
-                console.log(`🔄 Refrescando tab: ${this.currentTab}`);
-                this.loadTabData(this.currentTab);
-            }
-            
-            /**
-             * Carga la lista de hoteles
-             */
-            async loadHotels() {
-                const list = document.getElementById('hotels-list');
-                if (!list) return;
-                
-                try {
-                    list.innerHTML = `
-                        <div class="loading-state">
-                            <i class="fas fa-spinner fa-spin spinner"></i>
-                            <h3>Cargando hoteles...</h3>
-                        </div>
-                    `;
-                    
-                    const result = await apiClient.getHotels();
-                    
-                    if (result.success && result.data) {
-                        this.renderHotelsTable(result.data);
-                    } else {
-                        throw new Error(result.error || 'Error al cargar hoteles');
-                    }
-                } catch (error) {
-                    console.error('Error cargando hoteles:', error);
-                    list.innerHTML = `
-                        <div class="error-state">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <p>Error al cargar hoteles: ${error.message}</p>
-                            <button class="btn btn-primary" onclick="adminApp.loadHotels()">
-                                <i class="fas fa-redo"></i> Reintentar
-                            </button>
-                        </div>
-                    `;
-                }
-            }
-            
-            /**
-             * Renderiza la tabla de hoteles
-             */
-            renderHotelsTable(hotels) {
-                const list = document.getElementById('hotels-list');
-                
-                if (!hotels || hotels.length === 0) {
-                    list.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-hotel"></i>
-                            <h3>No hay hoteles registrados</h3>
-                            <p>Comienza agregando tu primer hotel al sistema</p>
-                            <button class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Agregar Hotel
-                            </button>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                let tableHTML = `
-                    <div class="table-wrapper">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre del Hotel</th>
-                                    <th>Estado</th>
-                                    <th>Última Actualización</th>
-                                    <th class="col-actions">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
-                
-                hotels.forEach(hotel => {
-                    tableHTML += `
-                        <tr>
-                            <td class="col-id">${hotel.id}</td>
-                            <td><strong>${hotel.name}</strong></td>
-                            <td>
-                                <span class="status-badge status-active">
-                                    <i class="fas fa-check"></i> Activo
-                                </span>
-                            </td>
-                            <td class="col-date">${this.formatDate(hotel.created_at || new Date())}</td>
-                            <td class="col-actions">
-                                <button class="btn btn-sm btn-info" onclick="editHotel(${hotel.id}, '${hotel.name}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="confirmDeleteHotel(${hotel.id}, '${hotel.name}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                
-                tableHTML += `
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-                
-                list.innerHTML = tableHTML;
-            }
-            
-            /**
-             * Formatea una fecha
-             */
-            formatDate(dateString) {
-                try {
-                    const date = new Date(dateString);
-                    return date.toLocaleDateString('es-ES') + ' ' + date.toLocaleTimeString('es-ES', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                } catch (error) {
-                    return 'Fecha inválida';
-                }
-            }
-            
-            // Métodos placeholder para otros tabs
-            async loadApiProviders() {
-                showInfo('Módulo de APIs en desarrollo');
-            }
-            
-            async loadAiProviders() {
-                showInfo('Módulo de Proveedores IA en desarrollo');
-            }
-            
-            async loadPrompts() {
-                showInfo('Módulo de Prompts en desarrollo');
-            }
-            
-            async loadLogs() {
-                showInfo('Módulo de Logs en desarrollo');
-            }
-            
-            async loadDbStats() {
-                showInfo('Módulo de Herramientas en desarrollo');
-            }
-            
-            async loadExtractionData() {
-                showInfo('Módulo de Extracción en desarrollo');
             }
         }
         
@@ -612,23 +322,31 @@
                 return;
             }
             
+            if (typeof tabManager === 'undefined') {
+                console.error('❌ tabManager no encontrado');
+                showDependencyError('tabManager');
+                return;
+            }
+            
+            if (typeof hotelsModule === 'undefined') {
+                console.error('❌ hotelsModule no encontrado');
+                showDependencyError('hotelsModule');
+                return;
+            }
+            
             // Inicializar aplicación
             adminApp = new AdminApp();
             
-            // Manejar navegación del historial
-            window.addEventListener('popstate', function(event) {
-                if (event.state && event.state.tab) {
-                    adminApp.showTab(event.state.tab);
-                }
-            });
-            
-            // Cargar tab desde URL si existe
-            const urlParams = new URLSearchParams(window.location.search);
-            const tabFromUrl = urlParams.get('tab');
-            if (tabFromUrl && AdminConfig.tabs.available.includes(tabFromUrl)) {
-                adminApp.showTab(tabFromUrl);
-            }
+            // Las funciones de navegación ahora son manejadas por tabManager automáticamente
         });
+        
+        // Funciones globales para compatibilidad
+        function confirmAction(message, options = {}) {
+            return modalManager.confirm(options.title || 'Confirmar Acción', message, options);
+        }
     </script>
+    
+    <!-- Modales de Hoteles -->
+    <?php include 'modules/hotels/hotel-modal.php'; ?>
 </body>
 </html>
