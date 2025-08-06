@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Sistema de Navegación Modular</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS Modular -->
+    <link rel="stylesheet" href="assets/css/admin-base.css">
+    <link rel="stylesheet" href="assets/css/admin-components.css">
+    <link rel="stylesheet" href="assets/css/admin-tables.css">
+    <link rel="stylesheet" href="assets/css/admin-modals.css">
+</head>
+<body>
+    <!-- Header Modular (Simulado) -->
+    <div class="header">
+        <div class="header-content">
+            <!-- Logo y Título -->
+            <div class="header-brand">
+                <div class="brand-logo">
+                    <i class="fas fa-hotel"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>Panel de Administración - Kavia Hoteles</h1>
+                    <p>Gestión de Hoteles, IA, APIs y Extracción de Reseñas - Versión Modular 2.0</p>
+                </div>
+            </div>
+
+            <!-- Información del Sistema -->
+            <div class="header-info">
+                <div class="system-status">
+                    <span class="status-indicator online"></span>
+                    <span class="status-text">Sistema Activo</span>
+                </div>
+                <div class="version-info">
+                    <span class="version-badge">v2.0</span>
+                </div>
+            </div>
+
+            <!-- Acciones del Header -->
+            <div class="header-actions">
+                <div class="notifications-container">
+                    <button class="notification-btn" id="notifications-toggle">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notification-count">2</span>
+                    </button>
+                    <div class="notifications-dropdown" id="notifications-dropdown">
+                        <div class="notifications-header">
+                            <h3>Notificaciones</h3>
+                            <button class="mark-all-read" id="mark-all-read">Marcar todo como leído</button>
+                        </div>
+                        <div class="notifications-list" id="notifications-list">
+                            <div class="notification-item unread" data-id="1">
+                                <div class="notification-icon info">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <div class="notification-title">Nuevo hotel agregado</div>
+                                    <div class="notification-message">Se ha agregado el hotel "Hotel Plaza" al sistema</div>
+                                    <div class="notification-time">Hace 5 min</div>
+                                </div>
+                                <button class="notification-close">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="notification-item unread" data-id="2">
+                                <div class="notification-icon success">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <div class="notification-title">Extracción completada</div>
+                                    <div class="notification-message">La extracción de reseñas se ha completado exitosamente</div>
+                                    <div class="notification-time">Hace 10 min</div>
+                                </div>
+                                <button class="notification-close">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="user-container">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-details">
+                            <span class="user-name">Administrador</span>
+                            <span class="user-role">Admin</span>
+                        </div>
+                    </div>
+                    <div class="user-dropdown">
+                        <button class="user-menu-btn" id="user-menu-toggle">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="user-dropdown-menu" id="user-dropdown-menu">
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-user"></i> Perfil
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-cog"></i> Configuración
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item text-danger" id="logout-btn">
+                                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación Modular (Simulado) -->
+    <div class="navigation-container">
+        <div class="tabs" id="main-tabs">
+            <button class="tab-button active" data-tab="hotels" data-shortcut="1" title="Gestión de hoteles y sus configuraciones">
+                <div class="tab-icon">
+                    <i class="fas fa-hotel"></i>
+                </div>
+                <div class="tab-content">
+                    <span class="tab-label">Hoteles</span>
+                    <span class="tab-shortcut">Ctrl+1</span>
+                </div>
+            </button>
+            <button class="tab-button" data-tab="apis" data-shortcut="2" title="Configuración de APIs y proveedores">
+                <div class="tab-icon">
+                    <i class="fas fa-plug"></i>
+                </div>
+                <div class="tab-content">
+                    <span class="tab-label">APIs</span>
+                    <span class="tab-shortcut">Ctrl+2</span>
+                </div>
+            </button>
+            <button class="tab-button" data-tab="extraction" data-shortcut="3" title="Extracción de reseñas y datos">
+                <div class="tab-icon">
+                    <i class="fas fa-download"></i>
+                </div>
+                <div class="tab-content">
+                    <span class="tab-label">Extractor</span>
+                    <span class="tab-shortcut">Ctrl+3</span>
+                </div>
+            </button>
+            <button class="tab-button" data-tab="ia" data-shortcut="4" title="Configuración de proveedores de IA">
+                <div class="tab-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="tab-content">
+                    <span class="tab-label">Proveedores IA</span>
+                    <span class="tab-shortcut">Ctrl+4</span>
+                </div>
+            </button>
+            <button class="tab-button" data-tab="prompts" data-shortcut="5" title="Gestión de prompts y plantillas">
+                <div class="tab-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="tab-content">
+                    <span class="tab-label">Prompts</span>
+                    <span class="tab-shortcut">Ctrl+5</span>
+                </div>
+            </button>
+            <button class="tab-button" data-tab="logs" data-shortcut="6" title="Registros y estadísticas del sistema">
+                <div class="tab-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="tab-content">
+                    <span class="tab-label">Logs</span>
+                    <span class="tab-shortcut">Ctrl+6</span>
+                </div>
+            </button>
+            <button class="tab-button" data-tab="tools" data-shortcut="7" title="Herramientas de mantenimiento">
+                <div class="tab-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="tab-content">
+                    <span class="tab-label">Herramientas</span>
+                    <span class="tab-shortcut">Ctrl+7</span>
+                </div>
+            </button>
+        </div>
+
+        <!-- Navegación Secundaria -->
+        <div class="secondary-navigation" id="secondary-nav">
+            <div class="nav-actions">
+                <button class="nav-action-btn" id="refresh-current" title="Actualizar contenido actual">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                
+                <button class="nav-action-btn" id="go-back" title="Volver atrás" disabled>
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                
+                <button class="nav-action-btn" id="go-forward" title="Avanzar" disabled>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <div class="nav-info">
+                <span class="current-tab-info" id="current-tab-info">Hoteles</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breadcrumb de Navegación -->
+    <div class="breadcrumb-container" id="breadcrumb-container">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <ol class="breadcrumb-list">
+                <li class="breadcrumb-item">
+                    <a href="#" class="breadcrumb-link" data-tab="hotels">
+                        <i class="fas fa-home"></i>
+                        <span>Inicio</span>
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <span id="current-breadcrumb">Hoteles</span>
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Contenedor Principal -->
+    <div class="container">
+        <!-- Tab de Hoteles (Activo por defecto) -->
+        <div id="hotels-tab" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-hotel"></i> Gestión de Hoteles</h2>
+                </div>
+                <div class="card-body">
+                    <p>Este es el módulo de hoteles. La navegación funciona correctamente.</p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Prueba de Navegación:</strong> Haz clic en los diferentes tabs para probar la funcionalidad.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Otros tabs (ocultos inicialmente) -->
+        <div id="apis-tab" class="tab-content" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-plug"></i> APIs</h2>
+                </div>
+                <div class="card-body">
+                    <p>Módulo de APIs - Funcionando correctamente</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="extraction-tab" class="tab-content" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-download"></i> Extractor</h2>
+                </div>
+                <div class="card-body">
+                    <p>Módulo de Extracción - Funcionando correctamente</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="ia-tab" class="tab-content" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-robot"></i> Proveedores IA</h2>
+                </div>
+                <div class="card-body">
+                    <p>Módulo de Proveedores IA - Funcionando correctamente</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="prompts-tab" class="tab-content" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-file-alt"></i> Prompts</h2>
+                </div>
+                <div class="card-body">
+                    <p>Módulo de Prompts - Funcionando correctamente</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="logs-tab" class="tab-content" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-line"></i> Logs</h2>
+                </div>
+                <div class="card-body">
+                    <p>Módulo de Logs - Funcionando correctamente</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="tools-tab" class="tab-content" style="display:none;">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-tools"></i> Herramientas</h2>
+                </div>
+                <div class="card-body">
+                    <p>Módulo de Herramientas - Funcionando correctamente</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Core -->
+    <script src="assets/js/core/config.js"></script>
+    <script src="assets/js/core/api-client.js"></script>
+    <script src="assets/js/core/notification-system.js"></script>
+    <script src="assets/js/core/modal-manager.js"></script>
+    <script src="assets/js/core/tab-manager.js"></script>
+
+    <!-- Script de Prueba -->
+    <script>
+        /**
+         * Script de prueba para el sistema de navegación
+         */
+        class NavigationTest {
+            constructor() {
+                this.currentTab = 'hotels';
+                this.history = [];
+                this.historyIndex = -1;
+                this.maxHistory = 10;
+                this.init();
+            }
+
+            init() {
+                this.bindEvents();
+                this.initializeShortcuts();
+                console.log('🧪 Navigation Test inicializado');
+            }
+
+            bindEvents() {
+                // Eventos de tabs
+                const tabButtons = document.querySelectorAll('.tab-button');
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const tabName = button.getAttribute('data-tab');
+                        this.switchTab(tabName);
+                    });
+                });
+
+                // Eventos de navegación secundaria
+                const refreshBtn = document.getElementById('refresh-current');
+                const backBtn = document.getElementById('go-back');
+                const forwardBtn = document.getElementById('go-forward');
+
+                if (refreshBtn) {
+                    refreshBtn.addEventListener('click', () => {
+                        this.refreshCurrentTab();
+                    });
+                }
+
+                if (backBtn) {
+                    backBtn.addEventListener('click', () => {
+                        this.goBack();
+                    });
+                }
+
+                if (forwardBtn) {
+                    forwardBtn.addEventListener('click', () => {
+                        this.goForward();
+                    });
+                }
+
+                // Eventos de breadcrumb
+                const breadcrumbLinks = document.querySelectorAll('.breadcrumb-link');
+                breadcrumbLinks.forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const tabName = link.getAttribute('data-tab');
+                        if (tabName) {
+                            this.switchTab(tabName);
+                        }
+                    });
+                });
+
+                // Eventos de notificaciones
+                const notificationsToggle = document.getElementById('notifications-toggle');
+                const notificationsDropdown = document.getElementById('notifications-dropdown');
+                
+                if (notificationsToggle && notificationsDropdown) {
+                    notificationsToggle.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        notificationsDropdown.classList.toggle('show');
+                    });
+                }
+
+                // Eventos de usuario
+                const userMenuToggle = document.getElementById('user-menu-toggle');
+                const userDropdownMenu = document.getElementById('user-dropdown-menu');
+                
+                if (userMenuToggle && userDropdownMenu) {
+                    userMenuToggle.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        userDropdownMenu.classList.toggle('show');
+                    });
+                }
+
+                // Cerrar dropdowns al hacer clic fuera
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.notifications-container')) {
+                        const notificationsDropdown = document.getElementById('notifications-dropdown');
+                        if (notificationsDropdown) {
+                            notificationsDropdown.classList.remove('show');
+                        }
+                    }
+                    
+                    if (!e.target.closest('.user-container')) {
+                        const userDropdownMenu = document.getElementById('user-dropdown-menu');
+                        if (userDropdownMenu) {
+                            userDropdownMenu.classList.remove('show');
+                        }
+                    }
+                });
+            }
+
+            initializeShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                        return;
+                    }
+
+                    if (e.ctrlKey || e.metaKey) {
+                        const key = e.key;
+                        const tabButton = document.querySelector(`[data-shortcut="${key}"]`);
+                        
+                        if (tabButton) {
+                            e.preventDefault();
+                            const tabName = tabButton.getAttribute('data-tab');
+                            this.switchTab(tabName);
+                        }
+                    }
+                });
+            }
+
+            switchTab(tabName) {
+                // Agregar a historial
+                this.addToHistory(tabName);
+
+                // Actualizar estado
+                this.currentTab = tabName;
+                this.updateTabButtons(tabName);
+                this.updateNavigationState();
+                this.updateBreadcrumb(tabName);
+                this.showTabContent(tabName);
+
+                console.log(`🧭 Cambiando a tab: ${tabName}`);
+            }
+
+            updateTabButtons(activeTab) {
+                const tabButtons = document.querySelectorAll('.tab-button');
+                tabButtons.forEach(button => {
+                    const tabName = button.getAttribute('data-tab');
+                    if (tabName === activeTab) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
+                    }
+                });
+            }
+
+            updateNavigationState() {
+                const backBtn = document.getElementById('go-back');
+                const forwardBtn = document.getElementById('go-forward');
+                const currentTabInfo = document.getElementById('current-tab-info');
+
+                if (backBtn) {
+                    backBtn.disabled = this.historyIndex <= 0;
+                }
+
+                if (forwardBtn) {
+                    forwardBtn.disabled = this.historyIndex >= this.history.length - 1;
+                }
+
+                if (currentTabInfo) {
+                    const tabButton = document.querySelector(`[data-tab="${this.currentTab}"]`);
+                    const tabLabel = tabButton.querySelector('.tab-label').textContent;
+                    currentTabInfo.textContent = tabLabel;
+                }
+            }
+
+            updateBreadcrumb(tabName) {
+                const currentBreadcrumb = document.getElementById('current-breadcrumb');
+                if (currentBreadcrumb) {
+                    const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
+                    const tabLabel = tabButton.querySelector('.tab-label').textContent;
+                    currentBreadcrumb.textContent = tabLabel;
+                }
+            }
+
+            showTabContent(tabName) {
+                const tabContents = document.querySelectorAll('.tab-content');
+                tabContents.forEach(content => {
+                    content.style.display = 'none';
+                });
+
+                const activeContent = document.getElementById(`${tabName}-tab`);
+                if (activeContent) {
+                    activeContent.style.display = 'block';
+                }
+            }
+
+            addToHistory(tabName) {
+                this.history = this.history.slice(0, this.historyIndex + 1);
+                this.history.push(tabName);
+                this.historyIndex++;
+
+                if (this.history.length > this.maxHistory) {
+                    this.history.shift();
+                    this.historyIndex--;
+                }
+            }
+
+            goBack() {
+                if (this.historyIndex > 0) {
+                    this.historyIndex--;
+                    const tabName = this.history[this.historyIndex];
+                    this.switchTab(tabName, false);
+                }
+            }
+
+            goForward() {
+                if (this.historyIndex < this.history.length - 1) {
+                    this.historyIndex++;
+                    const tabName = this.history[this.historyIndex];
+                    this.switchTab(tabName, false);
+                }
+            }
+
+            refreshCurrentTab() {
+                const refreshBtn = document.getElementById('refresh-current');
+                if (refreshBtn) {
+                    const icon = refreshBtn.querySelector('i');
+                    icon.classList.add('fa-spin');
+                    
+                    setTimeout(() => {
+                        icon.classList.remove('fa-spin');
+                        alert(`Contenido de "${this.currentTab}" actualizado`);
+                    }, 1000);
+                }
+            }
+        }
+
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            new NavigationTest();
+        });
+    </script>
+</body>
+</html>
