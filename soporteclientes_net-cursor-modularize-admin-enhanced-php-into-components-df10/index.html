@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kavia Hoteles - Gestión de Reputación Online</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; margin: 0; background-color: #f3f4f6; }
+        .loading { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 18px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .kavia-logo { width: 32px; height: 32px; object-fit: contain; }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div class="loading">
+            <div class="spinner"></div>
+            Cargando Kavia Hoteles...
+        </div>
+    </div>
+
+    <script type="text/babel">
+        // Función para copiar al portapapeles
+        const copyToClipboard = async (text) => {
+            try {
+                if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } else {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    return successful;
+                }
+            } catch (err) {
+                console.error('Error copying:', err);
+                return false;
+            }
+        };
+
+        // Función para validar y limpiar datos
+        const cleanReviewData = (review) => {
+            return {
+                id: review.id || `review_${Date.now()}_${Math.random()}`,
+                guest: review.guest || 'Usuario anónimo',
+                country: review.country || 'No especificado',
+                date: review.date || 'Sin fecha',
+                tripType: review.tripType || 'Sin especificar',
+                reviewId: review.reviewId || 'N/A',
+                platform: review.platform || 'Booking.com',
+                rating: Math.max(0, Math.min(5, parseFloat(review.rating) || 0)),
+                title: review.title || '',
+                positive: review.positive || '',
+                negative: review.negative || '',
+                hasResponse: Boolean(review.hasResponse),
+                response: review.response || '',
+                platformColor: review.platformColor || 'bg-blue-700',
+                language: review.language || 'es',
+                sentiment: review.sentiment || 'neutral',
+                tags: Array.isArray(review.tags) ? review.tags : []
+            };
+        };
+
+        // Componente para mostrar estrellas de forma segura
+        const StarRating = ({ rating, showValue = true }) => {
+            const safeRating = Math.max(0, Math.min(5, parseFloat(rating) || 0));
+            const fullStars = Math.floor(safeRating);
+            const emptyStars = 5 - fullStars;
+            
+            return (
+                <div className="flex items-center gap-2">
+                    <div className="flex text-yellow-400">
+                        {Array.from({ length: fullStars }, (_, i) => (
+                            <span key={`full-${i}`}>★</span>
+                        ))}
+                        {Array.from({ length: emptyStars }, (_, i) => (
+                            <span key={`empty-${i}`} className="text-gray-300">☆</span>
+                        ))}
+                    </div>
+                    {showValue && <span className="text-sm">{safeRating.toFixed(1)}/5</span>}
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [activeSection, setActiveSection] = React.useState('resumen');
+            const [hotels, setHotels] = React.useState([]);
+            const [selectedHotel, setSelectedHotel] = React.useState('');
+            const [reviews, setReviews] = React.useState([]);
+            const [dashboardData, setDashboardData] = React.useState(null);
+            const [loading, setLoading] = React.useState(true);
+            const [error, setError] = React.useState(null);
+            const [dateRange, setDateRange] = React.useState(30);
+            
+            // Estados para el modal de respuesta
+            const [showResponseModal, setShowResponseModal] = React.useState(false);
+            const [currentReview, setCurrentReview] = React.useState(null);
+            const [generatedResponse, setGeneratedResponse] = React.useState('');
+            const [generatingResponse, setGeneratingResponse] = React.useState(false);
+            const [notification, setNotification] = React.useState(null);
+            const [translatedTexts, setTranslatedTexts] = React.useState({});
+            const [translatingId, setTranslatingId] = React.useState(null);
+
+            // Función para mostrar notificaciones
+            const showNotification = (message, type = 'success') => {
+                setNotification({ message, type });
+                setTimeout(() => setNotification(null), 3000);
+            };
+
+            // Función para traducir texto
+            const handleTranslate = async (reviewId, review) => {
+                // Si ya existe traducción, volver al original
+                if (translatedTexts[reviewId]) {
+                    const newTranslated = {...translatedTexts};
+                    delete newTranslated[reviewId];
+                    setTranslatedTexts(newTranslated);
+                    return;
+                }
+
+                setTranslatingId(reviewId);
+                
+                try {
+                    const textToTranslate = `${review.positive || ''} ${review.negative || ''}`.trim();
+                    
+                    if (!textToTranslate) {
+                        showNotification('No hay texto para traducir', 'warning');
+                        setTranslatingId(null);
+                        return;
+                    }
+                    
+                    const formData = new FormData();
+                    formData.append('action', 'translate');
+                    formData.append('text', textToTranslate);
+                    
+                    const response = await fetch('/usuarios/api/ia_response.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const responseText = await response.text();
+                    let data;
+                    
+                    try {
+                        data = JSON.parse(responseText);
+                    } catch (e) {
+                        console.error('Failed to parse translation response:', responseText);
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+                    
+                    if (data.success) {
+                        setTranslatedTexts({
+                            ...translatedTexts,
+                            [reviewId]: data.translation
+                        });
+                        showNotification('Texto traducido correctamente', 'success');
+                    } else {
+                        throw new Error(data.error || 'Error al traducir');
+                    }
+                } catch (error) {
+                    console.error('Error traduciendo:', error);
+                    showNotification('Error al traducir el texto', 'error');
+                } finally {
+                    setTranslatingId(null);
+                }
+            };
+
+            // Función para generar respuesta con IA
+            const handleGenerateResponse = async (review) => {
+                console.log('🚀 Iniciando generación de respuesta para:', review);
+                
+                setCurrentReview(review);
+                setShowResponseModal(true);
+                setGeneratingResponse(true);
+                setGeneratedResponse('');
+
+                try {
+                    const reviewData = {
+                        guest: review.guest || 'Huésped',
+                        rating: review.rating,
+                        title: review.title || '',
+                        positive: review.positive || '',
+                        negative: review.negative || '',
+                        date: review.date,
+                        country: review.country || '',
+                        tripType: review.tripType || review.trip_type || ''
+                    };
+                    
+                    console.log('📤 Datos a enviar:', reviewData);
+                    
+                    const formData = new FormData();
+                    formData.append('action', 'generate');
+                    formData.append('review', JSON.stringify(reviewData));
+                    formData.append('hotel', selectedHotel);
+                    
+                    console.log('🌐 Llamando a:', '/usuarios/api/ia_response.php');
+                    
+                    const response = await fetch('/usuarios/api/ia_response.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    console.log('📥 Respuesta HTTP:', response.status, response.statusText);
+                    
+                    const responseText = await response.text();
+                    console.log('📄 Respuesta cruda:', responseText);
+                    
+                    let data;
+                    try {
+                        data = JSON.parse(responseText);
+                        console.log('✅ Respuesta parseada:', data);
+                    } catch (e) {
+                        console.error('❌ Error parseando JSON:', e);
+                        console.error('Respuesta recibida:', responseText);
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+
+                    if (data.success) {
+                        setGeneratedResponse(data.response);
+                        console.log('✨ Respuesta generada por:', data.provider);
+                        
+                        // Verificar si es una respuesta de fallback
+                        if (data.provider === 'Fallback' || data.provider === 'Local/Fallback') {
+                            showNotification('⚠️ Usando respuesta local (verifica la configuración de IA)', 'warning');
+                        } else {
+                            showNotification(`✅ Respuesta generada con ${data.provider}`, 'success');
+                        }
+                        
+                        // Mostrar información adicional si está disponible
+                        if (data.tokens) {
+                            console.log('🎯 Tokens usados:', data.tokens);
+                        }
+                        if (data.processing_time_ms) {
+                            console.log('⏱️ Tiempo de procesamiento:', data.processing_time_ms + 'ms');
+                        }
+                        if (data.original_error) {
+                            console.warn('⚠️ Error original del proveedor:', data.original_error);
+                        }
+                    } else {
+                        console.error('❌ Error en la respuesta:', data.error);
+                        
+                        if (data.response) {
+                            // Hay una respuesta de fallback
+                            setGeneratedResponse(data.response);
+                            showNotification('⚠️ ' + (data.error || 'Error generando respuesta, usando fallback'), 'warning');
+                        } else {
+                            throw new Error(data.error || 'Error generando respuesta');
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Error general:', error);
+                    
+                    // Fallback local de emergencia
+                    const fallbackResponse = generateLocalFallback(review, selectedHotel);
+                    setGeneratedResponse(fallbackResponse);
+                    showNotification('⚠️ Error de conexión, usando respuesta local', 'error');
+                } finally {
+                    setGeneratingResponse(false);
+                }
+            };
+
+            // Función de fallback local
+            const generateLocalFallback = (review, hotelName) => {
+                const guest = review.guest || 'Estimado huésped';
+                const rating = review.rating || 0;
+                
+                if (rating >= 4) {
+                    return `¡Hola ${guest}! Nos alegra enormemente saber que disfrutaste de tu estancia en ${hotelName}. Tu satisfacción es nuestra mayor recompensa y esperamos verte de nuevo muy pronto para brindarte otra experiencia excepcional. ¡Gracias por elegirnos!`;
+                } else if (rating <= 2) {
+                    return `Estimado/a ${guest}, lamentamos profundamente que tu experiencia en ${hotelName} no haya cumplido con tus expectativas. Hemos tomado nota de tus comentarios para implementar mejoras inmediatas. Te invitamos a contactarnos directamente para resolver cualquier inconveniente.`;
+                } else {
+                    return `Hola ${guest}, muchas gracias por tu reseña sobre ${hotelName}. Apreciamos tanto tus elogios como tus sugerencias constructivas, ya que nos ayudan a seguir mejorando. Esperamos verte pronto.`;
+                }
+            };
+
+            // Función para copiar respuesta
+            const handleCopyResponse = async () => {
+                const success = await copyToClipboard(generatedResponse);
+                if (success) {
+                    showNotification('¡Respuesta copiada al portapapeles!', 'success');
+                    setShowResponseModal(false);
+                } else {
+                    showNotification('Error al copiar. Intenta seleccionar y copiar manualmente.', 'error');
+                }
+            };
+
+            // Función para crear caso
+            const handleCreateCase = (review) => {
+                showNotification('Función "Crear Caso" en desarrollo', 'info');
+                console.log('Crear caso para:', review);
+            };
+
+            // Modal de respuesta
+            const ResponseModal = () => {
+                if (!showResponseModal || !currentReview) return null;
+
+                return (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+                            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-xl font-bold">🤖 Respuesta Inteligente</h3>
+                                        <p className="text-blue-100 text-sm">Generada automáticamente para {currentReview.guest}</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowResponseModal(false)}
+                                        className="text-white hover:text-gray-200 text-2xl"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="p-6">
+                                {/* Reseña original */}
+                                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="font-semibold">{currentReview.guest}</span>
+                                        <StarRating rating={currentReview.rating} showValue={false} />
+                                        <span className="text-sm text-gray-600">({currentReview.rating}/5)</span>
+                                    </div>
+                                    {currentReview.positive && (
+                                        <div className="text-sm text-green-700 mb-1">
+                                            <strong>(+)</strong> {currentReview.positive}
+                                        </div>
+                                    )}
+                                    {currentReview.negative && (
+                                        <div className="text-sm text-red-700">
+                                            <strong>(-)</strong> {currentReview.negative}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Respuesta generada */}
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        📝 Respuesta Generada:
+                                    </label>
+                                    
+                                    {generatingResponse ? (
+                                        <div className="flex flex-col items-center justify-center p-8">
+                                            <video 
+                                                src="https://soporteclientes.net/usuarios/trabajando.mp4"
+                                                autoPlay
+                                                loop
+                                                muted
+                                                playsInline
+                                                className="w-64 h-auto rounded-lg shadow-lg"
+                                            >
+                                                <img 
+                                                    src="https://soporteclientes.net/usuarios/trabajando_nuevo.jpg" 
+                                                    alt="Generando respuesta..."
+                                                    className="w-64 h-auto rounded-lg shadow-lg"
+                                                />
+                                            </video>
+                                            <p className="text-gray-600 mt-4 text-center">Espere mientras pensamos...</p>
+                                        </div>
+                                    ) : (
+                                        <textarea
+                                            value={generatedResponse}
+                                            onChange={(e) => setGeneratedResponse(e.target.value)}
+                                            className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                            placeholder="La respuesta aparecerá aquí..."
+                                        />
+                                    )}
+                                </div>
+
+                                {/* Acciones */}
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={handleCopyResponse}
+                                        disabled={generatingResponse || !generatedResponse}
+                                        className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+                                    >
+                                        📋 Copiar al Portapapeles
+                                    </button>
+                                    
+                                    <button
+                                        onClick={() => handleGenerateResponse(currentReview)}
+                                        disabled={generatingResponse}
+                                        className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                                    >
+                                        🔄 Regenerar
+                                    </button>
+                                    
+                                    <button
+                                        onClick={() => setShowResponseModal(false)}
+                                        className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+
+                                <div className="mt-4 text-xs text-gray-500 text-center">
+                                    💡 Puedes editar la respuesta antes de copiarla
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Cargar datos
+            const loadHotels = async () => {
+                try {
+                    const response = await fetch('/usuarios/api/hotels.php');
+                    if (!response.ok) throw new Error(`Error ${response.status}`);
+                    const data = await response.json();
+                    
+                    if (data.hotels && Array.isArray(data.hotels)) {
+                        setHotels(data.hotels);
+                        if (data.hotels.length > 0 && !selectedHotel) {
+                            setSelectedHotel(data.hotels[0].name);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error loading hotels:', err);
+                    setError('Error cargando hoteles: ' + err.message);
+                }
+            };
+            
+            const loadDashboard = async (hotel, days) => {
+                if (!hotel) return;
+                try {
+                    const response = await fetch(`/usuarios/api/dashboard.php?hotel=${encodeURIComponent(hotel)}&days=${days}`);
+                    if (!response.ok) throw new Error(`Error ${response.status}`);
+                    const data = await response.json();
+                    setDashboardData(data);
+                } catch (err) {
+                    console.error('Error loading dashboard:', err);
+                    setError('Error cargando dashboard: ' + err.message);
+                }
+            };
+            
+            const loadReviews = async (hotel) => {
+                if (!hotel) return;
+                try {
+                    const response = await fetch(`/usuarios/api/reviews_fixed.php?hotel=${encodeURIComponent(hotel)}&limit=15`);
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success' && data.reviews) {
+                        const cleanedReviews = data.reviews
+                            .filter(review => review && typeof review === 'object')
+                            .map(cleanReviewData);
+                        
+                        setReviews(cleanedReviews);
+                    } else {
+                        throw new Error(data.error || 'Formato de respuesta inválido');
+                    }
+                } catch (err) {
+                    console.error('Error loading reviews:', err);
+                    setError('Error cargando reseñas: ' + err.message);
+                    setReviews([]);
+                }
+            };
+
+            // Efectos
+            React.useEffect(() => {
+                loadHotels();
+            }, []);
+            
+            React.useEffect(() => {
+                if (selectedHotel) {
+                    setLoading(true);
+                    Promise.all([
+                        loadDashboard(selectedHotel, dateRange),
+                        loadReviews(selectedHotel)
+                    ]).finally(() => setLoading(false));
+                }
+            }, [selectedHotel, dateRange]);
+
+            // Función de test para debug
+            window.testAIGeneration = async () => {
+                console.log('🧪 Iniciando test de generación de IA...');
+                
+                const testReview = {
+                    guest: 'Test User',
+                    rating: 5,
+                    positive: 'Todo excelente',
+                    negative: '',
+                    date: '2024-08-03',
+                    country: 'España'
+                };
+                
+                await handleGenerateResponse(testReview);
+            };
+
+            if (error) {
+                return (
+                    <div className="min-h-screen bg-red-50 flex items-center justify-center">
+                        <div className="text-center max-w-md mx-auto p-6">
+                            <div className="text-6xl mb-4">❌</div>
+                            <h2 className="text-xl font-bold text-red-800 mb-2">Error del Sistema</h2>
+                            <p className="text-red-600 mb-4">{error}</p>
+                            <button 
+                                onClick={() => {
+                                    setError(null);
+                                    window.location.reload();
+                                }} 
+                                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                            >
+                                Recargar Página
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (loading && !dashboardData) {
+                return (
+                    <div className="loading">
+                        <div className="spinner"></div>
+                        Cargando datos...
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-100">
+                    {/* Notificaciones */}
+                    {notification && (
+                        <div className="fixed top-4 right-4 z-50">
+                            <div className={`p-4 rounded-lg shadow-lg max-w-sm ${
+                                notification.type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' :
+                                notification.type === 'warning' ? 'bg-yellow-50 border border-yellow-200 text-yellow-800' :
+                                notification.type === 'info' ? 'bg-blue-50 border border-blue-200 text-blue-800' :
+                                'bg-red-50 border border-red-200 text-red-800'
+                            }`}>
+                                <div className="flex items-center gap-2">
+                                    <span>
+                                        {notification.type === 'success' ? '✅' : 
+                                         notification.type === 'warning' ? '⚠️' : 
+                                         notification.type === 'info' ? 'ℹ️' : '❌'}
+                                    </span>
+                                    <span className="font-medium">{notification.message}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Modal de respuesta */}
+                    <ResponseModal />
+
+                    {/* Header */}
+                    <header className="bg-white shadow-sm border-b">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex justify-between items-center h-16">
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-xl font-bold text-gray-900">
+                                            <span className="text-blue-600">Kavia</span>
+                                            <span className="text-slate-700"> Hoteles</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <select 
+                                        value={selectedHotel}
+                                        onChange={(e) => setSelectedHotel(e.target.value)}
+                                        className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                                    >
+                                        {hotels.map((hotel) => (
+                                            <option key={hotel.id} value={hotel.name}>
+                                                {hotel.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                
+                                <div className="flex items-center gap-4">
+                                    <select 
+                                        value={dateRange}
+                                        onChange={(e) => setDateRange(parseInt(e.target.value))}
+                                        className="border border-gray-300 rounded-lg px-3 py-1 text-sm"
+                                    >
+                                        <option value={7}>Últimos 7 días</option>
+                                        <option value={30}>Últimos 30 días</option>
+                                        <option value={60}>Últimos 60 días</option>
+                                        <option value={90}>Últimos 90 días</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div className="flex">
+                        {/* Sidebar */}
+                        <div className="w-64 bg-slate-800 min-h-screen">
+                            <nav className="mt-8">
+                                {[
+                                    { id: 'resumen', label: 'Resumen', icon: '📊' },
+                                    { id: 'otas', label: 'OTAs', icon: '🌐' },
+                                    { id: 'reseñas', label: 'Reseñas', icon: '💬' }
+                                ].map(item => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setActiveSection(item.id)}
+                                        className={`w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-slate-700 transition-colors ${
+                                            activeSection === item.id ? 'bg-cyan-500 text-white' : 'text-gray-300'
+                                        }`}
+                                    >
+                                        <span className="text-xl">{item.icon}</span>
+                                        <span className="font-medium">{item.label}</span>
+                                    </button>
+                                ))}
+                            </nav>
+                        </div>
+
+                        {/* Main Content */}
+                        <div className="flex-1 p-8">
+                            {activeSection === 'resumen' && dashboardData && (
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                        <div className="bg-white rounded-lg p-6 shadow-sm">
+                                            <h3 className="text-lg font-semibold mb-4">IRO Score</h3>
+                                            <div className="text-4xl font-bold text-yellow-500">
+                                                {dashboardData.iro?.score || 0}%
+                                            </div>
+                                        </div>
+                                        <div className="bg-white rounded-lg p-6 shadow-sm">
+                                            <h3 className="text-lg font-semibold mb-4">Índice Semántico</h3>
+                                            <div className="text-4xl font-bold text-green-500">
+                                                {dashboardData.semantic?.score || 0}%
+                                            </div>
+                                        </div>
+                                        <div className="bg-white rounded-lg p-6 shadow-sm">
+                                            <h3 className="text-lg font-semibold mb-4">Total Reseñas</h3>
+                                            <div className="text-4xl font-bold">
+                                                {dashboardData.stats?.total_reviews?.period || 0}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeSection === 'otas' && (
+                                <div className="bg-white rounded-lg p-6 shadow-sm">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                                        Análisis por OTA - {selectedHotel}
+                                    </h3>
+                                    <div className="text-center py-8">
+                                        <div className="text-4xl mb-4">📊</div>
+                                        <p className="text-gray-600 mb-4">
+                                            Actualmente integramos con Booking.com
+                                        </p>
+                                        <div className="bg-blue-50 p-6 rounded-lg max-w-2xl mx-auto">
+                                            <h4 className="font-semibold text-blue-900 mb-4">Booking.com</h4>
+                                            <div className="grid grid-cols-3 gap-4 text-sm">
+                                                <div className="text-center">
+                                                    <div className="font-bold text-2xl text-blue-700">
+                                                        {dashboardData?.stats?.average_rating?.period || 0}
+                                                    </div>
+                                                    <div className="text-gray-600">Rating Promedio</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="font-bold text-2xl text-blue-700">
+                                                        {dashboardData?.stats?.total_reviews?.period || 0}
+                                                    </div>
+                                                    <div className="text-gray-600">Reseñas Período</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="font-bold text-2xl text-blue-700">
+                                                        {dashboardData?.stats?.response_rate?.period || 0}%
+                                                    </div>
+                                                    <div className="text-gray-600">Tasa Respuesta</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeSection === 'reseñas' && (
+                                <div className="space-y-6">
+                                    {reviews.map((review, index) => (
+                                        <div key={review.id || index} className="bg-white rounded-lg p-6 shadow-sm">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div>
+                                                    <h4 className="font-semibold">{review.guest}</h4>
+                                                    <div className="text-sm text-gray-600">
+                                                        {review.country} • {review.date}
+                                                    </div>
+                                                    <StarRating rating={review.rating} />
+                                                </div>
+                                            </div>
+                                            
+                                            {translatedTexts[review.id] ? (
+                                                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                                                    <p className="text-sm font-semibold text-blue-800 mb-2">📝 Traducción al español:</p>
+                                                    <p className="text-gray-700">{translatedTexts[review.id]}</p>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {review.positive && (
+                                                        <div className="mb-3 p-3 bg-green-50 rounded-lg">
+                                                            <span className="text-green-600 font-medium">(+) </span>
+                                                            {review.positive}
+                                                        </div>
+                                                    )}
+                                                    {review.negative && (
+                                                        <div className="mb-4 p-3 bg-red-50 rounded-lg">
+                                                            <span className="text-red-600 font-medium">(-) </span>
+                                                            {review.negative}
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+                                            
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => handleGenerateResponse(review)}
+                                                    className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg text-sm hover:from-yellow-600 hover:to-orange-600"
+                                                >
+                                                    🤖 Generar respuesta
+                                                </button>
+                                                
+                                                <button 
+                                                    onClick={() => handleCreateCase(review)}
+                                                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50"
+                                                >
+                                                    📝 Crear Caso
+                                                </button>
+                                                
+                                                {review.language !== 'es' && (
+                                                    <button 
+                                                        onClick={() => handleTranslate(review.id, review)}
+                                                        disabled={translatingId === review.id}
+                                                        className="px-4 py-2 border border-blue-300 text-blue-600 rounded-lg text-sm hover:bg-blue-50 disabled:opacity-50"
+                                                    >
+                                                        {translatingId === review.id ? '⏳ Traduciendo...' :
+                                                         translatedTexts[review.id] ? '🔄 Ver original' : '🌐 Traducir'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Botón de debug temporal */}
+                    <button 
+                        onClick={() => window.testAIGeneration()} 
+                        style={{
+                            position: 'fixed', 
+                            bottom: '20px', 
+                            right: '20px', 
+                            background: '#f44336', 
+                            color: 'white', 
+                            padding: '10px', 
+                            borderRadius: '5px', 
+                            zIndex: 9999,
+                            border: 'none',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        🧪 Test IA
+                    </button>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
