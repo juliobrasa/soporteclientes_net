@@ -278,7 +278,7 @@
     <?php endif; ?>
     
     <?php if ($implementedModules['providers']): ?>
-        <!-- <script src="assets/js/modules/providers-module.js"></script> -->
+        <script src="assets/js/modules/providers-module.js"></script>
     <?php endif; ?>
     
     <?php if ($implementedModules['apis']): ?>
@@ -476,7 +476,7 @@
     
     <!-- Modales de otros módulos - Solo cargar cuando estén implementados -->
     <?php if ($implementedModules['providers']): ?>
-        <!-- <?php include 'modules/providers/provider-modal.php'; ?> -->
+        <?php include 'modules/providers/provider-modal.php'; ?>
     <?php endif; ?>
     
     <?php if ($implementedModules['apis']): ?>
