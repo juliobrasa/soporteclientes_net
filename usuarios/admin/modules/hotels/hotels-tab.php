@@ -27,18 +27,34 @@
         </div>
     </div>
     
-    <!-- Contenedor principal de datos -->
-    <div id="hotels-content" style="background: white; padding: 20px; min-height: 400px; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div id="hotels-loading-state" style="text-align: center; padding: 40px;">
-            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #6c757d; margin-bottom: 15px;"></i>
-            <h3 style="color: #495057;">Cargando hoteles...</h3>
-            <p style="color: #6c757d;">Por favor espera mientras cargamos la información</p>
+    <!-- Estado de carga SIEMPRE VISIBLE -->
+    <div id="hotels-loading-state" style="text-align: center; padding: 40px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; margin-bottom: 20px;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #007bff; margin-bottom: 15px;"></i>
+        <h3 style="color: #495057; margin-bottom: 10px;">🔄 Cargando hoteles...</h3>
+        <p style="color: #6c757d; margin-bottom: 15px;">Conectando con la base de datos...</p>
+        <button onclick="forceLoadHotels()" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+            <i class="fas fa-redo"></i> Forzar Carga
+        </button>
+    </div>
+
+    <!-- Contenedor principal SIEMPRE VISIBLE -->
+    <div id="hotels-content" style="background: white; padding: 20px; min-height: 400px; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block;">
+        <div style="text-align: center; color: #6c757d; padding: 40px;">
+            <p>📋 Preparando tabla de hoteles...</p>
         </div>
     </div>
     
-    <!-- Información de estado (opcional) -->
-    <div id="hotels-status" style="margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 6px; text-align: center; display: none;">
-        <small id="hotels-status-text" style="color: #6c757d;">Preparando datos...</small>
+    <!-- Información de estado -->
+    <div id="hotels-status" style="margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 6px; text-align: center; display: block;">
+        <small id="hotels-status-text" style="color: #6c757d;">✅ Elementos HTML creados correctamente</small>
+    </div>
+    
+    <!-- DEBUG: Verificación de elementos -->
+    <div id="hotels-debug" style="margin-top: 10px; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; font-family: monospace; font-size: 12px;">
+        <strong>DEBUG:</strong> 
+        <span id="debug-content">hotels-content</span> | 
+        <span id="debug-loading">hotels-loading-state</span> |
+        <span id="debug-status">hotels-status</span>
     </div>
 </div>
 
@@ -302,21 +318,161 @@ let isLoadingHotels = false;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 DOM cargado, iniciando sistema de hoteles...');
     
+    // Primero verificar visualmente los elementos en el debug
+    updateDebugInfo();
+    
     // Mostrar información de estado
     updateStatus('Inicializando sistema de hoteles...');
     
-    // Verificar elementos DOM
+    // Verificar elementos DOM con múltiples intentos
+    attemptDOMVerification();
+});
+
+// Función para intentar verificación DOM múltiples veces
+function attemptDOMVerification(attempt = 1, maxAttempts = 5) {
+    console.log(`🔍 Intento ${attempt}/${maxAttempts} de verificación DOM...`);
+    
     if (verifyDOMElements()) {
-        console.log('✅ Elementos DOM verificados');
-        // Cargar datos después de un breve delay
+        console.log('✅ Elementos DOM verificados en intento', attempt);
+        updateStatus(`✅ DOM verificado en intento ${attempt}`);
+        // Cargar datos después de verificación exitosa
         setTimeout(function() {
             loadHotelsDirectly();
-        }, 800);
+        }, 500);
+    } else if (attempt < maxAttempts) {
+        console.warn(`⚠️ Intento ${attempt} falló, reintentando en 1 segundo...`);
+        updateStatus(`⚠️ Reintentando verificación DOM (${attempt}/${maxAttempts})...`);
+        setTimeout(() => {
+            attemptDOMVerification(attempt + 1, maxAttempts);
+        }, 1000);
     } else {
-        console.error('❌ Elementos DOM no encontrados');
-        showCriticalError('Error crítico: Elementos HTML no encontrados');
+        console.error('❌ Todos los intentos de verificación DOM fallaron');
+        updateStatus('❌ Error crítico: No se pueden encontrar elementos HTML');
+        showCriticalError('Error crítico: Elementos HTML no encontrados después de múltiples intentos');
     }
-});
+}
+
+// Función para actualizar información de debug
+function updateDebugInfo() {
+    const debugContent = document.getElementById('debug-content');
+    const debugLoading = document.getElementById('debug-loading');
+    const debugStatus = document.getElementById('debug-status');
+    
+    if (debugContent) {
+        debugContent.textContent = document.getElementById('hotels-content') ? '✅ hotels-content' : '❌ hotels-content';
+        debugContent.style.color = document.getElementById('hotels-content') ? 'green' : 'red';
+    }
+    
+    if (debugLoading) {
+        debugLoading.textContent = document.getElementById('hotels-loading-state') ? '✅ hotels-loading-state' : '❌ hotels-loading-state';
+        debugLoading.style.color = document.getElementById('hotels-loading-state') ? 'green' : 'red';
+    }
+    
+    if (debugStatus) {
+        debugStatus.textContent = document.getElementById('hotels-status') ? '✅ hotels-status' : '❌ hotels-status';
+        debugStatus.style.color = document.getElementById('hotels-status') ? 'green' : 'red';
+    }
+}
+
+// Función de fuerza bruta para cargar hoteles (llamada desde botón)
+function forceLoadHotels() {
+    console.log('🚨 FUERZA BRUTA: Cargando hoteles directamente...');
+    updateStatus('🚨 Forzando carga de hoteles...');
+    updateDebugInfo();
+    
+    // Verificar elementos una vez más
+    if (verifyDOMElements()) {
+        loadHotelsDirectly();
+    } else {
+        // Si aún fallan los elementos, crear un contenedor temporal
+        createEmergencyContainer();
+    }
+}
+
+// Crear contenedor de emergencia si los elementos no existen
+function createEmergencyContainer() {
+    console.log('🆘 Creando contenedor de emergencia...');
+    
+    const hotelsContainer = document.querySelector('.hotels-container');
+    if (hotelsContainer) {
+        // Crear elementos de emergencia
+        const emergencyContent = `
+            <div id="emergency-hotels-content" style="background: #fff; border: 2px solid #dc3545; padding: 20px; margin: 20px 0; border-radius: 8px;">
+                <h3 style="color: #dc3545; margin-bottom: 15px;">🆘 Modo de Emergencia</h3>
+                <p>Los elementos HTML normales no fueron encontrados. Cargando en modo de emergencia...</p>
+                <div id="emergency-table-container">
+                    <p style="text-align: center; padding: 20px;">⏳ Cargando datos...</p>
+                </div>
+            </div>
+        `;
+        
+        hotelsContainer.innerHTML += emergencyContent;
+        
+        // Cargar datos en el contenedor de emergencia
+        loadHotelsInEmergencyMode();
+    }
+}
+
+// Cargar hoteles en modo de emergencia
+function loadHotelsInEmergencyMode() {
+    fetch('admin_api.php?action=getHotels')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.hotels) {
+                displayHotelsInEmergencyMode(data.hotels);
+            } else {
+                document.getElementById('emergency-table-container').innerHTML = 
+                    `<p style="color: #dc3545;">❌ Error: ${data.error || 'No se pudieron cargar los hoteles'}</p>`;
+            }
+        })
+        .catch(error => {
+            document.getElementById('emergency-table-container').innerHTML = 
+                `<p style="color: #dc3545;">❌ Error de conexión: ${error.message}</p>`;
+        });
+}
+
+// Mostrar hoteles en modo de emergencia
+function displayHotelsInEmergencyMode(hotels) {
+    let html = `
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 10px; border: 1px solid #ddd;">ID</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">Hotel</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">Destino</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    hotels.forEach(hotel => {
+        html += `
+            <tr>
+                <td style="padding: 10px; border: 1px solid #ddd;">#${hotel.id}</td>
+                <td style="padding: 10px; border: 1px solid #ddd;"><strong>${escapeHtml(hotel.nombre_hotel)}</strong></td>
+                <td style="padding: 10px; border: 1px solid #ddd;">${escapeHtml(hotel.hoja_destino)}</td>
+                <td style="padding: 10px; border: 1px solid #ddd;">
+                    <span style="background: ${hotel.activo ? '#28a745' : '#dc3545'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">
+                        ${hotel.activo ? 'Activo' : 'Inactivo'}
+                    </span>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+        <p style="margin-top: 15px; text-align: center;">
+            <strong>✅ ${hotels.length} hoteles cargados en modo de emergencia</strong>
+        </p>
+    `;
+    
+    document.getElementById('emergency-table-container').innerHTML = html;
+}
 
 // Verificar que todos los elementos DOM necesarios existen
 function verifyDOMElements() {
