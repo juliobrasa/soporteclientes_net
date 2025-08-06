@@ -60,26 +60,46 @@ try {
             $stmt = $pdo->query("
                 SELECT 
                     h.id,
-                    h.nombre_hotel as hotel_name,
-                    h.hoja_destino as hotel_destination,
-                    h.activo,
-                    h.max_reviews,
+                    h.nombre_hotel as name,
+                    h.hoja_destino as description,
+                    CASE 
+                        WHEN h.activo = 1 THEN 'active'
+                        ELSE 'inactive'
+                    END as status,
+                    'normal' as priority,
+                    'hotel' as category,
+                    h.url_booking as website,
+                    '' as contact_email,
+                    '' as phone,
+                    h.max_reviews as total_rooms,
+                    '' as address,
+                    '' as city,
+                    '' as country,
+                    'Europe/Madrid' as timezone,
                     h.created_at,
+                    h.updated_at,
                     COUNT(r.id) as total_reviews,
                     ROUND(AVG(r.rating), 2) as avg_rating,
                     COUNT(CASE WHEN r.review_date >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 END) as recent_reviews,
                     MAX(r.review_date) as last_review_date
                 FROM hoteles h
                 LEFT JOIN reviews r ON h.nombre_hotel = r.hotel_name
-                GROUP BY h.id, h.nombre_hotel, h.hoja_destino, h.activo, h.max_reviews, h.created_at
+                GROUP BY h.id, h.nombre_hotel, h.hoja_destino, h.activo, h.max_reviews, h.created_at, h.updated_at, h.url_booking
                 ORDER BY h.id DESC
             ");
             
             $hotels = $stmt->fetchAll();
             
+            // Adaptar formato para el frontend
+            foreach ($hotels as &$hotel) {
+                $hotel['created_at'] = $hotel['created_at'] ? date('Y-m-d H:i', strtotime($hotel['created_at'])) : '';
+                $hotel['updated_at'] = $hotel['updated_at'] ? date('Y-m-d H:i', strtotime($hotel['updated_at'])) : '';
+            }
+            
             sendResponse([
                 'success' => true,
-                'hotels' => $hotels
+                'data' => $hotels,
+                'total' => count($hotels)
             ]);
             break;
 
@@ -90,11 +110,16 @@ try {
             }
             
             $id = $data['id'] ?? null;
-            $nombre = trim($data['nombre_hotel'] ?? '');
-            $destino = trim($data['hoja_destino'] ?? '');
-            $url = trim($data['url_booking'] ?? '');
-            $maxReviews = intval($data['max_reviews'] ?? 200);
-            $activo = intval($data['activo'] ?? 1);
+            
+            // Mapear campos del frontend a la estructura de BD existente
+            $nombre = trim($data['name'] ?? $data['nombre_hotel'] ?? '');
+            $destino = trim($data['description'] ?? $data['hoja_destino'] ?? '');
+            $url = trim($data['website'] ?? $data['url_booking'] ?? '');
+            $maxReviews = intval($data['total_rooms'] ?? $data['max_reviews'] ?? 200);
+            
+            // Convertir status a activo
+            $status = $data['status'] ?? 'active';
+            $activo = ($status === 'active') ? 1 : 0;
             
             if (!$nombre) {
                 sendError('El nombre del hotel es obligatorio');
