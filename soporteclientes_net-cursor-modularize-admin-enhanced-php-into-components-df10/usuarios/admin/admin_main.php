@@ -18,11 +18,39 @@
     <link rel="stylesheet" href="assets/css/admin-modals.css">
 </head>
 <body>
-    <!-- Header Modular -->
-    <?php include 'modules/header.php'; ?>
+    <!-- Header Principal -->
+    <div class="header">
+        <h1>
+            <i class="fas fa-hotel"></i> 
+            Panel de Administración - Kavia Hoteles
+        </h1>
+        <p>Gestión de Hoteles, IA, APIs y Extracción de Reseñas - Versión Modular 2.0</p>
+    </div>
 
-    <!-- Navegación Modular -->
-    <?php include 'modules/navigation.php'; ?>
+    <!-- Sistema de Navegación -->
+    <div class="tabs">
+        <button class="tab-button active" data-tab="hotels">
+            <i class="fas fa-hotel"></i> Hoteles
+        </button>
+        <button class="tab-button" data-tab="apis">
+            <i class="fas fa-plug"></i> APIs
+        </button>
+        <button class="tab-button" data-tab="extraction">
+            <i class="fas fa-download"></i> Extractor
+        </button>
+        <button class="tab-button" data-tab="ia">
+            <i class="fas fa-robot"></i> Proveedores IA
+        </button>
+        <button class="tab-button" data-tab="prompts">
+            <i class="fas fa-file-alt"></i> Prompts
+        </button>
+        <button class="tab-button" data-tab="logs">
+            <i class="fas fa-chart-line"></i> Logs
+        </button>
+        <button class="tab-button" data-tab="tools">
+            <i class="fas fa-tools"></i> Herramientas
+        </button>
+    </div>
 
     <!-- Contenedor Principal -->
     <div class="container">
@@ -166,7 +194,6 @@
     <script src="assets/js/core/notification-system.js"></script>
     <script src="assets/js/core/modal-manager.js"></script>
     <script src="assets/js/core/tab-manager.js"></script>
-    <script src="assets/js/core/content-loader.js"></script>
     
     <!-- JavaScript Modules -->
     <script src="assets/js/modules/hotels-module.js"></script>
