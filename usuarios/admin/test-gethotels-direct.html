@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test getHotels Direct</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #ddd;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+            border: 1px solid #dee2e6;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔍 Test getHotels Endpoint Direct</h1>
+        <p>Prueba directa del endpoint que está causando el problema de carga infinita</p>
+        
+        <div class="info">
+            <strong>URL a probar:</strong> admin_api.php?action=getHotels<br>
+            <strong>Formato esperado:</strong> {"success": true, "hotels": [...]}
+        </div>
+        
+        <button class="btn" onclick="testGetHotels()">🏨 Test getHotels</button>
+        <button class="btn" onclick="testDirect()">🔗 Test URL Direct</button>
+        <button class="btn" onclick="clearResults()">🗑️ Clear</button>
+    </div>
+    
+    <div class="card">
+        <h3>📊 Resultado del Test</h3>
+        <div id="results">
+            <p>Presiona el botón para probar el endpoint...</p>
+        </div>
+    </div>
+
+    <script>
+        function clearResults() {
+            document.getElementById('results').innerHTML = '<p>Resultados limpiados...</p>';
+        }
+        
+        async function testGetHotels() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>🔄 Probando endpoint getHotels...</p>';
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch('admin_api.php?action=getHotels', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const responseTime = Date.now() - startTime;
+                
+                let html = `<p><strong>⏱️ Response Time:</strong> ${responseTime}ms</p>`;
+                html += `<p><strong>🌐 Status:</strong> ${response.status} ${response.statusText}</p>`;
+                html += `<p><strong>📄 Content-Type:</strong> ${response.headers.get('content-type')}</p>`;
+                
+                if (!response.ok) {
+                    html += `<p class="error">❌ HTTP Error: ${response.status}</p>`;
+                    const text = await response.text();
+                    html += `<p><strong>Response Body:</strong></p><pre>${text}</pre>`;
+                    resultsDiv.innerHTML = html;
+                    return;
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    html += `<p class="error">❌ Expected JSON but got: ${contentType}</p>`;
+                    const text = await response.text();
+                    html += `<p><strong>Response Body:</strong></p><pre>${text.substring(0, 1000)}${text.length > 1000 ? '...' : ''}</pre>`;
+                    resultsDiv.innerHTML = html;
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                html += `<p class="success">✅ JSON Response Received</p>`;
+                html += `<p><strong>📊 Full Response:</strong></p>`;
+                html += `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                
+                // Analizar la respuesta
+                if (result.success) {
+                    html += `<p class="success">✅ Success: ${result.success}</p>`;
+                    
+                    if (result.hotels) {
+                        html += `<p class="success">✅ Hotels field found: ${result.hotels.length} hotels</p>`;
+                    } else {
+                        html += `<p class="error">❌ No 'hotels' field in response</p>`;
+                    }
+                    
+                    if (result.data) {
+                        html += `<p>ℹ️ Data field found: ${result.data.length} items</p>`;
+                    }
+                    
+                    if (result.total !== undefined) {
+                        html += `<p>ℹ️ Total: ${result.total}</p>`;
+                    }
+                    
+                    if (result.debug) {
+                        html += `<p>🐛 Debug info:</p>`;
+                        html += `<pre>${JSON.stringify(result.debug, null, 2)}</pre>`;
+                    }
+                    
+                    // Mostrar primer hotel como muestra
+                    if (result.hotels && result.hotels.length > 0) {
+                        html += `<p><strong>🏨 First Hotel Sample:</strong></p>`;
+                        html += `<pre>${JSON.stringify(result.hotels[0], null, 2)}</pre>`;
+                    }
+                } else {
+                    html += `<p class="error">❌ Success: false</p>`;
+                    if (result.error) {
+                        html += `<p class="error">Error: ${result.error}</p>`;
+                    }
+                }
+                
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<p class="error">💥 Exception: ${error.message}</p><pre>${error.stack}</pre>`;
+            }
+        }
+        
+        async function testDirect() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>🔗 Abriendo URL directa en nueva pestaña...</p>';
+            
+            const url = 'admin_api.php?action=getHotels';
+            window.open(url, '_blank');
+            
+            resultsDiv.innerHTML += '<p>ℹ️ Verifica la pestaña nueva para ver la respuesta JSON directa</p>';
+        }
+        
+        // Auto-test al cargar
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testGetHotels();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
