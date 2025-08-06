@@ -45,6 +45,22 @@ class HotelsModule {
         this.bindElements();
         this.bindEvents();
         
+        // Cargar datos si el tab de hoteles está activo
+        if (document.getElementById('hotels-tab') && 
+            document.getElementById('hotels-tab').style.display !== 'none') {
+            // Pequeño delay para asegurar que el DOM esté listo
+            setTimeout(() => {
+                this.loadHotels();
+            }, 100);
+        }
+        
+        // Escuchar cambios de tab para cargar datos cuando se active hotels
+        document.addEventListener('tabChanged', (event) => {
+            if (event.detail && event.detail.tabName === 'hotels') {
+                this.loadHotels();
+            }
+        });
+        
         if (AdminConfig?.debug?.enabled) {
             console.log('🏨 Hotels Module inicializado');
         }
@@ -153,7 +169,7 @@ class HotelsModule {
             });
             
             if (result.success) {
-                this.hotelsData = result.data || [];
+                this.hotelsData = result.hotels || [];
                 this.config.totalItems = result.total || this.hotelsData.length;
                 this.config.totalPages = Math.ceil(this.config.totalItems / this.config.pageSize);
                 
@@ -258,13 +274,13 @@ class HotelsModule {
         // Preparar datos
         const data = {
             id: hotel.id,
-            name: this.escapeHtml(hotel.name),
-            name_escaped: this.escapeHtml(hotel.name).replace(/'/g, "\\'"),
-            description: hotel.description ? `<small class="text-gray">${this.escapeHtml(hotel.description)}</small>` : '',
-            status: hotel.status || 'active',
-            status_badge: this.getStatusBadge(hotel.status),
-            status_icon: this.getStatusIcon(hotel.status),
-            status_toggle_text: hotel.status === 'active' ? 'Desactivar' : 'Activar',
+            name: this.escapeHtml(hotel.nombre_hotel),
+            name_escaped: this.escapeHtml(hotel.nombre_hotel).replace(/'/g, "\\'"),
+            description: hotel.hoja_destino ? `<small class="text-gray">${this.escapeHtml(hotel.hoja_destino)}</small>` : '',
+            status: hotel.activo == 1 ? 'active' : 'inactive',
+            status_badge: this.getStatusBadge(hotel.activo == 1 ? 'active' : 'inactive'),
+            status_icon: this.getStatusIcon(hotel.activo == 1 ? 'active' : 'inactive'),
+            status_toggle_text: hotel.activo == 1 ? 'Desactivar' : 'Activar',
             featured_badge: hotel.priority === 'featured' ? '<span class="featured-badge">Destacado</span>' : '',
             created_at: this.formatDate(hotel.created_at),
             updated_at: this.formatDate(hotel.updated_at)
@@ -285,16 +301,16 @@ class HotelsModule {
         // Preparar datos
         const data = {
             id: hotel.id,
-            name: this.escapeHtml(hotel.name),
-            name_escaped: this.escapeHtml(hotel.name).replace(/'/g, "\\'"),
-            featured_badge: hotel.priority === 'featured' ? '<span class="featured-badge">Destacado</span>' : '',
-            status_badge: this.getStatusBadge(hotel.status),
+            name: this.escapeHtml(hotel.nombre_hotel),
+            name_escaped: this.escapeHtml(hotel.nombre_hotel).replace(/'/g, "\\'"),
+            featured_badge: '', // No priority field in Spanish format
+            status_badge: this.getStatusBadge(hotel.activo == 1 ? 'active' : 'inactive'),
             created_at: this.formatDate(hotel.created_at),
             updated_at: this.formatDate(hotel.updated_at),
-            description_field: hotel.description ? 
+            description_field: hotel.hoja_destino ? 
                 `<div class="data-card-field">
                     <span class="data-card-label">Descripción:</span>
-                    <span class="data-card-value">${this.escapeHtml(hotel.description)}</span>
+                    <span class="data-card-value">${this.escapeHtml(hotel.hoja_destino)}</span>
                 </div>` : ''
         };
         

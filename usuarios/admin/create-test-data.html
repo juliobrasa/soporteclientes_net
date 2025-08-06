@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Datos de Prueba - Hoteles</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn.success {
+            background: #28a745;
+        }
+        
+        .btn.danger {
+            background: #dc3545;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .success {
+            color: #28a745;
+        }
+        
+        .error {
+            color: #dc3545;
+        }
+        
+        .info {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🏨 Crear Datos de Prueba para Hoteles</h1>
+        <p>Este script creará hoteles de prueba para verificar que el módulo funciona correctamente.</p>
+        
+        <div>
+            <button class="btn" onclick="testConnection()">🔍 Probar Conexión API</button>
+            <button class="btn success" onclick="createTestHotels()">➕ Crear Hoteles de Prueba</button>
+            <button class="btn" onclick="loadHotels()">📋 Cargar Hoteles</button>
+            <button class="btn danger" onclick="clearLog()">🗑️ Limpiar Log</button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3>📝 Log de Operaciones</h3>
+        <div id="log" class="log">
+            <div class="info">Listo para probar...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'admin_api.php';
+        
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            logEl.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '<div class="info">Log limpiado...</div>';
+        }
+        
+        async function apiCall(action, data = {}) {
+            try {
+                const payload = {
+                    action: action,
+                    ...data
+                };
+                
+                log(`📡 Enviando request: ${action}`, 'info');
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP Error: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                return result;
+                
+            } catch (error) {
+                log(`❌ Error en ${action}: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        async function testConnection() {
+            try {
+                log('🔍 Probando conexión con API...', 'info');
+                const result = await apiCall('getHotels');
+                
+                if (result.success) {
+                    log(`✅ API conectada. Hoteles encontrados: ${result.data ? result.data.length : 0}`, 'success');
+                    if (result.data && result.data.length > 0) {
+                        log(`📊 Primer hotel: ${result.data[0].name}`, 'info');
+                    }
+                } else {
+                    log(`❌ API error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error de conexión: ${error.message}`, 'error');
+            }
+        }
+        
+        async function createTestHotels() {
+            const testHotels = [
+                {
+                    name: 'Hotel Paradise Madrid',
+                    description: 'Un elegante hotel en el corazón de Madrid con vistas panorámicas',
+                    website: 'https://hotelparadisemadrid.com',
+                    status: 'active',
+                    priority: 'featured',
+                    category: 'luxury',
+                    contact_email: 'info@hotelparadisemadrid.com',
+                    phone: '+34 91 123 4567',
+                    total_rooms: 150,
+                    address: 'Gran Vía 123, Madrid',
+                    city: 'Madrid',
+                    country: 'ES',
+                    timezone: 'Europe/Madrid'
+                },
+                {
+                    name: 'Resort Costa del Sol',
+                    description: 'Resort de lujo frente al mar en la Costa del Sol',
+                    website: 'https://resortcostadelsol.com',
+                    status: 'active',
+                    priority: 'high',
+                    category: 'resort',
+                    contact_email: 'reservas@resortcostadelsol.com',
+                    phone: '+34 95 987 6543',
+                    total_rooms: 300,
+                    address: 'Playa de la Malagueta, Málaga',
+                    city: 'Málaga',
+                    country: 'ES',
+                    timezone: 'Europe/Madrid'
+                },
+                {
+                    name: 'Hotel Boutique Barcelona',
+                    description: 'Hotel boutique en el centro histórico de Barcelona',
+                    website: 'https://boutiquebarcelona.com',
+                    status: 'active',
+                    priority: 'normal',
+                    category: 'boutique',
+                    contact_email: 'hola@boutiquebarcelona.com',
+                    phone: '+34 93 456 7890',
+                    total_rooms: 80,
+                    address: 'Barrio Gótico, Barcelona',
+                    city: 'Barcelona',
+                    country: 'ES',
+                    timezone: 'Europe/Madrid'
+                },
+                {
+                    name: 'Parador de Sevilla',
+                    description: 'Hotel histórico en el centro de Sevilla',
+                    website: 'https://paradorsevilla.com',
+                    status: 'inactive',
+                    priority: 'normal',
+                    category: 'business',
+                    contact_email: 'info@paradorsevilla.com',
+                    phone: '+34 95 321 0987',
+                    total_rooms: 120,
+                    address: 'Plaza de España, Sevilla',
+                    city: 'Sevilla',
+                    country: 'ES',
+                    timezone: 'Europe/Madrid'
+                }
+            ];
+            
+            log('🏨 Iniciando creación de hoteles de prueba...', 'info');
+            
+            let created = 0;
+            let errors = 0;
+            
+            for (const hotel of testHotels) {
+                try {
+                    log(`➕ Creando: ${hotel.name}`, 'info');
+                    const result = await apiCall('saveHotel', hotel);
+                    
+                    if (result.success) {
+                        log(`✅ Creado: ${hotel.name}`, 'success');
+                        created++;
+                    } else {
+                        log(`❌ Error creando ${hotel.name}: ${result.error}`, 'error');
+                        errors++;
+                    }
+                } catch (error) {
+                    log(`❌ Excepción creando ${hotel.name}: ${error.message}`, 'error');
+                    errors++;
+                }
+                
+                // Pequeña pausa entre requests
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            log(`✨ Proceso completado: ${created} creados, ${errors} errores`, created > 0 ? 'success' : 'error');
+        }
+        
+        async function loadHotels() {
+            try {
+                log('📋 Cargando lista de hoteles...', 'info');
+                const result = await apiCall('getHotels');
+                
+                if (result.success && result.data) {
+                    log(`📊 Hoteles cargados: ${result.data.length}`, 'success');
+                    result.data.forEach((hotel, index) => {
+                        const status = hotel.status === 'active' ? '✅' : '❌';
+                        log(`${index + 1}. ${status} ${hotel.name} (${hotel.city})`, 'info');
+                    });
+                } else {
+                    log(`❌ Error cargando hoteles: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-test al cargar la página
+        window.addEventListener('load', () => {
+            log('🚀 Página cargada. Lista para probar API.', 'info');
+        });
+    </script>
+</body>
+</html>

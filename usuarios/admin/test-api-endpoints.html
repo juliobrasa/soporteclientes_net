@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Endpoints</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 2px;
+            font-size: 12px;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn.success {
+            background: #28a745;
+        }
+        
+        .btn.danger {
+            background: #dc3545;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .success {
+            color: #28a745;
+        }
+        
+        .error {
+            color: #dc3545;
+        }
+        
+        .info {
+            color: #007bff;
+        }
+        
+        .endpoint-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔍 Test API Endpoints</h1>
+        <p>Prueba rápida de todos los endpoints críticos del sistema modular</p>
+        
+        <div class="endpoint-grid">
+            <button class="btn" onclick="testEndpoint('getHotels')">🏨 getHotels</button>
+            <button class="btn" onclick="testEndpoint('getDbStats')">📊 getDbStats</button>
+            <button class="btn" onclick="testEndpoint('getApiProviders')">🔌 getApiProviders</button>
+            <button class="btn" onclick="testEndpoint('getAiProviders')">🤖 getAiProviders</button>
+            <button class="btn" onclick="testEndpoint('getExternalApis')">🌐 getExternalApis</button>
+            <button class="btn" onclick="testEndpoint('getPrompts')">📝 getPrompts</button>
+            <button class="btn" onclick="testEndpoint('getLogs')">📋 getLogs</button>
+            <button class="btn" onclick="testEndpoint('getExtractionJobs')">⚡ getExtractionJobs</button>
+        </div>
+        
+        <div>
+            <button class="btn success" onclick="testAllEndpoints()">🚀 Test All</button>
+            <button class="btn danger" onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3>📝 API Response Log</h3>
+        <div id="log" class="log">
+            <div class="info">Ready to test API endpoints...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'admin_api.php';
+        
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            logEl.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '<div class="info">Log cleared...</div>';
+        }
+        
+        async function testEndpoint(action) {
+            try {
+                log(`🔍 Testing ${action}...`, 'info');
+                
+                const startTime = Date.now();
+                const response = await fetch(`${API_URL}?action=${action}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const responseTime = Date.now() - startTime;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    log(`❌ ${action}: Expected JSON but got ${contentType}`, 'error');
+                    log(`📄 Response preview: ${text.substring(0, 200)}...`, 'error');
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const dataCount = result.data ? result.data.length : (result.hotels ? result.hotels.length : 'N/A');
+                    log(`✅ ${action}: OK (${responseTime}ms) - Items: ${dataCount}`, 'success');
+                    
+                    // Mostrar estructura de respuesta para debugging
+                    if (result.data && result.data.length > 0) {
+                        const firstItem = result.data[0];
+                        const keys = Object.keys(firstItem).slice(0, 5).join(', ');
+                        log(`   📊 Sample fields: ${keys}`, 'info');
+                    }
+                } else {
+                    log(`❌ ${action}: API Error - ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`💥 ${action}: Exception - ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAllEndpoints() {
+            const endpoints = [
+                'getHotels', 'getDbStats', 'getApiProviders', 'getAiProviders',
+                'getExternalApis', 'getPrompts', 'getLogs', 'getExtractionJobs'
+            ];
+            
+            log('🚀 Starting comprehensive API test...', 'info');
+            
+            for (const endpoint of endpoints) {
+                await testEndpoint(endpoint);
+                // Small delay between requests
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+            
+            log('✨ API test completed!', 'success');
+        }
+        
+        // Auto-test critical endpoints on load
+        window.addEventListener('load', async () => {
+            log('📡 Auto-testing critical endpoints...', 'info');
+            await testEndpoint('getHotels');
+            await testEndpoint('getDbStats');
+        });
+    </script>
+</body>
+</html>
