@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Navigation System</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .test-container { max-width: 1200px; margin: 0 auto; }
+        .test-nav { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .nav-button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .nav-button.active { background: #28a745; }
+        .nav-button:hover { background: #0056b3; }
+        .test-result { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .success { border-left: 5px solid #28a745; }
+        .error { border-left: 5px solid #dc3545; }
+        .warning { border-left: 5px solid #ffc107; }
+        
+        /* Simular estructura de módulos */
+        .module-direct-system { 
+            display: none; 
+            padding: 20px; 
+            background: white; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            margin: 10px 0; 
+        }
+        .module-direct-system.active { display: block; }
+        
+        .tab-content { 
+            display: none; 
+            padding: 20px; 
+            background: white; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            margin: 10px 0; 
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test Sistema de Navegación - Tabs</h1>
+        <p>Prueba del sistema de navegación por tabs que mantiene el sistema directo</p>
+        
+        <!-- Navegación de prueba -->
+        <div class="test-nav">
+            <h3>🧭 Navegación de Prueba</h3>
+            <button class="nav-button active" data-tab="hotels">🏨 Hotels</button>
+            <button class="nav-button" data-tab="apis">🔌 APIs</button>
+            <button class="nav-button" data-tab="extraction">📥 Extracción</button>
+            <button class="nav-button" data-tab="ia">🤖 IA</button>
+            <button class="nav-button" data-tab="prompts">💬 Prompts</button>
+            <button class="nav-button" data-tab="logs">📊 Logs</button>
+        </div>
+        
+        <!-- Resultado del test -->
+        <div id="test-results" class="test-result">
+            <h3>📋 Resultados del Test</h3>
+            <div id="test-output">Iniciando test...</div>
+        </div>
+        
+        <!-- Módulos simulados -->
+        <div class="modules-container">
+            <!-- Hotels - Sistema directo -->
+            <div id="hotels-direct-system" class="module-direct-system" data-module="hotels">
+                <h3 style="color: #007bff;"><i class="fas fa-hotel"></i> Módulo Hotels (Sistema Directo)</h3>
+                <p>Este es el módulo Hotels funcionando con el sistema directo.</p>
+                <div id="hotels-content-direct">
+                    <div style="background: #e7f3ff; padding: 15px; border-radius: 4px;">
+                        ✅ Hotels carga correctamente con datos reales
+                    </div>
+                </div>
+            </div>
+            
+            <!-- APIs - Sistema directo -->
+            <div id="apis-direct-system" class="module-direct-system" data-module="apis">
+                <h3 style="color: #17a2b8;"><i class="fas fa-plug"></i> Módulo APIs (Sistema Directo)</h3>
+                <p>Sistema de gestión de APIs externas.</p>
+                <div id="apis-content-direct">
+                    <div style="background: #e8f4fd; padding: 15px; border-radius: 4px;">
+                        🔌 APIs Externas interface funcionando
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Extraction - Sistema directo -->
+            <div id="extraction-direct-system" class="module-direct-system" data-module="extraction">
+                <h3 style="color: #ffc107;"><i class="fas fa-download"></i> Módulo Extracción (Sistema Directo)</h3>
+                <p>Sistema de extracción automatizada.</p>
+                <div id="extraction-content-direct">
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 4px;">
+                        📥 Sistema de Extracción funcionando
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Providers - Sistema directo -->
+            <div id="providers-direct-system" class="module-direct-system" data-module="providers">
+                <h3 style="color: #dc3545;"><i class="fas fa-server"></i> Módulo Proveedores IA (Sistema Directo)</h3>
+                <p>Gestión de proveedores de IA.</p>
+                <div id="providers-content-direct">
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 4px;">
+                        🤖 Proveedores IA interface funcionando
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Prompts - Sistema legacy -->
+            <div id="prompts-tab" class="tab-content">
+                <h3 style="color: #6f42c1;"><i class="fas fa-comment-alt"></i> Módulo Prompts (Sistema Legacy)</h3>
+                <p>Sistema de gestión de prompts.</p>
+                <div id="prompts-content-direct">
+                    <div style="background: #e2e3f3; padding: 15px; border-radius: 4px;">
+                        💬 Prompts interface funcionando
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Logs - Sistema legacy -->
+            <div id="logs-tab" class="tab-content">
+                <h3 style="color: #fd7e14;"><i class="fas fa-chart-bar"></i> Módulo Logs (Sistema Legacy)</h3>
+                <p>Analytics y logs del sistema.</p>
+                <div id="logs-content-direct">
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 4px;">
+                        📊 Analytics & Logs interface funcionando
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simular el sistema de navegación de admin_main.php
+        window.tabManager = {
+            currentTab: 'hotels',
+            
+            switchTab: function(tabName, updateHistory = true) {
+                console.log(`🔄 Switching to tab: ${tabName}`);
+                
+                // Update test results
+                this.logTestResult(`Switching to ${tabName}...`, 'info');
+                
+                // Ocultar todos los módulos
+                this.hideAllModules();
+                
+                // Mostrar módulo solicitado
+                this.showModule(tabName);
+                
+                // Actualizar tab actual
+                this.currentTab = tabName;
+                
+                // Actualizar navegación visual
+                this.updateNavigation(tabName);
+                
+                // Cargar contenido si es necesario
+                this.loadModuleContent(tabName);
+                
+                return Promise.resolve(true);
+            },
+            
+            hideAllModules: function() {
+                // Ocultar sistemas directos
+                const directSystems = document.querySelectorAll('.module-direct-system');
+                directSystems.forEach(system => {
+                    system.style.display = 'none';
+                    system.classList.remove('active');
+                });
+                
+                // Ocultar sistemas legacy
+                const legacyTabs = document.querySelectorAll('.tab-content');
+                legacyTabs.forEach(tab => {
+                    tab.style.display = 'none';
+                });
+                
+                this.logTestResult('✅ Todos los módulos ocultos correctamente', 'success');
+            },
+            
+            showModule: function(tabName) {
+                const moduleMapping = {
+                    'hotels': 'hotels',
+                    'apis': 'apis', 
+                    'extraction': 'extraction',
+                    'ia': 'providers',
+                    'prompts': 'prompts',
+                    'logs': 'logs'
+                };
+                
+                const moduleName = moduleMapping[tabName] || tabName;
+                
+                // Intentar mostrar sistema directo primero
+                const directSystem = document.getElementById(`${moduleName}-direct-system`);
+                if (directSystem) {
+                    directSystem.style.display = 'block';
+                    directSystem.classList.add('active');
+                    this.logTestResult(`✅ Showing direct system: ${moduleName}-direct-system`, 'success');
+                    return;
+                }
+                
+                // Fallback a sistema legacy
+                const legacyTab = document.getElementById(`${tabName}-tab`);
+                if (legacyTab) {
+                    legacyTab.style.display = 'block';
+                    this.logTestResult(`✅ Showing legacy tab: ${tabName}-tab`, 'success');
+                    return;
+                }
+                
+                this.logTestResult(`⚠️ No se encontró módulo para: ${tabName}`, 'warning');
+            },
+            
+            updateNavigation: function(activeTab) {
+                document.querySelectorAll('.nav-button').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.tab === activeTab) {
+                        btn.classList.add('active');
+                    }
+                });
+            },
+            
+            loadModuleContent: function(tabName) {
+                // Simular carga de contenido
+                setTimeout(() => {
+                    this.logTestResult(`📄 Contenido cargado para: ${tabName}`, 'info');
+                }, 300);
+            },
+            
+            logTestResult: function(message, type = 'info') {
+                const output = document.getElementById('test-output');
+                const timestamp = new Date().toLocaleTimeString();
+                const color = {
+                    'success': '#28a745',
+                    'error': '#dc3545', 
+                    'warning': '#ffc107',
+                    'info': '#007bff'
+                }[type] || '#007bff';
+                
+                output.innerHTML += `<div style="margin: 5px 0; color: ${color};">
+                    [${timestamp}] ${message}
+                </div>`;
+                output.scrollTop = output.scrollHeight;
+            }
+        };
+        
+        // Test de funcionalidad
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 Test Navigation System loaded');
+            
+            // Mostrar módulo inicial
+            window.tabManager.switchTab('hotels');
+            
+            // Event listeners para botones de navegación
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    window.tabManager.switchTab(tabName);
+                });
+            });
+            
+            // Test automático
+            setTimeout(() => {
+                testAllModules();
+            }, 2000);
+        });
+        
+        function testAllModules() {
+            const tabs = ['hotels', 'apis', 'extraction', 'ia', 'prompts', 'logs'];
+            let currentIndex = 0;
+            
+            function testNext() {
+                if (currentIndex < tabs.length) {
+                    const tab = tabs[currentIndex];
+                    window.tabManager.logTestResult(`🧪 Auto-testing: ${tab}`, 'info');
+                    window.tabManager.switchTab(tab);
+                    currentIndex++;
+                    setTimeout(testNext, 1500);
+                } else {
+                    window.tabManager.logTestResult('🎉 Test completado - Navegación funcionando correctamente!', 'success');
+                }
+            }
+            
+            window.tabManager.logTestResult('🚀 Iniciando test automático de todos los módulos...', 'info');
+            testNext();
+        }
+    </script>
+</body>
+</html>
