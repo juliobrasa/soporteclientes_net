@@ -154,7 +154,8 @@ try {
                 
                 sendResponse([
                     'success' => true,
-                    'data' => $hotels,
+                    'hotels' => $hotels,
+                    'data' => $hotels, // Mantener compatibilidad
                     'total' => count($hotels),
                     'debug' => [
                         'reviews_table_exists' => $reviewsTableExists,
