@@ -64,8 +64,19 @@ try {
     sendError('Error de conexión a la base de datos', $e->getMessage());
 }
 
-// Obtener acción
+// Obtener acción - manejar tanto requests normales como JSON
 $action = $_REQUEST['action'] ?? '';
+
+// Si no hay acción y es POST, intentar decodificar JSON
+if (empty($action) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $json_input = file_get_contents('php://input');
+    if (!empty($json_input)) {
+        $json_data = json_decode($json_input, true);
+        if ($json_data && isset($json_data['action'])) {
+            $action = $json_data['action'];
+        }
+    }
+}
 
 try {
     switch($action) {
