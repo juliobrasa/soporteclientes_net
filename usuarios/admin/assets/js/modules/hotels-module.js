@@ -45,6 +45,22 @@ class HotelsModule {
         this.bindElements();
         this.bindEvents();
         
+        // Cargar datos si el tab de hoteles está activo
+        if (document.getElementById('hotels-tab') && 
+            document.getElementById('hotels-tab').style.display !== 'none') {
+            // Pequeño delay para asegurar que el DOM esté listo
+            setTimeout(() => {
+                this.loadHotels();
+            }, 100);
+        }
+        
+        // Escuchar cambios de tab para cargar datos cuando se active hotels
+        document.addEventListener('tabChanged', (event) => {
+            if (event.detail && event.detail.tabName === 'hotels') {
+                this.loadHotels();
+            }
+        });
+        
         if (AdminConfig?.debug?.enabled) {
             console.log('🏨 Hotels Module inicializado');
         }

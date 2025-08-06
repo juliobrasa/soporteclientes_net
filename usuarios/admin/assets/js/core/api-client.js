@@ -121,7 +121,7 @@ class AdminAPIClient {
      * Realiza la request HTTP real
      */
     async makeHttpRequest(endpoint, data, config) {
-        const url = this.buildUrl(endpoint);
+        const url = this.buildUrl(endpoint, data);
         const controller = new AbortController();
         
         // Timeout
@@ -140,10 +140,13 @@ class AdminAPIClient {
             
             // Agregar datos según el método
             if (config.method === 'GET') {
-                // Para GET, agregar datos como query parameters
-                if (Object.keys(data).length > 0) {
-                    const params = new URLSearchParams(data);
-                    requestOptions.method = 'POST'; // Cambiar a POST con action en data
+                // Para GET simples sin parámetros, usar GET
+                if (Object.keys(data).length === 0) {
+                    // No hay datos adicionales, solo el action como query param
+                    // La URL ya incluye el action en buildUrl
+                } else {
+                    // Si hay parámetros, cambiar a POST
+                    requestOptions.method = 'POST';
                     requestOptions.body = JSON.stringify({ action: endpoint, ...data });
                 }
             } else {
@@ -181,7 +184,7 @@ class AdminAPIClient {
     /**
      * Construye la URL completa
      */
-    buildUrl(endpoint) {
+    buildUrl(endpoint, data = {}) {
         // Si ya es una URL completa, usarla tal como está
         if (endpoint.startsWith('http')) {
             return endpoint;
@@ -190,12 +193,21 @@ class AdminAPIClient {
         // Usar admin_api.php como endpoint por defecto
         const baseUrl = this.baseUrl || 'admin_api.php';
         
+        let finalUrl;
+        
         // Si baseUrl no termina en .php, asumir que es un directorio
         if (!baseUrl.includes('.php')) {
-            return `${baseUrl.replace(/\/$/, '')}/admin_api.php`;
+            finalUrl = `${baseUrl.replace(/\/$/, '')}/admin_api.php`;
+        } else {
+            finalUrl = baseUrl;
         }
         
-        return baseUrl;
+        // Para GET requests, agregar action como query parameter
+        if (Object.keys(data).length === 0) {
+            finalUrl += `?action=${endpoint}`;
+        }
+        
+        return finalUrl;
     }
     
     /**
