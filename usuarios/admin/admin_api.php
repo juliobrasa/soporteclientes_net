@@ -502,6 +502,219 @@ try {
             ]);
             break;
 
+        case 'saveAiProvider':
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (!$data) {
+                $data = $_POST;
+            }
+            
+            $name = trim($data['name'] ?? '');
+            $provider_type = trim($data['provider_type'] ?? '');
+            $api_key = trim($data['api_key'] ?? '');
+            $api_url = trim($data['api_url'] ?? '');
+            $model_name = trim($data['model_name'] ?? '');
+            $description = trim($data['description'] ?? '');
+            $parameters = $data['parameters'] ?? '';
+            $temperature = floatval($data['temperature'] ?? 0.7);
+            $max_tokens = intval($data['max_tokens'] ?? 150);
+            $is_active = intval($data['is_active'] ?? 0);
+            
+            if (empty($name) || empty($provider_type)) {
+                sendError('Nombre y tipo de proveedor son requeridos');
+            }
+            
+            // Si se marca como activo, desactivar otros del mismo tipo
+            if ($is_active) {
+                $stmt = $pdo->prepare("UPDATE ai_providers SET is_active = 0 WHERE provider_type = ?");
+                $stmt->execute([$provider_type]);
+            }
+            
+            // Formatear parámetros como JSON
+            $params_json = json_encode([
+                'temperature' => $temperature,
+                'max_tokens' => $max_tokens,
+                'custom' => $parameters ? json_decode($parameters, true) : null
+            ], JSON_UNESCAPED_UNICODE);
+            
+            $stmt = $pdo->prepare("
+                INSERT INTO ai_providers (name, provider_type, api_key, api_url, model_name, description, parameters, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([$name, $provider_type, $api_key, $api_url, $model_name, $description, $params_json, $is_active]);
+            
+            sendResponse([
+                'success' => true,
+                'message' => 'Proveedor creado correctamente',
+                'provider_id' => $pdo->lastInsertId()
+            ]);
+            break;
+
+        case 'updateAiProvider':
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (!$data) {
+                $data = $_POST;
+            }
+            
+            $id = intval($data['id'] ?? 0);
+            if (!$id) {
+                sendError('ID de proveedor no válido');
+            }
+            
+            $name = trim($data['name'] ?? '');
+            $provider_type = trim($data['provider_type'] ?? '');
+            $api_key = trim($data['api_key'] ?? '');
+            $api_url = trim($data['api_url'] ?? '');
+            $model_name = trim($data['model_name'] ?? '');
+            $description = trim($data['description'] ?? '');
+            $parameters = $data['parameters'] ?? '';
+            $temperature = floatval($data['temperature'] ?? 0.7);
+            $max_tokens = intval($data['max_tokens'] ?? 150);
+            $is_active = intval($data['is_active'] ?? 0);
+            
+            if (empty($name) || empty($provider_type)) {
+                sendError('Nombre y tipo de proveedor son requeridos');
+            }
+            
+            // Si se marca como activo, desactivar otros del mismo tipo
+            if ($is_active) {
+                $stmt = $pdo->prepare("UPDATE ai_providers SET is_active = 0 WHERE provider_type = ? AND id != ?");
+                $stmt->execute([$provider_type, $id]);
+            }
+            
+            // Formatear parámetros como JSON
+            $params_json = json_encode([
+                'temperature' => $temperature,
+                'max_tokens' => $max_tokens,
+                'custom' => $parameters ? json_decode($parameters, true) : null
+            ], JSON_UNESCAPED_UNICODE);
+            
+            $stmt = $pdo->prepare("
+                UPDATE ai_providers 
+                SET name = ?, provider_type = ?, api_key = ?, api_url = ?, model_name = ?, description = ?, parameters = ?, is_active = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$name, $provider_type, $api_key, $api_url, $model_name, $description, $params_json, $is_active, $id]);
+            
+            sendResponse([
+                'success' => true,
+                'message' => 'Proveedor actualizado correctamente'
+            ]);
+            break;
+
+        case 'deleteAiProvider':
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (!$data) {
+                $data = $_POST;
+            }
+            
+            $id = intval($data['id'] ?? 0);
+            if (!$id) {
+                sendError('ID de proveedor no válido');
+            }
+            
+            $stmt = $pdo->prepare("DELETE FROM ai_providers WHERE id = ?");
+            $stmt->execute([$id]);
+            
+            sendResponse([
+                'success' => true,
+                'message' => 'Proveedor eliminado correctamente'
+            ]);
+            break;
+
+        case 'editAiProvider':
+            $id = intval($_GET['id'] ?? 0);
+            if (!$id) {
+                sendError('ID de proveedor no válido');
+            }
+            
+            $stmt = $pdo->prepare("SELECT * FROM ai_providers WHERE id = ?");
+            $stmt->execute([$id]);
+            $provider = $stmt->fetch();
+            
+            if (!$provider) {
+                sendError('Proveedor no encontrado');
+            }
+            
+            sendResponse([
+                'success' => true,
+                'provider' => $provider
+            ]);
+            break;
+
+        case 'toggleAiProvider':
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (!$data) {
+                $data = $_POST;
+            }
+            
+            $id = intval($data['id'] ?? 0);
+            $active = intval($data['active'] ?? 0);
+            
+            if (!$id) {
+                sendError('ID de proveedor no válido');
+            }
+            
+            // Si se activa, desactivar otros del mismo tipo
+            if ($active) {
+                $stmt = $pdo->prepare("SELECT provider_type FROM ai_providers WHERE id = ?");
+                $stmt->execute([$id]);
+                $provider_type = $stmt->fetchColumn();
+                
+                if ($provider_type) {
+                    $stmt = $pdo->prepare("UPDATE ai_providers SET is_active = 0 WHERE provider_type = ? AND id != ?");
+                    $stmt->execute([$provider_type, $id]);
+                }
+            }
+            
+            $stmt = $pdo->prepare("UPDATE ai_providers SET is_active = ? WHERE id = ?");
+            $stmt->execute([$active, $id]);
+            
+            sendResponse([
+                'success' => true,
+                'message' => $active ? 'Proveedor activado correctamente' : 'Proveedor desactivado correctamente'
+            ]);
+            break;
+
+        case 'testAiProvider':
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (!$data) {
+                $data = $_POST;
+            }
+            
+            $id = intval($data['id'] ?? 0);
+            $name = trim($data['name'] ?? '');
+            $provider_type = trim($data['provider_type'] ?? '');
+            $api_key = trim($data['api_key'] ?? '');
+            $api_url = trim($data['api_url'] ?? '');
+            $model_name = trim($data['model_name'] ?? '');
+            
+            // Si hay ID, cargar desde BD, sino usar datos del formulario
+            if ($id) {
+                $stmt = $pdo->prepare("SELECT * FROM ai_providers WHERE id = ?");
+                $stmt->execute([$id]);
+                $provider = $stmt->fetch();
+                
+                if (!$provider) {
+                    sendError('Proveedor no encontrado');
+                }
+                
+                $name = $provider['name'];
+                $provider_type = $provider['provider_type'];
+                $api_key = $provider['api_key'];
+                $api_url = $provider['api_url'];
+                $model_name = $provider['model_name'];
+            }
+            
+            if (empty($provider_type)) {
+                sendError('Tipo de proveedor es requerido');
+            }
+            
+            // Realizar test según el tipo de proveedor
+            $test_result = testAiProviderConnection($provider_type, $api_key, $api_url, $model_name, $name);
+            
+            sendResponse($test_result);
+            break;
+
         // PROMPTS
         case 'getPrompts':
             $pdo->exec("
@@ -2936,5 +3149,330 @@ function generateErrorsChart() {
         ];
     }
     return $data;
+}
+
+/**
+ * Función para probar conexión con proveedores de IA
+ */
+function testAiProviderConnection($provider_type, $api_key, $api_url, $model_name, $provider_name) {
+    $test_message = "Hola, este es un test de conexión desde Kavia Hoteles Admin Panel";
+    
+    try {
+        switch ($provider_type) {
+            case 'openai':
+                return testOpenAI($api_key, $model_name, $test_message, $provider_name);
+                
+            case 'claude':
+                return testClaude($api_key, $model_name, $test_message, $provider_name);
+                
+            case 'deepseek':
+                return testDeepSeek($api_key, $api_url, $model_name, $test_message, $provider_name);
+                
+            case 'gemini':
+                return testGemini($api_key, $model_name, $test_message, $provider_name);
+                
+            case 'local':
+                return testLocal($api_url, $model_name, $test_message, $provider_name);
+                
+            default:
+                return [
+                    'success' => false,
+                    'error' => 'Tipo de proveedor no soportado: ' . $provider_type
+                ];
+        }
+    } catch (Exception $e) {
+        return [
+            'success' => false,
+            'error' => 'Error durante el test: ' . $e->getMessage()
+        ];
+    }
+}
+
+/**
+ * Test OpenAI API
+ */
+function testOpenAI($api_key, $model, $message, $provider_name) {
+    if (empty($api_key)) {
+        return [
+            'success' => false,
+            'error' => 'API Key de OpenAI es requerida'
+        ];
+    }
+    
+    $url = 'https://api.openai.com/v1/chat/completions';
+    
+    $data = [
+        'model' => $model ?: 'gpt-3.5-turbo',
+        'messages' => [
+            [
+                'role' => 'user',
+                'content' => $message
+            ]
+        ],
+        'max_tokens' => 50,
+        'temperature' => 0.7
+    ];
+    
+    $headers = [
+        'Authorization: Bearer ' . $api_key,
+        'Content-Type: application/json'
+    ];
+    
+    $response = makeCurlRequest($url, $data, $headers);
+    
+    if ($response['success'] && isset($response['data']['choices'][0]['message']['content'])) {
+        return [
+            'success' => true,
+            'test_message' => "✅ Conexión exitosa con {$provider_name}",
+            'response' => trim($response['data']['choices'][0]['message']['content']),
+            'model_used' => $response['data']['model'] ?? $model,
+            'tokens_used' => $response['data']['usage']['total_tokens'] ?? 'N/A'
+        ];
+    }
+    
+    return [
+        'success' => false,
+        'error' => $response['error'] ?? 'Error desconocido en OpenAI',
+        'details' => $response['data'] ?? null
+    ];
+}
+
+/**
+ * Test Anthropic Claude API
+ */
+function testClaude($api_key, $model, $message, $provider_name) {
+    if (empty($api_key)) {
+        return [
+            'success' => false,
+            'error' => 'API Key de Claude es requerida'
+        ];
+    }
+    
+    $url = 'https://api.anthropic.com/v1/messages';
+    
+    $data = [
+        'model' => $model ?: 'claude-3-sonnet-20240229',
+        'max_tokens' => 50,
+        'messages' => [
+            [
+                'role' => 'user',
+                'content' => $message
+            ]
+        ]
+    ];
+    
+    $headers = [
+        'x-api-key: ' . $api_key,
+        'Content-Type: application/json',
+        'anthropic-version: 2023-06-01'
+    ];
+    
+    $response = makeCurlRequest($url, $data, $headers);
+    
+    if ($response['success'] && isset($response['data']['content'][0]['text'])) {
+        return [
+            'success' => true,
+            'test_message' => "✅ Conexión exitosa con {$provider_name}",
+            'response' => trim($response['data']['content'][0]['text']),
+            'model_used' => $response['data']['model'] ?? $model,
+            'tokens_used' => $response['data']['usage']['output_tokens'] ?? 'N/A'
+        ];
+    }
+    
+    return [
+        'success' => false,
+        'error' => $response['error'] ?? 'Error desconocido en Claude',
+        'details' => $response['data'] ?? null
+    ];
+}
+
+/**
+ * Test DeepSeek API
+ */
+function testDeepSeek($api_key, $api_url, $model, $message, $provider_name) {
+    if (empty($api_key)) {
+        return [
+            'success' => false,
+            'error' => 'API Key de DeepSeek es requerida'
+        ];
+    }
+    
+    $url = $api_url ?: 'https://api.deepseek.com/v1/chat/completions';
+    
+    $data = [
+        'model' => $model ?: 'deepseek-chat',
+        'messages' => [
+            [
+                'role' => 'user',
+                'content' => $message
+            ]
+        ],
+        'max_tokens' => 50,
+        'temperature' => 0.7
+    ];
+    
+    $headers = [
+        'Authorization: Bearer ' . $api_key,
+        'Content-Type: application/json'
+    ];
+    
+    $response = makeCurlRequest($url, $data, $headers);
+    
+    if ($response['success'] && isset($response['data']['choices'][0]['message']['content'])) {
+        return [
+            'success' => true,
+            'test_message' => "✅ Conexión exitosa con {$provider_name}",
+            'response' => trim($response['data']['choices'][0]['message']['content']),
+            'model_used' => $response['data']['model'] ?? $model,
+            'tokens_used' => $response['data']['usage']['total_tokens'] ?? 'N/A'
+        ];
+    }
+    
+    return [
+        'success' => false,
+        'error' => $response['error'] ?? 'Error desconocido en DeepSeek',
+        'details' => $response['data'] ?? null
+    ];
+}
+
+/**
+ * Test Google Gemini API
+ */
+function testGemini($api_key, $model, $message, $provider_name) {
+    if (empty($api_key)) {
+        return [
+            'success' => false,
+            'error' => 'API Key de Gemini es requerida'
+        ];
+    }
+    
+    $model_name = $model ?: 'gemini-pro';
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model_name}:generateContent?key={$api_key}";
+    
+    $data = [
+        'contents' => [
+            [
+                'parts' => [
+                    ['text' => $message]
+                ]
+            ]
+        ],
+        'generationConfig' => [
+            'maxOutputTokens' => 50,
+            'temperature' => 0.7
+        ]
+    ];
+    
+    $headers = [
+        'Content-Type: application/json'
+    ];
+    
+    $response = makeCurlRequest($url, $data, $headers);
+    
+    if ($response['success'] && isset($response['data']['candidates'][0]['content']['parts'][0]['text'])) {
+        return [
+            'success' => true,
+            'test_message' => "✅ Conexión exitosa con {$provider_name}",
+            'response' => trim($response['data']['candidates'][0]['content']['parts'][0]['text']),
+            'model_used' => $model_name,
+            'tokens_used' => $response['data']['usageMetadata']['totalTokenCount'] ?? 'N/A'
+        ];
+    }
+    
+    return [
+        'success' => false,
+        'error' => $response['error'] ?? 'Error desconocido en Gemini',
+        'details' => $response['data'] ?? null
+    ];
+}
+
+/**
+ * Test sistema local
+ */
+function testLocal($api_url, $model, $message, $provider_name) {
+    if (empty($api_url)) {
+        return [
+            'success' => true,
+            'test_message' => "✅ Sistema local configurado",
+            'response' => "Sistema local/fallback funcionando correctamente. Este proveedor se usará como respaldo cuando otros fallan.",
+            'model_used' => $model ?: 'local',
+            'tokens_used' => 'N/A'
+        ];
+    }
+    
+    // Para URL personalizada, intentar conexión básica
+    $data = [
+        'model' => $model ?: 'local',
+        'prompt' => $message,
+        'max_tokens' => 50
+    ];
+    
+    $headers = [
+        'Content-Type: application/json'
+    ];
+    
+    $response = makeCurlRequest($api_url, $data, $headers);
+    
+    if ($response['success']) {
+        return [
+            'success' => true,
+            'test_message' => "✅ Conexión exitosa con {$provider_name}",
+            'response' => $response['data']['response'] ?? 'Respuesta del sistema local',
+            'model_used' => $model ?: 'local',
+            'tokens_used' => 'N/A'
+        ];
+    }
+    
+    return [
+        'success' => false,
+        'error' => $response['error'] ?? 'Error de conexión con sistema local',
+        'details' => $response['data'] ?? null
+    ];
+}
+
+/**
+ * Función auxiliar para hacer requests cURL
+ */
+function makeCurlRequest($url, $data, $headers = []) {
+    $ch = curl_init();
+    
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($data),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => $headers,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_USERAGENT => 'Kavia-Hotels-Admin/1.0'
+    ]);
+    
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    
+    curl_close($ch);
+    
+    if ($error) {
+        return [
+            'success' => false,
+            'error' => 'cURL Error: ' . $error
+        ];
+    }
+    
+    $decoded_response = json_decode($response, true);
+    
+    if ($http_code >= 200 && $http_code < 300) {
+        return [
+            'success' => true,
+            'data' => $decoded_response
+        ];
+    }
+    
+    return [
+        'success' => false,
+        'error' => "HTTP {$http_code}: " . ($decoded_response['error']['message'] ?? $response),
+        'data' => $decoded_response
+    ];
 }
 ?>
