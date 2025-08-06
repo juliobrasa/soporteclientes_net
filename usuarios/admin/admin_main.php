@@ -42,10 +42,16 @@
                         <i class="fas fa-hotel"></i> 
                         Gestión de Hoteles
                     </h2>
-                    <button class="btn btn-success" onclick="loadHotelsDirect()" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
-                        <i class="fas fa-sync-alt"></i> 
-                        Recargar Hoteles
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="addHotel()" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-plus"></i> 
+                            Agregar Hotel
+                        </button>
+                        <button class="btn btn-success" onclick="loadHotelsDirect()" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-sync-alt"></i> 
+                            Recargar
+                        </button>
+                    </div>
                 </div>
                 
                 <div id="hotels-content-direct" style="background: white; padding: 20px; min-height: 400px; border: 1px solid #dee2e6; border-radius: 8px;">
@@ -562,6 +568,7 @@
                             <th style="padding: 12px; border: 1px solid #ddd;">Reviews</th>
                             <th style="padding: 12px; border: 1px solid #ddd;">Rating</th>
                             <th style="padding: 12px; border: 1px solid #ddd;">Estado</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; width: 200px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -589,6 +596,22 @@
                         <span style="background: ${hotel.activo ? '#28a745' : '#dc3545'}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
                             ${hotel.activo ? 'Activo' : 'Inactivo'}
                         </span>
+                    </td>
+                    <td style="padding: 12px; border: 1px solid #ddd;">
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button onclick="viewHotel(${hotel.id})" style="background: #007bff; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;" title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="editHotel(${hotel.id})" style="background: #28a745; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="toggleHotelStatus(${hotel.id}, ${hotel.activo ? 0 : 1})" style="background: ${hotel.activo ? '#ffc107' : '#28a745'}; color: ${hotel.activo ? '#000' : 'white'}; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;" title="${hotel.activo ? 'Desactivar' : 'Activar'}">
+                                <i class="fas fa-${hotel.activo ? 'pause' : 'play'}"></i>
+                            </button>
+                            <button onclick="deleteHotel(${hotel.id}, '${escapeHtml(hotel.nombre_hotel).replace(/'/g, '\\\'')}')" style="background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -933,6 +956,232 @@
     });
     
     console.log('🚀 Sistema de navegación por tabs implementado');
+    
+    // ============================================================================
+    // FUNCIONES CRUD PARA HOTELES
+    // ============================================================================
+    
+    // Agregar nuevo hotel
+    function addHotel() {
+        console.log('➕ Agregando nuevo hotel...');
+        
+        if (window.hotelsModule) {
+            // Usar modal profesional si está disponible
+            window.hotelsModule.openModal();
+        } else {
+            // Fallback con prompts simples
+            const hotelData = {
+                name: prompt('Nombre del hotel:'),
+                description: prompt('Destino/ciudad:'),
+                website: prompt('URL de Booking (opcional):') || '',
+                total_rooms: prompt('Máximo de reviews:') || '200',
+                status: 'active'
+            };
+            
+            if (!hotelData.name || !hotelData.description) {
+                alert('Nombre y destino son requeridos');
+                return;
+            }
+            
+            saveHotelData(hotelData);
+        }
+    }
+    
+    // Editar hotel existente
+    async function editHotel(hotelId) {
+        console.log(`✏️ Editando hotel ID: ${hotelId}`);
+        
+        if (window.hotelsModule) {
+            // Usar modal profesional si está disponible
+            window.hotelsModule.openModal(hotelId);
+        } else {
+            // Fallback con prompts simples
+            const hotels = await getCurrentHotels();
+            const hotel = hotels.find(h => h.id == hotelId);
+            
+            if (!hotel) {
+                alert('Hotel no encontrado');
+                return;
+            }
+            
+            const hotelData = {
+                id: hotelId,
+                name: prompt('Nombre del hotel:', hotel.nombre_hotel) || hotel.nombre_hotel,
+                description: prompt('Destino/ciudad:', hotel.hoja_destino) || hotel.hoja_destino,
+                website: prompt('URL de Booking:', hotel.url_booking || '') || hotel.url_booking || '',
+                total_rooms: prompt('Máximo de reviews:', hotel.max_reviews || '200') || hotel.max_reviews || '200',
+                status: hotel.activo ? 'active' : 'inactive'
+            };
+            
+            saveHotelData(hotelData);
+        }
+    }
+    
+    // Ver detalles del hotel
+    async function viewHotel(hotelId) {
+        console.log(`👁️ Viendo detalles hotel ID: ${hotelId}`);
+        
+        if (window.hotelsModule && window.hotelsModule.viewDetails) {
+            // Usar modal de detalles profesional si está disponible
+            window.hotelsModule.viewDetails(hotelId);
+        } else {
+            // Fallback con alert simple
+            const hotels = await getCurrentHotels();
+            const hotel = hotels.find(h => h.id == hotelId);
+            
+            if (!hotel) {
+                alert('Hotel no encontrado');
+                return;
+            }
+            
+            const details = `
+DETALLES DEL HOTEL:
+==================
+ID: ${hotel.id}
+Nombre: ${hotel.nombre_hotel}
+Destino: ${hotel.hoja_destino}
+Reviews: ${hotel.total_reviews || 0}
+Rating: ${hotel.avg_rating || 'N/A'}
+URL Booking: ${hotel.url_booking || 'No configurada'}
+Máx Reviews: ${hotel.max_reviews || 'N/A'}
+Estado: ${hotel.activo ? 'Activo' : 'Inactivo'}
+Creado: ${hotel.created_at || 'N/A'}
+            `;
+            
+            alert(details);
+        }
+    }
+    
+    // Alternar estado del hotel
+    async function toggleHotelStatus(hotelId, newStatus) {
+        const action = newStatus ? 'activar' : 'desactivar';
+        console.log(`🔄 ${action} hotel ID: ${hotelId}`);
+        
+        if (!confirm(`¿Estás seguro de que quieres ${action} este hotel?`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('admin_api.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'saveHotel',
+                    id: hotelId,
+                    status: newStatus ? 'active' : 'inactive'
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(`Hotel ${action} correctamente`);
+                loadHotelsDirect(); // Recargar tabla
+            } else {
+                alert('Error: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error de conexión');
+        }
+    }
+    
+    // Eliminar hotel
+    async function deleteHotel(hotelId, hotelName) {
+        console.log(`🗑️ Eliminando hotel ID: ${hotelId}`);
+        
+        if (!confirm(`¿Estás SEGURO de que quieres ELIMINAR el hotel "${hotelName}"?\n\nEsta acción NO se puede deshacer y eliminará:\n- El hotel\n- Todas sus reviews\n- Todos sus datos asociados`)) {
+            return;
+        }
+        
+        if (!confirm('¿REALMENTE estás seguro? Esta acción es PERMANENTE.')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('admin_api.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'deleteHotel',
+                    id: hotelId
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(`Hotel "${hotelName}" eliminado correctamente`);
+                loadHotelsDirect(); // Recargar tabla
+            } else {
+                alert('Error: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error de conexión');
+        }
+    }
+    
+    // Función auxiliar para guardar datos del hotel
+    async function saveHotelData(hotelData) {
+        console.log('💾 Guardando hotel...', hotelData);
+        
+        try {
+            const response = await fetch('admin_api.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'saveHotel',
+                    ...hotelData
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(hotelData.id ? 'Hotel actualizado correctamente' : 'Hotel creado correctamente');
+                loadHotelsDirect(); // Recargar tabla
+            } else {
+                alert('Error: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error de conexión');
+        }
+    }
+    
+    // Función auxiliar para obtener hoteles actuales
+    async function getCurrentHotels() {
+        try {
+            const response = await fetch('admin_api.php?action=getHotels');
+            const result = await response.json();
+            
+            if (result.success) {
+                return result.hotels || [];
+            } else {
+                console.error('Error al obtener hoteles:', result.error);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error de conexión:', error);
+            return [];
+        }
+    }
+    
+    // Hacer funciones globalmente disponibles
+    window.addHotel = addHotel;
+    window.editHotel = editHotel;
+    window.viewHotel = viewHotel;
+    window.toggleHotelStatus = toggleHotelStatus;
+    window.deleteHotel = deleteHotel;
+    
+    console.log('✅ Funciones CRUD de hoteles inicializadas');
     </script>
 </body>
 </html>
