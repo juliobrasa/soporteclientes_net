@@ -50,23 +50,7 @@
 
         <!-- Tab de Extracción (Oculto inicialmente) -->
         <div id="extraction-tab" class="tab-content" style="display:none;">
-            <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-download"></i> Extractor de Reseñas</h2>
-                </div>
-                <div class="card-body">
-                    <div id="extraction-content">
-                        <div class="empty-state">
-                            <i class="fas fa-download"></i>
-                            <h3>Extractor de Reseñas</h3>
-                            <p>Configura y ejecuta extracciones de reseñas desde múltiples plataformas</p>
-                            <button class="btn btn-primary">
-                                <i class="fas fa-play"></i> Iniciar Extracción
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <?php include 'modules/extraction/extraction-tab.php'; ?>
         </div>
 
         <!-- Tab de Proveedores IA (Oculto inicialmente) -->
@@ -76,36 +60,12 @@
 
         <!-- Tab de Prompts (Oculto inicialmente) -->
         <div id="prompts-tab" class="tab-content" style="display:none;">
-            <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-file-alt"></i> Gestión de Prompts</h2>
-                </div>
-                <div class="card-body">
-                    <div id="prompts-list">
-                        <div class="loading-state">
-                            <i class="fas fa-spinner fa-spin spinner"></i>
-                            <h3>Cargando prompts...</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <?php include 'modules/prompts/prompts-tab.php'; ?>
         </div>
 
         <!-- Tab de Logs (Oculto inicialmente) -->
         <div id="logs-tab" class="tab-content" style="display:none;">
-            <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-chart-line"></i> Logs del Sistema</h2>
-                </div>
-                <div class="card-body">
-                    <div id="logs-list">
-                        <div class="loading-state">
-                            <i class="fas fa-spinner fa-spin spinner"></i>
-                            <h3>Cargando logs...</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <?php include 'modules/logs/logs-tab.php'; ?>
         </div>
 
         <!-- Tab de Herramientas (Oculto inicialmente) -->
@@ -159,6 +119,10 @@
     <!-- JavaScript Modules -->
     <script src="assets/js/modules/hotels-module.js"></script>
     <script src="assets/js/modules/providers-module.js"></script>
+    <script src="assets/js/modules/apis-module.js"></script>
+    <script src="assets/js/modules/extraction-module.js"></script>
+    <script src="assets/js/modules/prompts-module.js"></script>
+    <script src="assets/js/modules/logs-module.js"></script>
 
     <!-- JavaScript Principal -->
     <script>
@@ -319,5 +283,15 @@
     
     <!-- Modales de Proveedores IA -->
     <?php include 'modules/providers/provider-modal.php'; ?>
+    
+    <!-- Modales de APIs Externas -->
+    <?php include 'modules/apis/api-modal.php'; ?>
+    
+    <!-- Modales de Extractor -->
+    <?php include 'modules/extraction/wizard-modal.php'; ?>
+    <?php include 'modules/extraction/job-monitor-modal.php'; ?>
+    
+    <!-- Modales de Prompts -->
+    <?php include 'modules/prompts/prompt-modal.php'; ?>
 </body>
 </html>
