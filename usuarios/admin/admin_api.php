@@ -57,50 +57,114 @@ try {
     switch($action) {
         // HOTELES
         case 'getHotels':
-            $stmt = $pdo->query("
-                SELECT 
-                    h.id,
-                    h.nombre_hotel as name,
-                    h.hoja_destino as description,
-                    CASE 
-                        WHEN h.activo = 1 THEN 'active'
-                        ELSE 'inactive'
-                    END as status,
-                    'normal' as priority,
-                    'hotel' as category,
-                    h.url_booking as website,
-                    '' as contact_email,
-                    '' as phone,
-                    h.max_reviews as total_rooms,
-                    '' as address,
-                    '' as city,
-                    '' as country,
-                    'Europe/Madrid' as timezone,
-                    h.created_at,
-                    h.updated_at,
-                    COUNT(r.id) as total_reviews,
-                    ROUND(AVG(r.rating), 2) as avg_rating,
-                    COUNT(CASE WHEN r.review_date >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 END) as recent_reviews,
-                    MAX(r.review_date) as last_review_date
-                FROM hoteles h
-                LEFT JOIN reviews r ON h.nombre_hotel = r.hotel_name
-                GROUP BY h.id, h.nombre_hotel, h.hoja_destino, h.activo, h.max_reviews, h.created_at, h.updated_at, h.url_booking
-                ORDER BY h.id DESC
-            ");
-            
-            $hotels = $stmt->fetchAll();
-            
-            // Adaptar formato para el frontend
-            foreach ($hotels as &$hotel) {
-                $hotel['created_at'] = $hotel['created_at'] ? date('Y-m-d H:i', strtotime($hotel['created_at'])) : '';
-                $hotel['updated_at'] = $hotel['updated_at'] ? date('Y-m-d H:i', strtotime($hotel['updated_at'])) : '';
+            try {
+                // Primero, verificar si existe la tabla reviews
+                $reviewsTableExists = false;
+                try {
+                    $stmt = $pdo->query("SHOW TABLES LIKE 'reviews'");
+                    $reviewsTableExists = $stmt->fetch() !== false;
+                } catch (Exception $e) {
+                    // Si falla la verificación, asumir que no existe
+                    $reviewsTableExists = false;
+                }
+                
+                // Query base sin reviews primero
+                $baseQuery = "
+                    SELECT 
+                        h.id,
+                        h.nombre_hotel as name,
+                        COALESCE(h.hoja_destino, '') as description,
+                        CASE 
+                            WHEN h.activo = 1 THEN 'active'
+                            ELSE 'inactive'
+                        END as status,
+                        'normal' as priority,
+                        'hotel' as category,
+                        COALESCE(h.url_booking, '') as website,
+                        '' as contact_email,
+                        '' as phone,
+                        COALESCE(h.max_reviews, 100) as total_rooms,
+                        '' as address,
+                        '' as city,
+                        '' as country,
+                        'Europe/Madrid' as timezone,
+                        h.created_at,
+                        h.updated_at
+                    FROM hoteles h
+                    ORDER BY h.id DESC
+                ";
+                
+                $stmt = $pdo->query($baseQuery);
+                $hotels = $stmt->fetchAll();
+                
+                // Si existe la tabla reviews, agregar stats de reviews
+                if ($reviewsTableExists && count($hotels) > 0) {
+                    try {
+                        foreach ($hotels as &$hotel) {
+                            // Buscar reviews para este hotel
+                            $reviewStmt = $pdo->prepare("
+                                SELECT 
+                                    COUNT(*) as total_reviews,
+                                    COALESCE(ROUND(AVG(rating), 2), 0) as avg_rating,
+                                    COUNT(CASE WHEN review_date >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 END) as recent_reviews,
+                                    MAX(review_date) as last_review_date
+                                FROM reviews 
+                                WHERE hotel_name = ?
+                            ");
+                            
+                            $reviewStmt->execute([$hotel['name']]);
+                            $reviewStats = $reviewStmt->fetch();
+                            
+                            if ($reviewStats) {
+                                $hotel['total_reviews'] = (int)$reviewStats['total_reviews'];
+                                $hotel['avg_rating'] = (float)$reviewStats['avg_rating'];
+                                $hotel['recent_reviews'] = (int)$reviewStats['recent_reviews'];
+                                $hotel['last_review_date'] = $reviewStats['last_review_date'];
+                            } else {
+                                $hotel['total_reviews'] = 0;
+                                $hotel['avg_rating'] = 0;
+                                $hotel['recent_reviews'] = 0;
+                                $hotel['last_review_date'] = null;
+                            }
+                        }
+                    } catch (Exception $e) {
+                        // Si falla la carga de reviews, continuar sin ellas
+                        foreach ($hotels as &$hotel) {
+                            $hotel['total_reviews'] = 0;
+                            $hotel['avg_rating'] = 0;
+                            $hotel['recent_reviews'] = 0;
+                            $hotel['last_review_date'] = null;
+                        }
+                    }
+                } else {
+                    // No hay tabla de reviews, agregar valores default
+                    foreach ($hotels as &$hotel) {
+                        $hotel['total_reviews'] = 0;
+                        $hotel['avg_rating'] = 0;
+                        $hotel['recent_reviews'] = 0;
+                        $hotel['last_review_date'] = null;
+                    }
+                }
+                
+                // Formatear fechas
+                foreach ($hotels as &$hotel) {
+                    $hotel['created_at'] = $hotel['created_at'] ? date('Y-m-d H:i', strtotime($hotel['created_at'])) : date('Y-m-d H:i');
+                    $hotel['updated_at'] = $hotel['updated_at'] ? date('Y-m-d H:i', strtotime($hotel['updated_at'])) : date('Y-m-d H:i');
+                }
+                
+                sendResponse([
+                    'success' => true,
+                    'data' => $hotels,
+                    'total' => count($hotels),
+                    'debug' => [
+                        'reviews_table_exists' => $reviewsTableExists,
+                        'hotels_count' => count($hotels)
+                    ]
+                ]);
+                
+            } catch (Exception $e) {
+                sendError('Error al obtener hoteles: ' . $e->getMessage());
             }
-            
-            sendResponse([
-                'success' => true,
-                'data' => $hotels,
-                'total' => count($hotels)
-            ]);
             break;
 
         case 'saveHotel':

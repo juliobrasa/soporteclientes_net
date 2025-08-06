@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Hotels API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 2px;
+            font-size: 12px;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn.success {
+            background: #28a745;
+        }
+        
+        .btn.danger {
+            background: #dc3545;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 600px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .success {
+            color: #28a745;
+        }
+        
+        .error {
+            color: #dc3545;
+        }
+        
+        .info {
+            color: #007bff;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔍 Debug Hotels API Response</h1>
+        <p>Diagnóstico específico para el problema del módulo de hoteles</p>
+        
+        <div>
+            <button class="btn success" onclick="testHotelsAPI()">🏨 Test getHotels API</button>
+            <button class="btn" onclick="testDbStructure()">🗃️ Test DB Structure</button>
+            <button class="btn" onclick="simulateModuleCall()">🔄 Simulate Module Call</button>
+            <button class="btn danger" onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3>📝 Debug Log</h3>
+        <div id="log" class="log">
+            <div class="info">Ready to debug hotels API...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'admin_api.php';
+        
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            logEl.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '<div class="info">Log cleared...</div>';
+        }
+        
+        async function testHotelsAPI() {
+            try {
+                log('🔍 Testing getHotels API endpoint...', 'info');
+                
+                const startTime = Date.now();
+                const response = await fetch(`${API_URL}?action=getHotels`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                const responseTime = Date.now() - startTime;
+                log(`⏱️ Response time: ${responseTime}ms`, 'info');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const contentType = response.headers.get('content-type');
+                log(`📄 Content-Type: ${contentType}`, 'info');
+                
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    log(`❌ Expected JSON but got ${contentType}`, 'error');
+                    log(`📄 Response preview:\n<pre>${text.substring(0, 500)}...</pre>`, 'error');
+                    return;
+                }
+                
+                const result = await response.json();
+                log(`📊 API Response:`, 'info');
+                log(`<pre>${JSON.stringify(result, null, 2)}</pre>`, 'info');
+                
+                if (result.success) {
+                    log(`✅ API Success: ${result.data ? result.data.length : 0} hotels found`, 'success');
+                    
+                    if (result.data && result.data.length > 0) {
+                        const firstHotel = result.data[0];
+                        log(`🏨 First hotel sample:`, 'info');
+                        log(`<pre>${JSON.stringify(firstHotel, null, 2)}</pre>`, 'info');
+                        
+                        // Verify expected fields
+                        const requiredFields = ['id', 'name', 'status'];
+                        const missingFields = requiredFields.filter(field => !(field in firstHotel));
+                        
+                        if (missingFields.length > 0) {
+                            log(`⚠️ Missing required fields: ${missingFields.join(', ')}`, 'error');
+                        } else {
+                            log(`✅ All required fields present`, 'success');
+                        }
+                    } else {
+                        log(`📊 No hotels found in database`, 'info');
+                    }
+                } else {
+                    log(`❌ API Error: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`💥 Exception: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDbStructure() {
+            try {
+                log('🗃️ Testing database structure...', 'info');
+                
+                const response = await fetch(`${API_URL}?action=getDbStats`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    log(`📊 Database Stats:`, 'info');
+                    log(`<pre>${JSON.stringify(result.stats, null, 2)}</pre>`, 'info');
+                    
+                    if (result.stats.hoteles > 0) {
+                        log(`✅ Found ${result.stats.hoteles} hotels in database`, 'success');
+                    } else {
+                        log(`⚠️ No hotels found in database - this explains the empty result`, 'error');
+                    }
+                } else {
+                    log(`❌ DB Stats Error: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`💥 DB Stats Exception: ${error.message}`, 'error');
+            }
+        }
+        
+        async function simulateModuleCall() {
+            try {
+                log('🔄 Simulating hotels module call...', 'info');
+                
+                // Simulate the exact call that hotels-module.js makes
+                const mockApiClient = {
+                    async getHotels(filters = {}) {
+                        const response = await fetch(`${API_URL}?action=getHotels`, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                        return await response.json();
+                    }
+                };
+                
+                const result = await mockApiClient.getHotels({
+                    page: 1,
+                    limit: 25,
+                    search: '',
+                    status: '',
+                    sort: 'name',
+                    direction: 'asc'
+                });
+                
+                log('🎯 Module simulation result:', 'info');
+                log(`<pre>${JSON.stringify(result, null, 2)}</pre>`, 'info');
+                
+                if (result.success) {
+                    const hotelsData = result.data || [];
+                    const totalItems = result.total || hotelsData.length;
+                    
+                    log(`✅ Module would receive: ${hotelsData.length} hotels`, 'success');
+                    log(`📊 Total items: ${totalItems}`, 'info');
+                    
+                    if (hotelsData.length === 0) {
+                        log(`❌ This explains why module shows "Loading..." - no data to display`, 'error');
+                        log(`💡 Suggestion: Check if hotels exist in database or if query is filtering them out`, 'info');
+                    }
+                } else {
+                    log(`❌ Module would fail with: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`💥 Module simulation failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-test on load
+        window.addEventListener('load', async () => {
+            log('🚀 Auto-testing Hotels API...', 'info');
+            await testHotelsAPI();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testDbStructure();
+        });
+    </script>
+</body>
+</html>
