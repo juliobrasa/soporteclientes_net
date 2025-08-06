@@ -334,33 +334,23 @@ class AdminAPIClient {
     
     // Hoteles
     async getHotels(filters = {}) {
-        // Usar simulación mientras el backend no esté disponible
-        if (AdminConfig?.debug?.simulateData !== false) {
-            return this.simulateHotelsData(filters);
-        }
         return this.call('getHotels', filters, { cache: true });
     }
     
     async saveHotel(hotelData) {
-        // Usar simulación mientras el backend no esté disponible
-        if (AdminConfig?.debug?.simulateData !== false) {
-            return this.simulateSaveHotel(hotelData);
-        }
         const result = await this.call('saveHotel', hotelData);
         if (result.success) {
             this.clearCache('getHotels');
+            this.clearCache('getExtractionHotels');
         }
         return result;
     }
     
     async deleteHotel(hotelId) {
-        // Usar simulación mientras el backend no esté disponible
-        if (AdminConfig?.debug?.simulateData !== false) {
-            return this.simulateDeleteHotel(hotelId);
-        }
         const result = await this.call('deleteHotel', { id: hotelId });
         if (result.success) {
             this.clearCache('getHotels');
+            this.clearCache('getExtractionHotels');
         }
         return result;
     }
@@ -391,16 +381,90 @@ class AdminAPIClient {
     }
     
     // Proveedores IA
-    async getAiProviders() {
-        return this.call('getAiProviders', {}, { cache: true });
+    async getProviders() {
+        return this.call('getProviders', {}, { cache: true });
+    }
+    
+    async saveAiProvider(providerData) {
+        const result = await this.call('saveAiProvider', providerData);
+        if (result.success) {
+            this.clearCache('getProviders');
+        }
+        return result;
     }
     
     async toggleAiProvider(providerId, status) {
-        const result = await this.call('toggleAiProvider', { id: providerId, status });
+        const result = await this.call('toggleAiProvider', { id: providerId, active: status });
         if (result.success) {
-            this.clearCache('getAiProviders');
+            this.clearCache('getProviders');
         }
         return result;
+    }
+    
+    async testAiProvider(providerId) {
+        return this.call('testAiProvider', { id: providerId });
+    }
+    
+    async deleteAiProvider(providerId) {
+        const result = await this.call('deleteAiProvider', { id: providerId });
+        if (result.success) {
+            this.clearCache('getProviders');
+        }
+        return result;
+    }
+    
+    // Extracción
+    async getExtractionHotels() {
+        return this.call('getExtractionHotels', {}, { cache: true });
+    }
+    
+    async startExtraction(extractionData) {
+        return this.call('startExtraction', extractionData);
+    }
+    
+    async getApifyStatus() {
+        return this.call('getApifyStatus', {}, { cache: true });
+    }
+    
+    // Prompts
+    async getPrompts() {
+        return this.call('getPrompts', {}, { cache: true });
+    }
+    
+    async savePrompt(promptData) {
+        const result = await this.call('savePrompt', promptData);
+        if (result.success) {
+            this.clearCache('getPrompts');
+        }
+        return result;
+    }
+    
+    async updatePrompt(promptData) {
+        const result = await this.call('updatePrompt', promptData);
+        if (result.success) {
+            this.clearCache('getPrompts');
+        }
+        return result;
+    }
+    
+    async deletePrompt(promptId) {
+        const result = await this.call('deletePrompt', { id: promptId });
+        if (result.success) {
+            this.clearCache('getPrompts');
+        }
+        return result;
+    }
+    
+    async togglePrompt(promptId, status) {
+        const result = await this.call('togglePrompt', { id: promptId, active: status });
+        if (result.success) {
+            this.clearCache('getPrompts');
+        }
+        return result;
+    }
+    
+    async editPrompt(promptId) {
+        return this.call('editPrompt', { id: promptId });
     }
     
     // Logs
@@ -408,222 +472,118 @@ class AdminAPIClient {
         return this.call('getLogs', filters);
     }
     
+    async clearLogs() {
+        return this.call('clearLogs');
+    }
+    
     // Herramientas
     async getDbStats() {
         return this.call('getDbStats', {}, { cache: true });
     }
     
-    async scanDuplicates() {
-        return this.call('scanDuplicates');
+    async scanDuplicateReviews() {
+        return this.call('scanDuplicateReviews');
+    }
+    
+    async deleteDuplicateReviews() {
+        const result = await this.call('deleteDuplicateReviews');
+        if (result.success) {
+            this.clearCache('getDbStats');
+        }
+        return result;
     }
     
     async optimizeTables() {
-        return this.call('optimizeTables');
+        const result = await this.call('optimizeTables');
+        if (result.success) {
+            this.clearCache('getDbStats');
+        }
+        return result;
     }
     
-    // Métodos de simulación para desarrollo (temporal)
-    async simulateHotelsData(params = {}) {
-        // Simular delay de red
-        await this.delay(500 + Math.random() * 1000);
-        
-        const mockHotels = [
-            {
-                id: 1,
-                name: 'Hotel Paradise Beach',
-                code: 'HPB001',
-                description: 'Un hermoso resort frente al mar con todas las comodidades modernas.',
-                status: 'active',
-                priority: 'featured',
-                category: 'resort',
-                website: 'https://paradise-beach.com',
-                contact_email: 'info@paradise-beach.com',
-                phone: '+1 (555) 123-4567',
-                total_rooms: 150,
-                address: '123 Ocean Drive',
-                city: 'Miami Beach',
-                country: 'US',
-                timezone: 'America/New_York',
-                created_at: '2024-01-15 10:00:00',
-                updated_at: '2024-01-20 15:30:00'
-            },
-            {
-                id: 2,
-                name: 'City Business Hotel',
-                code: 'CBH002',
-                description: 'Hotel moderno en el corazón de la ciudad, ideal para viajeros de negocios.',
-                status: 'active',
-                priority: 'high',
-                category: 'business',
-                website: 'https://citybusiness.com',
-                contact_email: 'reservas@citybusiness.com',
-                phone: '+1 (555) 987-6543',
-                total_rooms: 75,
-                address: '456 Business District Ave',
-                city: 'Nueva York',
-                country: 'US',
-                timezone: 'America/New_York',
-                created_at: '2024-01-10 09:15:00',
-                updated_at: '2024-01-18 11:45:00'
-            },
-            {
-                id: 3,
-                name: 'Boutique Villa Madrid',
-                code: 'BVM003',
-                description: 'Villa boutique en el centro histórico de Madrid con encanto clásico.',
-                status: 'active',
-                priority: 'normal',
-                category: 'boutique',
-                website: 'https://villamadrid.es',
-                contact_email: 'contacto@villamadrid.es',
-                phone: '+34 91 123 4567',
-                total_rooms: 25,
-                address: 'Calle Gran Vía 123',
-                city: 'Madrid',
-                country: 'ES',
-                timezone: 'Europe/Madrid',
-                created_at: '2024-01-05 14:20:00',
-                updated_at: '2024-01-19 16:10:00'
-            },
-            {
-                id: 4,
-                name: 'Mountain Lodge Retreat',
-                code: 'MLR004',
-                description: 'Refugio de montaña perfecto para escapadas relajantes.',
-                status: 'maintenance',
-                priority: 'normal',
-                category: 'other',
-                website: 'https://mountainlodge.com',
-                contact_email: 'info@mountainlodge.com',
-                phone: '+1 (555) 456-7890',
-                total_rooms: 40,
-                address: '789 Mountain View Road',
-                city: 'Aspen',
-                country: 'US',
-                timezone: 'America/Denver',
-                created_at: '2024-01-08 12:00:00',
-                updated_at: '2024-01-17 10:30:00'
-            },
-            {
-                id: 5,
-                name: 'Economy Inn Central',
-                code: 'EIC005',
-                description: 'Alojamiento económico con excelente ubicación.',
-                status: 'inactive',
-                priority: 'normal',
-                category: 'economy',
-                website: 'https://economyinn.com',
-                contact_email: 'reservas@economyinn.com',
-                phone: '+1 (555) 321-0987',
-                total_rooms: 60,
-                address: '321 Central Street',
-                city: 'Chicago',
-                country: 'US',
-                timezone: 'America/Chicago',
-                created_at: '2024-01-12 16:45:00',
-                updated_at: '2024-01-16 09:20:00'
-            }
-        ];
-        
-        // Aplicar filtros básicos
-        let filteredHotels = [...mockHotels];
-        
-        if (params.search) {
-            const searchTerm = params.search.toLowerCase();
-            filteredHotels = filteredHotels.filter(hotel => 
-                hotel.name.toLowerCase().includes(searchTerm) ||
-                hotel.description.toLowerCase().includes(searchTerm)
-            );
+    async checkIntegrity() {
+        return this.call('checkIntegrity');
+    }
+    
+    // API Providers (edición)
+    async editApiProvider(providerId) {
+        return this.call('editApiProvider', { id: providerId });
+    }
+    
+    async updateApiProvider(providerData) {
+        const result = await this.call('updateApiProvider', providerData);
+        if (result.success) {
+            this.clearCache('getApiProviders');
         }
-        
-        if (params.status) {
-            filteredHotels = filteredHotels.filter(hotel => hotel.status === params.status);
-        }
-        
-        // Aplicar ordenamiento
-        if (params.sort) {
-            const sortField = params.sort;
-            const direction = params.direction === 'desc' ? -1 : 1;
-            
-            filteredHotels.sort((a, b) => {
-                let aVal = a[sortField];
-                let bVal = b[sortField];
+        return result;
+    }
+    
+    // Función mejorada para hacer peticiones con compatibilidad total
+    async apiCall(action, data = {}) {
+        try {
+            // Para GET requests simples
+            if (Object.keys(data).length === 0) {
+                const response = await fetch(`admin_api.php?action=${action}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
                 
-                if (typeof aVal === 'string') {
-                    aVal = aVal.toLowerCase();
-                    bVal = bVal.toLowerCase();
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
-                if (aVal < bVal) return -1 * direction;
-                if (aVal > bVal) return 1 * direction;
-                return 0;
-            });
-        }
-        
-        // Aplicar paginación
-        const page = parseInt(params.page) || 1;
-        const limit = parseInt(params.limit) || 25;
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        
-        const paginatedHotels = filteredHotels.slice(startIndex, endIndex);
-        
-        return {
-            success: true,
-            data: paginatedHotels,
-            total: filteredHotels.length,
-            page: page,
-            pages: Math.ceil(filteredHotels.length / limit),
-            limit: limit
-        };
-    }
-    
-    async simulateSaveHotel(hotelData) {
-        await this.delay(800 + Math.random() * 1200);
-        
-        // Simular validación de errores ocasionales
-        if (Math.random() < 0.1) {
+                const text = await response.text();
+                console.log('Response text:', text); // Debug
+                
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('Error parsing JSON:', text);
+                    throw new Error('Respuesta del servidor no válida');
+                }
+            } else {
+                // Para POST con JSON
+                const response = await fetch('admin_api.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({action, ...data})
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const text = await response.text();
+                console.log('Response text:', text);
+                
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('Error parsing JSON:', text);
+                    throw new Error('Respuesta del servidor no válida');
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error en API call:', error);
             return {
-                success: false,
-                error: 'Error de simulación: El nombre del hotel ya existe'
+                success: false, 
+                error: error.message || 'Error de conexión'
             };
         }
-        
-        return {
-            success: true,
-            data: {
-                id: hotelData.id || Date.now(),
-                ...hotelData,
-                created_at: hotelData.id ? hotelData.created_at : new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            },
-            message: hotelData.id ? 'Hotel actualizado correctamente' : 'Hotel creado correctamente'
-        };
-    }
-    
-    async simulateDeleteHotel(hotelId) {
-        await this.delay(600 + Math.random() * 800);
-        
-        // Simular errores ocasionales
-        if (Math.random() < 0.05) {
-            return {
-                success: false,
-                error: 'Error de simulación: No se puede eliminar el hotel'
-            };
-        }
-        
-        return {
-            success: true,
-            message: 'Hotel eliminado correctamente'
-        };
     }
 }
 
 // Crear instancia global
 window.apiClient = new AdminAPIClient();
 
-// Función legacy para compatibilidad
+// Función legacy para compatibilidad total
 window.apiCall = function(action, data = {}) {
-    return window.apiClient.call(action, data);
+    return window.apiClient.apiCall(action, data);
 };
 
 // Log de inicialización
