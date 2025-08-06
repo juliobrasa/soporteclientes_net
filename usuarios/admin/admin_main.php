@@ -71,19 +71,7 @@
 
         <!-- Tab de Proveedores IA (Oculto inicialmente) -->
         <div id="ia-tab" class="tab-content" style="display:none;">
-            <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-robot"></i> Proveedores de IA</h2>
-                </div>
-                <div class="card-body">
-                    <div id="ia-list">
-                        <div class="loading-state">
-                            <i class="fas fa-spinner fa-spin spinner"></i>
-                            <h3>Cargando proveedores IA...</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <?php include 'modules/providers/providers-tab.php'; ?>
         </div>
 
         <!-- Tab de Prompts (Oculto inicialmente) -->
@@ -170,6 +158,7 @@
     
     <!-- JavaScript Modules -->
     <script src="assets/js/modules/hotels-module.js"></script>
+    <script src="assets/js/modules/providers-module.js"></script>
 
     <!-- JavaScript Principal -->
     <script>
@@ -307,6 +296,12 @@
                 return;
             }
             
+            if (typeof providersModule === 'undefined') {
+                console.error('❌ providersModule no encontrado');
+                showDependencyError('providersModule');
+                return;
+            }
+            
             // Inicializar aplicación
             adminApp = new AdminApp();
             
@@ -321,5 +316,8 @@
     
     <!-- Modales de Hoteles -->
     <?php include 'modules/hotels/hotel-modal.php'; ?>
+    
+    <!-- Modales de Proveedores IA -->
+    <?php include 'modules/providers/provider-modal.php'; ?>
 </body>
 </html>
