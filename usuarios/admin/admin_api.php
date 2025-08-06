@@ -68,26 +68,15 @@ try {
                     $reviewsTableExists = false;
                 }
                 
-                // Query base sin reviews primero
+                // Query base con nombres de campos en español
                 $baseQuery = "
                     SELECT 
                         h.id,
-                        h.nombre_hotel as name,
-                        COALESCE(h.hoja_destino, '') as description,
-                        CASE 
-                            WHEN h.activo = 1 THEN 'active'
-                            ELSE 'inactive'
-                        END as status,
-                        'normal' as priority,
-                        'hotel' as category,
-                        COALESCE(h.url_booking, '') as website,
-                        '' as contact_email,
-                        '' as phone,
-                        COALESCE(h.max_reviews, 100) as total_rooms,
-                        '' as address,
-                        '' as city,
-                        '' as country,
-                        'Europe/Madrid' as timezone,
+                        h.nombre_hotel,
+                        COALESCE(h.hoja_destino, '') as hoja_destino,
+                        h.activo,
+                        COALESCE(h.url_booking, '') as url_booking,
+                        COALESCE(h.max_reviews, 100) as max_reviews,
                         h.created_at,
                         h.updated_at
                     FROM hoteles h
@@ -112,7 +101,7 @@ try {
                                 WHERE hotel_name = ?
                             ");
                             
-                            $reviewStmt->execute([$hotel['name']]);
+                            $reviewStmt->execute([$hotel['nombre_hotel']]);
                             $reviewStats = $reviewStmt->fetch();
                             
                             if ($reviewStats) {
@@ -146,8 +135,14 @@ try {
                     }
                 }
                 
-                // Formatear fechas
+                // Formatear datos y convertir tipos
                 foreach ($hotels as &$hotel) {
+                    // Convertir ID a entero
+                    $hotel['id'] = (int)$hotel['id'];
+                    $hotel['activo'] = (int)$hotel['activo'];
+                    $hotel['max_reviews'] = (int)$hotel['max_reviews'];
+                    
+                    // Formatear fechas
                     $hotel['created_at'] = $hotel['created_at'] ? date('Y-m-d H:i', strtotime($hotel['created_at'])) : date('Y-m-d H:i');
                     $hotel['updated_at'] = $hotel['updated_at'] ? date('Y-m-d H:i', strtotime($hotel['updated_at'])) : date('Y-m-d H:i');
                 }
@@ -155,12 +150,7 @@ try {
                 sendResponse([
                     'success' => true,
                     'hotels' => $hotels,
-                    'data' => $hotels, // Mantener compatibilidad
-                    'total' => count($hotels),
-                    'debug' => [
-                        'reviews_table_exists' => $reviewsTableExists,
-                        'hotels_count' => count($hotels)
-                    ]
+                    'total' => count($hotels)
                 ]);
                 
             } catch (Exception $e) {
