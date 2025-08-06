@@ -8,15 +8,14 @@
 ?>
 
 <!-- Modal de Proveedor de IA -->
-<div id="provider-modal" class="modal">
-    <div class="modal-backdrop"></div>
-    <div class="modal-container large">
+<div class="modal-overlay" id="provider-modal">
+    <div class="modal modal-lg">
         <div class="modal-header">
             <h2 id="provider-modal-title">
                 <i class="fas fa-robot"></i>
                 <span id="provider-modal-title-text">Nuevo Proveedor de IA</span>
             </h2>
-            <button class="modal-close" onclick="closeProviderModal()">
+            <button class="modal-close" type="button" onclick="closeProviderModal()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
