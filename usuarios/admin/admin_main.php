@@ -29,13 +29,13 @@
 
     <!-- Contenedor Principal -->
     <div class="container">
-        <!-- Tab de Hoteles (Activo por defecto) -->
-        <div id="hotels-tab" class="tab-content">
+        <!-- Tab de Hoteles (Oculto inicialmente) -->
+        <div id="hotels-tab" class="tab-content" style="display:none;">
             <?php include 'modules/hotels/hotels-tab.php'; ?>
         </div>
         
         <!-- HOTELS MODULE: Direct embedded system -->
-        <div id="hotels-direct-system" style="display: block; padding: 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
+        <div id="hotels-direct-system" class="module-direct-system" data-module="hotels" style="display: none; padding: 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
             <div class="hotels-container-direct" style="padding: 20px;">
                 <div class="hotels-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                     <h2 style="margin: 0; color: #495057;">
@@ -59,7 +59,7 @@
         </div>
 
         <!-- APIS MODULE: Direct embedded system -->
-        <div id="apis-direct-system" style="display: block; padding: 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
+        <div id="apis-direct-system" class="module-direct-system" data-module="apis" style="display: none; padding: 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
             <div class="apis-container-direct" style="padding: 20px;">
                 <div class="apis-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #e8f4fd; border-radius: 8px;">
                     <h2 style="margin: 0; color: #495057;">
@@ -86,7 +86,7 @@
         </div>
 
         <!-- EXTRACTION MODULE: Direct embedded system -->
-        <div id="extraction-direct-system" style="display: block; padding: 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
+        <div id="extraction-direct-system" class="module-direct-system" data-module="extraction" style="display: none; padding: 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
             <div class="extraction-container-direct" style="padding: 20px;">
                 <div class="extraction-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #fff3cd; border-radius: 8px;">
                     <h2 style="margin: 0; color: #495057;">
@@ -113,7 +113,7 @@
         </div>
 
         <!-- PROVIDERS MODULE: Direct embedded system -->
-        <div id="providers-direct-system" style="display: block; padding: 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
+        <div id="providers-direct-system" class="module-direct-system" data-module="providers" style="display: none; padding: 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
             <div class="providers-container-direct" style="padding: 20px;">
                 <div class="providers-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #f8d7da; border-radius: 8px;">
                     <h2 style="margin: 0; color: #495057;">
@@ -278,7 +278,7 @@
     <?php endif; ?>
     
     <?php if ($implementedModules['providers']): ?>
-        <!-- <script src="assets/js/modules/providers-module.js"></script> -->
+        <script src="assets/js/modules/providers-module.js"></script>
     <?php endif; ?>
     
     <?php if ($implementedModules['apis']): ?>
@@ -476,7 +476,7 @@
     
     <!-- Modales de otros módulos - Solo cargar cuando estén implementados -->
     <?php if ($implementedModules['providers']): ?>
-        <!-- <?php include 'modules/providers/provider-modal.php'; ?> -->
+        <?php include 'modules/providers/provider-modal.php'; ?>
     <?php endif; ?>
     
     <?php if ($implementedModules['apis']): ?>
@@ -789,6 +789,150 @@
     window.loadLogsDirect = loadLogsDirect;
     
     console.log('🚀 Sistema directo para todos los módulos inicializado');
+    
+    // ============================================================================
+    // SISTEMA DE NAVEGACIÓN POR TABS - Compatible con sistema directo
+    // ============================================================================
+    
+    // Crear tabManager compatible que reemplaza el existente
+    window.tabManager = {
+        currentTab: 'hotels', // Tab por defecto
+        
+        // Función principal para cambiar tabs
+        switchTab: function(tabName, updateHistory = true) {
+            console.log(`🔄 Switching to tab: ${tabName}`);
+            
+            // Ocultar todos los módulos
+            this.hideAllModules();
+            
+            // Mostrar módulo solicitado
+            this.showModule(tabName);
+            
+            // Actualizar tab actual
+            this.currentTab = tabName;
+            
+            // Cargar contenido si es necesario
+            this.loadModuleContent(tabName);
+            
+            return Promise.resolve(true);
+        },
+        
+        // Ocultar todos los módulos
+        hideAllModules: function() {
+            // Ocultar sistemas directos
+            const directSystems = document.querySelectorAll('.module-direct-system');
+            directSystems.forEach(system => {
+                system.style.display = 'none';
+            });
+            
+            // Ocultar sistemas legacy
+            const legacyTabs = document.querySelectorAll('.tab-content');
+            legacyTabs.forEach(tab => {
+                tab.style.display = 'none';
+            });
+            
+            console.log('👻 Todos los módulos ocultos');
+        },
+        
+        // Mostrar módulo específico
+        showModule: function(tabName) {
+            // Mapear nombres de tabs a módulos
+            const moduleMapping = {
+                'hotels': 'hotels',
+                'apis': 'apis', 
+                'extraction': 'extraction',
+                'ia': 'providers', // IA tab mapea a providers module
+                'prompts': 'prompts',
+                'logs': 'logs',
+                'tools': 'tools'
+            };
+            
+            const moduleName = moduleMapping[tabName] || tabName;
+            
+            // Intentar mostrar sistema directo primero
+            const directSystem = document.getElementById(`${moduleName}-direct-system`);
+            if (directSystem) {
+                directSystem.style.display = 'block';
+                console.log(`✅ Showing direct system: ${moduleName}-direct-system`);
+                return;
+            }
+            
+            // Fallback a sistema legacy
+            const legacyTab = document.getElementById(`${tabName}-tab`);
+            if (legacyTab) {
+                legacyTab.style.display = 'block';
+                console.log(`✅ Showing legacy tab: ${tabName}-tab`);
+                return;
+            }
+            
+            console.warn(`⚠️ No se encontró módulo para: ${tabName}`);
+        },
+        
+        // Cargar contenido del módulo
+        loadModuleContent: function(tabName) {
+            const loadFunctions = {
+                'hotels': () => window.loadHotelsDirect && window.loadHotelsDirect(),
+                'apis': () => window.loadApisDirect && window.loadApisDirect(),
+                'extraction': () => window.loadExtractionDirect && window.loadExtractionDirect(),
+                'ia': () => window.loadProvidersDirect && window.loadProvidersDirect(),
+                'prompts': () => window.loadPromptsDirect && window.loadPromptsDirect(),
+                'logs': () => window.loadLogsDirect && window.loadLogsDirect(),
+                'tools': () => console.log('🔧 Tools module - not implemented yet')
+            };
+            
+            const loadFunction = loadFunctions[tabName];
+            if (loadFunction) {
+                // Cargar con delay para asegurar que el DOM esté visible
+                setTimeout(() => {
+                    loadFunction();
+                }, 100);
+            }
+        },
+        
+        // Función de refresh para compatibilidad
+        refreshCurrentTab: function() {
+            console.log(`🔄 Refreshing current tab: ${this.currentTab}`);
+            this.loadModuleContent(this.currentTab);
+            return Promise.resolve(true);
+        }
+    };
+    
+    // ============================================================================
+    // INICIALIZACIÓN DEL SISTEMA DE NAVEGACIÓN
+    // ============================================================================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🧭 Inicializando sistema de navegación...');
+        
+        // Mostrar módulo inicial (Hotels por defecto)
+        window.tabManager.switchTab('hotels');
+        
+        // Interceptar clicks en navegación si existe
+        document.addEventListener('click', function(e) {
+            const navButton = e.target.closest('[data-tab]');
+            if (navButton) {
+                const tabName = navButton.dataset.tab;
+                console.log(`🖱️ Navigation click detected: ${tabName}`);
+                window.tabManager.switchTab(tabName);
+            }
+        });
+        
+        // También interceptar clics en navegación legacy
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('[onclick*="showTab"]')) {
+                e.preventDefault();
+                const onclick = e.target.getAttribute('onclick') || e.target.closest('[onclick*="showTab"]').getAttribute('onclick');
+                const tabMatch = onclick.match(/showTab\(['"]([^'"]+)['"]\)/);
+                if (tabMatch) {
+                    window.tabManager.switchTab(tabMatch[1]);
+                }
+            }
+        });
+        
+        console.log('✅ Sistema de navegación inicializado');
+    });
+    
+    console.log('🚀 Sistema de navegación por tabs implementado');
     </script>
 </body>
 </html>
