@@ -75,7 +75,7 @@
 
         <!-- Lista de Hoteles -->
         <div id="hotels-list-container">
-            <div class="loading-state">
+            <div class="loading-state" id="hotels-loading">
                 <i class="fas fa-spinner fa-spin spinner"></i>
                 <h3>Cargando hoteles...</h3>
                 <p>Por favor espera mientras cargamos la información</p>
@@ -432,3 +432,38 @@
     }
 }
 </style>
+
+<script>
+// Asegurar que el módulo de hoteles se inicialice correctamente
+document.addEventListener('DOMContentLoaded', function() {
+    // Forzar carga inicial si el tab de hoteles está activo
+    if (document.getElementById('hotels-tab') && !document.getElementById('hotels-tab').classList.contains('hidden')) {
+        setTimeout(() => {
+            console.log('🔄 Forzando carga inicial de hoteles...');
+            if (window.hotelsModule && typeof window.hotelsModule.loadHotels === 'function') {
+                window.hotelsModule.loadHotels();
+            } else {
+                console.warn('⚠️ hotelsModule no disponible aún, reintentando...');
+                // Reintentar después de un momento
+                setTimeout(() => {
+                    if (window.hotelsModule) {
+                        window.hotelsModule.loadHotels();
+                    }
+                }, 500);
+            }
+        }, 200);
+    }
+});
+
+// Listener para cuando se cambie al tab de hoteles
+document.addEventListener('tabChanged', function(event) {
+    if (event.detail && event.detail.tabName === 'hotels') {
+        console.log('🏨 Tab hoteles activado, cargando datos...');
+        setTimeout(() => {
+            if (window.hotelsModule && typeof window.hotelsModule.loadHotels === 'function') {
+                window.hotelsModule.loadHotels();
+            }
+        }, 100);
+    }
+});
+</script>
