@@ -9,7 +9,7 @@
 window.AdminConfig = {
     // Configuración de la API
     api: {
-        baseUrl: '../../admin_api.php',  // URL base para las llamadas API (ruta correcta)
+        baseUrl: 'admin_api.php',  // URL base para las llamadas API (ahora en el mismo directorio)
         endpoints: {
             // Hoteles
             getHotels: 'getHotels',
