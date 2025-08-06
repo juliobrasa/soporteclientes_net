@@ -505,7 +505,7 @@
                     description: 'Verifica que la conexión a MySQL funcione correctamente',
                     icon: 'fas fa-database',
                     test: async () => {
-                        const response = await fetch('../../admin_api.php?action=getHotels');
+                        const response = await fetch('admin_api.php?action=getHotels');
                         if (!response.ok) throw new Error('Error de conexión BD');
                         const data = await response.json();
                         if (!data.success) throw new Error('Respuesta inválida de BD');
@@ -581,7 +581,7 @@
                         const results = [];
                         
                         for (const endpoint of endpoints) {
-                            const response = await fetch(`../../admin_api.php?action=${endpoint}`);
+                            const response = await fetch(`admin_api.php?action=${endpoint}`);
                             const data = await response.json();
                             results.push(`${endpoint}: ${data.success ? 'OK' : 'FAIL'}`);
                         }
@@ -596,7 +596,7 @@
                     description: 'Verifica los endpoints del módulo de proveedores IA',
                     icon: 'fas fa-robot',
                     test: async () => {
-                        const response = await fetch('../../admin_api.php?action=getProviders');
+                        const response = await fetch('admin_api.php?action=getProviders');
                         const data = await response.json();
                         
                         if (!data.success) {
@@ -613,7 +613,7 @@
                     description: 'Verifica los endpoints del módulo de APIs externas',
                     icon: 'fas fa-plug',
                     test: async () => {
-                        const response = await fetch('../../admin_api.php?action=getExternalApis');
+                        const response = await fetch('admin_api.php?action=getExternalApis');
                         const data = await response.json();
                         
                         if (!data.success) {
@@ -630,7 +630,7 @@
                     description: 'Verifica los endpoints del módulo de extracción',
                     icon: 'fas fa-filter',
                     test: async () => {
-                        const response = await fetch('../../admin_api.php?action=getExtractionJobs');
+                        const response = await fetch('admin_api.php?action=getExtractionJobs');
                         const data = await response.json();
                         
                         if (!data.success) {
@@ -647,7 +647,7 @@
                     description: 'Verifica los endpoints del módulo de prompts',
                     icon: 'fas fa-file-alt',
                     test: async () => {
-                        const response = await fetch('../../admin_api.php?action=getPrompts');
+                        const response = await fetch('admin_api.php?action=getPrompts');
                         const data = await response.json();
                         
                         if (!data.success) {
@@ -664,7 +664,7 @@
                     description: 'Verifica los endpoints del módulo de logs',
                     icon: 'fas fa-chart-line',
                     test: async () => {
-                        const response = await fetch('../../admin_api.php?action=getLogs');
+                        const response = await fetch('admin_api.php?action=getLogs');
                         const data = await response.json();
                         
                         if (!data.success) {

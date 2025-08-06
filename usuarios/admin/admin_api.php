@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // Configuración de base de datos
-$host = "localhost";
+$host = "soporteclientes.net";
 $db_name = "soporteia_bookingkavia";
 $username = "soporteia_admin";
 $password = "QCF8RhS*}.Oj0u(v";
@@ -41,7 +41,21 @@ function sendError($message, $error = null) {
 
 // Conectar a la base de datos
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8mb4", $username, $password, [
+    $dsn = "mysql:host=$host;dbname=$db_name;charset=utf8mb4";
+    
+    // Intentar con socket Unix si el host es localhost
+    if ($host === 'localhost') {
+        // Verificar sockets comunes de MySQL
+        $sockets = ['/var/run/mysqld/mysqld.sock', '/tmp/mysql.sock', '/var/lib/mysql/mysql.sock'];
+        foreach ($sockets as $socket) {
+            if (file_exists($socket)) {
+                $dsn = "mysql:unix_socket=$socket;dbname=$db_name;charset=utf8mb4";
+                break;
+            }
+        }
+    }
+    
+    $pdo = new PDO($dsn, $username, $password, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
