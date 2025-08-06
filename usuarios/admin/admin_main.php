@@ -38,13 +38,20 @@
         <div id="apis-tab" class="tab-content" style="display:none;">
             <div class="card">
                 <div class="card-header">
-                    <h2><i class="fas fa-plug"></i> Proveedores de APIs</h2>
+                    <h2><i class="fas fa-plug"></i> APIs Externas</h2>
                 </div>
                 <div class="card-body">
-                    <div id="apis-list">
-                        <div class="loading-state">
-                            <i class="fas fa-spinner fa-spin spinner"></i>
-                            <h3>Cargando proveedores...</h3>
+                    <div class="info-state text-center p-4">
+                        <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+                        <h3 class="text-muted">Módulo en Desarrollo</h3>
+                        <p class="text-muted">
+                            Este módulo será implementado en la próxima fase del proyecto.<br>
+                            <strong>Estado actual:</strong> Pendiente de implementación
+                        </p>
+                        <div class="mt-4">
+                            <span class="badge badge-warning">
+                                <i class="fas fa-clock"></i> Próximamente
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -53,22 +60,73 @@
 
         <!-- Tab de Extracción (Oculto inicialmente) -->
         <div id="extraction-tab" class="tab-content" style="display:none;">
-            <?php include 'modules/extraction/extraction-tab.php'; ?>
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-download"></i> Sistema de Extracción</h2>
+                </div>
+                <div class="card-body">
+                    <div class="info-state text-center p-4">
+                        <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+                        <h3 class="text-muted">Módulo en Desarrollo</h3>
+                        <p class="text-muted">Sistema de extracción automatizada de reseñas</p>
+                        <span class="badge badge-warning"><i class="fas fa-clock"></i> Próximamente</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Tab de Proveedores IA (Oculto inicialmente) -->
         <div id="ia-tab" class="tab-content" style="display:none;">
-            <?php include 'modules/providers/providers-tab.php'; ?>
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-robot"></i> Proveedores de IA</h2>
+                </div>
+                <div class="card-body">
+                    <div class="info-state text-center p-4">
+                        <i class="fas fa-cogs fa-3x text-muted mb-3"></i>
+                        <h3 class="text-muted">Configurando Proveedores IA</h3>
+                        <p class="text-muted">
+                            Configuración de servicios de inteligencia artificial<br>
+                            <strong>Estado:</strong> En desarrollo (Fase 3)
+                        </p>
+                        <span class="badge badge-info"><i class="fas fa-wrench"></i> En desarrollo</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Tab de Prompts (Oculto inicialmente) -->
         <div id="prompts-tab" class="tab-content" style="display:none;">
-            <?php include 'modules/prompts/prompts-tab.php'; ?>
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-file-alt"></i> Gestión de Prompts</h2>
+                </div>
+                <div class="card-body">
+                    <div class="info-state text-center p-4">
+                        <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+                        <h3 class="text-muted">Módulo en Desarrollo</h3>
+                        <p class="text-muted">Gestión avanzada de plantillas y prompts de IA</p>
+                        <span class="badge badge-warning"><i class="fas fa-clock"></i> Próximamente</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Tab de Logs (Oculto inicialmente) -->
         <div id="logs-tab" class="tab-content" style="display:none;">
-            <?php include 'modules/logs/logs-tab.php'; ?>
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-line"></i> Analytics & Logs</h2>
+                </div>
+                <div class="card-body">
+                    <div class="info-state text-center p-4">
+                        <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+                        <h3 class="text-muted">Módulo en Desarrollo</h3>
+                        <p class="text-muted">Registros detallados y análisis del sistema</p>
+                        <span class="badge badge-warning"><i class="fas fa-clock"></i> Próximamente</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Tab de Herramientas (Oculto inicialmente) -->
@@ -119,13 +177,30 @@
     <script src="assets/js/core/tab-manager.js"></script>
     <script src="assets/js/core/content-loader.js"></script>
     
-    <!-- JavaScript Modules -->
-    <script src="assets/js/modules/hotels-module.js"></script>
-    <script src="assets/js/modules/providers-module.js"></script>
-    <script src="assets/js/modules/apis-module.js"></script>
-    <script src="assets/js/modules/extraction-module.js"></script>
-    <script src="assets/js/modules/prompts-module.js"></script>
-    <script src="assets/js/modules/logs-module.js"></script>
+    <!-- JavaScript Modules - Solo cargar los implementados -->
+    <?php if ($implementedModules['hotels']): ?>
+        <script src="assets/js/modules/hotels-module.js"></script>
+    <?php endif; ?>
+    
+    <?php if ($implementedModules['providers']): ?>
+        <!-- <script src="assets/js/modules/providers-module.js"></script> -->
+    <?php endif; ?>
+    
+    <?php if ($implementedModules['apis']): ?>
+        <!-- <script src="assets/js/modules/apis-module.js"></script> -->
+    <?php endif; ?>
+    
+    <?php if ($implementedModules['extraction']): ?>
+        <!-- <script src="assets/js/modules/extraction-module.js"></script> -->
+    <?php endif; ?>
+    
+    <?php if ($implementedModules['prompts']): ?>
+        <!-- <script src="assets/js/modules/prompts-module.js"></script> -->
+    <?php endif; ?>
+    
+    <?php if ($implementedModules['logs']): ?>
+        <!-- <script src="assets/js/modules/logs-module.js"></script> -->
+    <?php endif; ?>
 
     <!-- JavaScript Principal -->
     <script>
@@ -257,17 +332,22 @@
                 return;
             }
             
+            // Verificar solo módulos implementados
+            <?php if ($implementedModules['hotels']): ?>
             if (typeof hotelsModule === 'undefined') {
                 console.error('❌ hotelsModule no encontrado');
                 showDependencyError('hotelsModule');
                 return;
             }
+            <?php endif; ?>
             
+            <?php if ($implementedModules['providers']): ?>
             if (typeof providersModule === 'undefined') {
                 console.error('❌ providersModule no encontrado');
                 showDependencyError('providersModule');
                 return;
             }
+            <?php endif; ?>
             
             // Inicializar aplicación
             adminApp = new AdminApp();
@@ -281,20 +361,40 @@
         }
     </script>
     
-    <!-- Modales de Hoteles -->
-    <?php include 'modules/hotels/hotel-modal.php'; ?>
+    <!-- MODALES - Solo cargar los implementados según el estado del proyecto -->
+    <?php
+    // Configuración de módulos implementados
+    $implementedModules = [
+        'hotels' => true,        // ✅ Fase 2 COMPLETADA
+        'providers' => false,    // 🔄 Fase 3 PARCIAL - NO cargar modal aún
+        'apis' => false,         // ⏳ Pendiente
+        'extraction' => false,   // ⏳ Pendiente  
+        'prompts' => false,      // ⏳ Pendiente
+        'logs' => false          // ⏳ Pendiente
+    ];
+    ?>
     
-    <!-- Modales de Proveedores IA -->
-    <?php include 'modules/providers/provider-modal.php'; ?>
+    <!-- Modal de Hoteles (Único implementado) -->
+    <?php if ($implementedModules['hotels']): ?>
+        <?php include 'modules/hotels/hotel-modal.php'; ?>
+    <?php endif; ?>
     
-    <!-- Modales de APIs Externas -->
-    <?php include 'modules/apis/api-modal.php'; ?>
+    <!-- Modales de otros módulos - Solo cargar cuando estén implementados -->
+    <?php if ($implementedModules['providers']): ?>
+        <!-- <?php include 'modules/providers/provider-modal.php'; ?> -->
+    <?php endif; ?>
     
-    <!-- Modales de Extractor -->
-    <?php include 'modules/extraction/wizard-modal.php'; ?>
-    <?php include 'modules/extraction/job-monitor-modal.php'; ?>
+    <?php if ($implementedModules['apis']): ?>
+        <!-- <?php include 'modules/apis/api-modal.php'; ?> -->
+    <?php endif; ?>
     
-    <!-- Modales de Prompts -->
-    <?php include 'modules/prompts/prompt-modal.php'; ?>
+    <?php if ($implementedModules['extraction']): ?>
+        <!-- <?php include 'modules/extraction/wizard-modal.php'; ?> -->
+        <!-- <?php include 'modules/extraction/job-monitor-modal.php'; ?> -->
+    <?php endif; ?>
+    
+    <?php if ($implementedModules['prompts']): ?>
+        <!-- <?php include 'modules/prompts/prompt-modal.php'; ?> -->
+    <?php endif; ?>
 </body>
 </html>

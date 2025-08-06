@@ -61,13 +61,23 @@ class ModalManager {
             backdrop: true,
             closeOnBackdrop: this.config.closeOnBackdrop !== false,
             closeOnEscape: this.config.closeOnEscape !== false,
+            module: null, // Contexto del módulo
             ...options
         };
         
-        // Crear o encontrar el modal
+        // Verificar si el modal está disponible (importante para evitar conflictos)
         let modalElement = document.getElementById(modalId);
         if (!modalElement) {
-            modalElement = this.createModal(modalId, config);
+            // Log de advertencia si se intenta abrir un modal no disponible
+            console.warn(`⚠️ Modal ${modalId} no encontrado. Puede que el módulo no esté implementado aún.`);
+            
+            if (window.notificationSystem) {
+                window.notificationSystem.warning(
+                    'Funcionalidad no disponible', 
+                    { message: 'Esta funcionalidad será implementada próximamente.' }
+                );
+            }
+            return null;
         }
         
         // Agregar al stack
