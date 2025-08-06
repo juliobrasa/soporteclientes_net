@@ -1798,8 +1798,290 @@ class PromptsModule {
     /**
      * Muestra la librería de plantillas
      */
-    showTemplatesLibrary() {
-        showInfo('Funcionalidad de librería de plantillas en desarrollo');
+    async showTemplatesLibrary() {
+        try {
+            const response = await AdminAPI.request('getTemplatesLibrary');
+            
+            if (response.success) {
+                this.renderTemplatesLibrary(response.data);
+            } else {
+                throw new Error(response.message || 'Error al cargar biblioteca de templates');
+            }
+        } catch (error) {
+            console.error('Error al cargar biblioteca:', error);
+            showError('Error al cargar biblioteca de templates: ' + error.message);
+        }
+    }
+    
+    /**
+     * Renderiza la biblioteca de templates
+     */
+    renderTemplatesLibrary(libraryData) {
+        const modalHtml = `
+            <div class="modal-overlay" id="templates-library-modal">
+                <div class="modal modal-lg">
+                    <div class="modal-header">
+                        <h3 class="modal-title">
+                            <i class="fas fa-book"></i>
+                            Biblioteca de Templates
+                        </h3>
+                        <button class="modal-close" type="button" onclick="promptsModule.closeTemplatesLibrary()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <div class="templates-library-content">
+                            <div class="library-header">
+                                <p class="library-description">
+                                    Selecciona un template predefinido para comenzar rápidamente. 
+                                    Los templates incluyen prompts optimizados para diferentes casos de uso.
+                                </p>
+                                <div class="library-stats">
+                                    <span class="stat-item">
+                                        <i class="fas fa-file-alt"></i>
+                                        ${libraryData.metadata.total_templates} templates
+                                    </span>
+                                    <span class="stat-item">
+                                        <i class="fas fa-layer-group"></i>
+                                        ${libraryData.metadata.categories.length} categorías
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="templates-grid">
+                                ${this.renderTemplateCards(libraryData.templates)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    
+    /**
+     * Renderiza las tarjetas de templates
+     */
+    renderTemplateCards(templates) {
+        return templates.map(template => {
+            const categoryConfig = this.categoryConfig[template.category] || this.categoryConfig.custom;
+            
+            return `
+                <div class="template-card" data-template-id="${template.name.replace(/\s+/g, '-').toLowerCase()}">
+                    <div class="template-header">
+                        <div class="template-category">
+                            <i class="${categoryConfig.icon}" style="color: ${categoryConfig.color}"></i>
+                            <span>${categoryConfig.name}</span>
+                        </div>
+                        <div class="template-language">
+                            ${this.languageConfig[template.language]?.flag || '🌐'} ${template.language.toUpperCase()}
+                        </div>
+                    </div>
+                    
+                    <div class="template-content">
+                        <h4 class="template-title">${this.escapeHtml(template.name)}</h4>
+                        <p class="template-description">${this.escapeHtml(template.description)}</p>
+                        
+                        <div class="template-features">
+                            <div class="feature-item">
+                                <i class="fas fa-code"></i>
+                                <span>${template.variables?.length || 0} variables</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-tags"></i>
+                                <span>${template.tags?.length || 0} tags</span>
+                            </div>
+                        </div>
+                        
+                        <div class="template-tags">
+                            ${(template.tags || []).slice(0, 3).map(tag => 
+                                `<span class="template-tag">${this.escapeHtml(tag)}</span>`
+                            ).join('')}
+                            ${template.tags?.length > 3 ? `<span class="template-tag-more">+${template.tags.length - 3} más</span>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="template-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="promptsModule.previewTemplate('${template.name.replace(/'/g, '\\\\\\\\\\'')}')">
+                            <i class="fas fa-eye"></i>
+                            Vista previa
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="promptsModule.importTemplate('${template.name.replace(/'/g, '\\\\\\\\\\'')}')">
+                            <i class="fas fa-download"></i>
+                            Usar Template
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    /**
+     * Vista previa de un template
+     */
+    async previewTemplate(templateName) {
+        try {
+            const response = await AdminAPI.request('getTemplatesLibrary');
+            if (response.success) {
+                const template = response.data.templates.find(t => t.name === templateName);
+                if (template) {
+                    this.showTemplatePreview(template);
+                } else {
+                    showError('Template no encontrado');
+                }
+            }
+        } catch (error) {
+            console.error('Error al cargar template:', error);
+            showError('Error al cargar template');
+        }
+    }
+    
+    /**
+     * Muestra la vista previa de un template
+     */
+    showTemplatePreview(template) {
+        const previewHtml = `
+            <div class="modal-overlay" id="template-preview-modal">
+                <div class="modal modal-lg">
+                    <div class="modal-header">
+                        <h3 class="modal-title">
+                            <i class="fas fa-eye"></i>
+                            Vista Previa: ${this.escapeHtml(template.name)}
+                        </h3>
+                        <button class="modal-close" type="button" onclick="promptsModule.closeTemplatePreview()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <div class="template-preview-content">
+                            <div class="preview-section">
+                                <h4><i class="fas fa-info-circle"></i> Información</h4>
+                                <div class="preview-info">
+                                    <div class="info-row">
+                                        <label>Categoría:</label>
+                                        <span>${this.categoryConfig[template.category]?.name || template.category}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <label>Idioma:</label>
+                                        <span>${this.languageConfig[template.language]?.name || template.language}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <label>Tags:</label>
+                                        <span>${(template.tags || []).join(', ')}</span>
+                                    </div>
+                                </div>
+                                <p><strong>Descripción:</strong> ${this.escapeHtml(template.description)}</p>
+                            </div>
+                            
+                            ${template.variables && template.variables.length > 0 ? `
+                            <div class="preview-section">
+                                <h4><i class="fas fa-code"></i> Variables (${template.variables.length})</h4>
+                                <div class="variables-list">
+                                    ${template.variables.map(variable => `
+                                        <div class="variable-preview-item">
+                                            <code>{${variable.name}}</code>
+                                            <span class="variable-type">${variable.type}</span>
+                                            ${variable.required ? '<span class="variable-required">Requerida</span>' : ''}
+                                            <p>${variable.description}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            <div class="preview-section">
+                                <h4><i class="fas fa-file-alt"></i> Contenido del Prompt</h4>
+                                <div class="template-content-preview">
+                                    <pre><code>${this.escapeHtml(template.content)}</code></pre>
+                                </div>
+                            </div>
+                            
+                            ${template.config && Object.keys(template.config).length > 0 ? `
+                            <div class="preview-section">
+                                <h4><i class="fas fa-cogs"></i> Configuración</h4>
+                                <div class="config-preview">
+                                    ${Object.entries(template.config).map(([key, value]) => `
+                                        <div class="config-item">
+                                            <label>${key}:</label>
+                                            <span>${typeof value === 'boolean' ? (value ? 'Sí' : 'No') : value}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="promptsModule.closeTemplatePreview()">
+                            Cerrar
+                        </button>
+                        <button class="btn btn-primary" onclick="promptsModule.importTemplate('${template.name.replace(/'/g, '\\\\\\\\\\'')}'); promptsModule.closeTemplatePreview();">
+                            <i class="fas fa-download"></i>
+                            Usar Template
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', previewHtml);
+    }
+    
+    /**
+     * Importa un template
+     */
+    async importTemplate(templateName) {
+        try {
+            const response = await AdminAPI.request('getTemplatesLibrary');
+            if (response.success) {
+                const template = response.data.templates.find(t => t.name === templateName);
+                if (template) {
+                    const importResponse = await AdminAPI.request('importTemplate', { template });
+                    
+                    if (importResponse.success) {
+                        showSuccess('Template importado correctamente');
+                        this.closeTemplatesLibrary();
+                        this.refreshPrompts();
+                        
+                        // Abrir el template importado para edición
+                        setTimeout(() => {
+                            this.editPrompt(importResponse.data.id);
+                        }, 500);
+                    } else {
+                        throw new Error(importResponse.message || 'Error al importar template');
+                    }
+                } else {
+                    showError('Template no encontrado');
+                }
+            }
+        } catch (error) {
+            console.error('Error al importar template:', error);
+            showError('Error al importar template: ' + error.message);
+        }
+    }
+    
+    /**
+     * Cierra la biblioteca de templates
+     */
+    closeTemplatesLibrary() {
+        const modal = document.getElementById('templates-library-modal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    
+    /**
+     * Cierra la vista previa del template
+     */
+    closeTemplatePreview() {
+        const modal = document.getElementById('template-preview-modal');
+        if (modal) {
+            modal.remove();
+        }
     }
     
     /**

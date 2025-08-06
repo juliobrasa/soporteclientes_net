@@ -2707,6 +2707,76 @@ try {
             }
             break;
             
+        case 'getTemplatesLibrary':
+            try {
+                $templatesFile = __DIR__ . '/modules/prompts/templates-library.json';
+                
+                if (!file_exists($templatesFile)) {
+                    sendError('Archivo de templates no encontrado');
+                }
+                
+                $templatesData = json_decode(file_get_contents($templatesFile), true);
+                
+                if (!$templatesData) {
+                    sendError('Error al leer templates');
+                }
+                
+                sendResponse([
+                    'success' => true,
+                    'data' => $templatesData
+                ]);
+                
+            } catch (Exception $e) {
+                sendError('Error cargando biblioteca de templates: ' . $e->getMessage());
+            }
+            break;
+            
+        case 'importTemplate':
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (!$data) {
+                $data = $_POST;
+            }
+            
+            if (!isset($data['template'])) {
+                sendError('Template no proporcionado');
+            }
+            
+            try {
+                $template = $data['template'];
+                
+                $stmt = $pdo->prepare("
+                    INSERT INTO prompts (
+                        name, category, language, description, content, status, version,
+                        tags, custom_variables, config
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                
+                $stmt->execute([
+                    $template['name'],
+                    $template['category'],
+                    $template['language'] ?? 'es',
+                    $template['description'] ?? null,
+                    $template['content'],
+                    'draft', // Los templates importados empiezan como draft
+                    $template['version'] ?? '1.0',
+                    json_encode($template['tags'] ?? []),
+                    json_encode($template['variables'] ?? []),
+                    json_encode($template['config'] ?? [])
+                ]);
+                
+                $newId = $pdo->lastInsertId();
+                
+                sendResponse([
+                    'success' => true,
+                    'message' => 'Template importado correctamente',
+                    'data' => ['id' => $newId]
+                ]);
+                
+            } catch (Exception $e) {
+                sendError('Error importando template: ' . $e->getMessage());
+            }
+            break;
+            
         // =========================================
         // MÓDULO LOGS - Sistema de auditoría
         // =========================================
