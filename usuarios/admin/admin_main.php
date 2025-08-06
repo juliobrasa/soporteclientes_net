@@ -16,6 +16,9 @@
     <link rel="stylesheet" href="assets/css/admin-components.css">
     <link rel="stylesheet" href="assets/css/admin-tables.css">
     <link rel="stylesheet" href="assets/css/admin-modals.css">
+    
+    <!-- CSS Responsive Mejorado (Fase 8) -->
+    <link rel="stylesheet" href="responsive-enhancements.css">
 </head>
 <body>
     <!-- Header Modular -->
