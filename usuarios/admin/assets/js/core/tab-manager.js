@@ -363,19 +363,29 @@ class TabManager {
                 }
             },
             apis: () => {
-                showInfo('Módulo de APIs en desarrollo');
+                if (window.loadApisDirect) {
+                    return window.loadApisDirect();
+                }
             },
             extraction: () => {
-                showInfo('Módulo de Extracción en desarrollo');
+                if (window.loadExtractionDirect) {
+                    return window.loadExtractionDirect();
+                }
             },
             ia: () => {
-                showInfo('Módulo de Proveedores IA en desarrollo');
+                if (window.loadProvidersDirect) {
+                    return window.loadProvidersDirect();
+                }
             },
             prompts: () => {
-                showInfo('Módulo de Prompts en desarrollo');
+                if (window.loadPromptsDirect) {
+                    return window.loadPromptsDirect();
+                }
             },
             logs: () => {
-                showInfo('Módulo de Logs en desarrollo');
+                if (window.loadLogsDirect) {
+                    return window.loadLogsDirect();
+                }
             },
             tools: () => {
                 showInfo('Módulo de Herramientas en desarrollo');

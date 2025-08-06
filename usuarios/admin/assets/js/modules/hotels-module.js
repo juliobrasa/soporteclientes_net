@@ -99,6 +99,18 @@ class HotelsModule {
             mobileTemplate: document.getElementById('hotels-mobile-template'),
             cardTemplate: document.getElementById('hotel-card-template')
         };
+        
+        // Debug: Verificar elementos críticos
+        if (!this.elements.container) {
+            console.error('❌ hotels-list-container no encontrado');
+        }
+        if (AdminConfig?.debug?.enabled) {
+            console.log('🔗 Hotels elements bound:', {
+                container: !!this.elements.container,
+                pagination: !!this.elements.pagination,
+                tableTemplate: !!this.elements.tableTemplate
+            });
+        }
     }
     
     /**
@@ -155,6 +167,7 @@ class HotelsModule {
     async loadHotels() {
         if (this.config.isLoading) return;
         
+        console.log('🏨 Iniciando carga de hoteles...');
         this.config.isLoading = true;
         this.showLoadingState();
         
@@ -321,7 +334,11 @@ class HotelsModule {
      * Muestra el estado de carga
      */
     showLoadingState() {
-        if (!this.elements.container) return;
+        if (!this.elements.container) {
+            console.error('❌ No se puede mostrar loading state: container no encontrado');
+            return;
+        }
+        console.log('⏳ Mostrando loading state...');
         
         this.elements.container.innerHTML = `
             <div class="loading-state">
