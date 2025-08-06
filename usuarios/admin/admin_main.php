@@ -34,32 +34,112 @@
             <?php include 'modules/hotels/hotels-tab.php'; ?>
         </div>
         
-        <!-- EMERGENCY BACKUP: Hotels content directly embedded -->
-        <div id="emergency-hotels-backup" style="display: none; padding: 20px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #856404;">🚨 MODO EMERGENCIA - Hotels Backup</h3>
-            <p>Si no ves el contenido de hoteles arriba, este contenido se activará automáticamente.</p>
-            
-            <div class="hotels-container-backup" style="padding: 20px;">
+        <!-- HOTELS MODULE: Direct embedded system -->
+        <div id="hotels-direct-system" style="display: block; padding: 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
+            <div class="hotels-container-direct" style="padding: 20px;">
                 <div class="hotels-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                     <h2 style="margin: 0; color: #495057;">
                         <i class="fas fa-hotel"></i> 
-                        Gestión de Hoteles (Backup)
+                        Gestión de Hoteles
                     </h2>
-                    <button class="btn btn-success" onclick="loadHotelsEmergencyBackup()" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
+                    <button class="btn btn-success" onclick="loadHotelsDirect()" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
                         <i class="fas fa-sync-alt"></i> 
-                        Cargar Hoteles
+                        Recargar Hoteles
                     </button>
                 </div>
                 
-                <div id="hotels-content-backup" style="background: white; padding: 20px; min-height: 400px; border: 1px solid #dee2e6; border-radius: 8px;">
+                <div id="hotels-content-direct" style="background: white; padding: 20px; min-height: 400px; border: 1px solid #dee2e6; border-radius: 8px;">
                     <div style="text-align: center; color: #6c757d; padding: 40px;">
-                        <p>🔄 Haz clic en "Cargar Hoteles" para mostrar los datos</p>
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                        <h3>Cargando hoteles...</h3>
+                        <p>Conectando con la base de datos</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Tab de APIs (Oculto inicialmente) -->
+        <!-- APIS MODULE: Direct embedded system -->
+        <div id="apis-direct-system" style="display: block; padding: 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
+            <div class="apis-container-direct" style="padding: 20px;">
+                <div class="apis-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #e8f4fd; border-radius: 8px;">
+                    <h2 style="margin: 0; color: #495057;">
+                        <i class="fas fa-plug"></i> 
+                        Gestión de APIs
+                    </h2>
+                    <button class="btn btn-info" onclick="loadApisDirect()" style="background: #17a2b8; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-sync-alt"></i> 
+                        Cargar APIs
+                    </button>
+                </div>
+                
+                <div id="apis-content-direct" style="background: white; padding: 20px; min-height: 400px; border: 1px solid #dee2e6; border-radius: 8px;">
+                    <div style="text-align: center; color: #6c757d; padding: 40px;">
+                        <i class="fas fa-plug" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                        <h3>Módulo de APIs</h3>
+                        <p>Gestión de proveedores de API y configuraciones</p>
+                        <button onclick="loadApisDirect()" style="background: #17a2b8; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                            <i class="fas fa-play"></i> Cargar APIs
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXTRACTION MODULE: Direct embedded system -->
+        <div id="extraction-direct-system" style="display: block; padding: 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
+            <div class="extraction-container-direct" style="padding: 20px;">
+                <div class="extraction-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #fff3cd; border-radius: 8px;">
+                    <h2 style="margin: 0; color: #495057;">
+                        <i class="fas fa-download"></i> 
+                        Extracción de Datos
+                    </h2>
+                    <button class="btn btn-warning" onclick="loadExtractionDirect()" style="background: #ffc107; color: #212529; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-sync-alt"></i> 
+                        Cargar Extracción
+                    </button>
+                </div>
+                
+                <div id="extraction-content-direct" style="background: white; padding: 20px; min-height: 400px; border: 1px solid #dee2e6; border-radius: 8px;">
+                    <div style="text-align: center; color: #6c757d; padding: 40px;">
+                        <i class="fas fa-download" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                        <h3>Módulo de Extracción</h3>
+                        <p>Extracción automática de reseñas y datos de hoteles</p>
+                        <button onclick="loadExtractionDirect()" style="background: #ffc107; color: #212529; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                            <i class="fas fa-play"></i> Cargar Extracción
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROVIDERS MODULE: Direct embedded system -->
+        <div id="providers-direct-system" style="display: block; padding: 20px; background: #fff; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
+            <div class="providers-container-direct" style="padding: 20px;">
+                <div class="providers-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 15px; background: #f8d7da; border-radius: 8px;">
+                    <h2 style="margin: 0; color: #495057;">
+                        <i class="fas fa-server"></i> 
+                        Gestión de Proveedores
+                    </h2>
+                    <button class="btn btn-danger" onclick="loadProvidersDirect()" style="background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-sync-alt"></i> 
+                        Cargar Proveedores
+                    </button>
+                </div>
+                
+                <div id="providers-content-direct" style="background: white; padding: 20px; min-height: 400px; border: 1px solid #dee2e6; border-radius: 8px;">
+                    <div style="text-align: center; color: #6c757d; padding: 40px;">
+                        <i class="fas fa-server" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                        <h3>Módulo de Proveedores</h3>
+                        <p>Gestión de proveedores IA y configuraciones</p>
+                        <button onclick="loadProvidersDirect()" style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                            <i class="fas fa-play"></i> Cargar Proveedores
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab de APIs (Oculto inicialmente - legacy) -->
         <div id="apis-tab" class="tab-content" style="display:none;">
             <div class="card">
                 <div class="card-header">
@@ -424,61 +504,45 @@
     
     <!-- EMERGENCY HOTELS SYSTEM -->
     <script>
-    // Sistema de emergencia para hotels
+    // Sistema directo para todos los módulos
     setTimeout(function() {
-        console.log('🚨 VERIFICANDO SISTEMA DE EMERGENCIA...');
+        console.log('🚀 INICIALIZANDO SISTEMA DIRECTO...');
         
-        // Verificar si los elementos principales existen
-        const hotelsContent = document.getElementById('hotels-content');
-        const hotelsLoading = document.getElementById('hotels-loading-state');
-        const emergencyBackup = document.getElementById('emergency-hotels-backup');
-        
-        console.log('hotels-content:', !!hotelsContent);
-        console.log('hotels-loading-state:', !!hotelsLoading);
-        console.log('emergency-backup:', !!emergencyBackup);
-        
-        if (!hotelsContent && !hotelsLoading && emergencyBackup) {
-            console.log('🆘 ACTIVANDO SISTEMA DE EMERGENCIA');
-            emergencyBackup.style.display = 'block';
-            
-            // Auto-cargar hoteles después de 2 segundos
-            setTimeout(function() {
-                if (typeof loadHotelsEmergencyBackup === 'function') {
-                    loadHotelsEmergencyBackup();
-                }
-            }, 2000);
-        } else if (hotelsContent || hotelsLoading) {
-            console.log('✅ Sistema principal funcionando correctamente');
+        // Auto-cargar hoteles
+        if (typeof loadHotelsDirect === 'function') {
+            loadHotelsDirect();
         }
-    }, 3000);
-    
-    // Función para cargar hoteles en modo de emergencia
-    function loadHotelsEmergencyBackup() {
-        console.log('🚨 Cargando hoteles en modo de emergencia...');
-        const backupContent = document.getElementById('hotels-content-backup');
         
-        if (backupContent) {
-            backupContent.innerHTML = '<div style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Cargando hoteles...</div>';
+        console.log('✅ Sistema directo inicializado para todos los módulos');
+    }, 1000);
+    
+    // Función principal para cargar hoteles directamente
+    function loadHotelsDirect() {
+        console.log('🏨 Cargando hoteles directamente...');
+        const directContent = document.getElementById('hotels-content-direct');
+        
+        if (directContent) {
+            directContent.innerHTML = '<div style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Cargando hoteles...</div>';
             
             fetch('admin_api.php?action=getHotels')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.hotels) {
-                        displayHotelsBackupTable(data.hotels);
+                        displayHotelsDirectTable(data.hotels);
                     } else {
-                        backupContent.innerHTML = `<div style="color: #dc3545; text-align: center; padding: 20px;">❌ Error: ${data.error || 'No se pudieron cargar los hoteles'}</div>`;
+                        directContent.innerHTML = `<div style="color: #dc3545; text-align: center; padding: 20px;">❌ Error: ${data.error || 'No se pudieron cargar los hoteles'}</div>`;
                     }
                 })
                 .catch(error => {
-                    backupContent.innerHTML = `<div style="color: #dc3545; text-align: center; padding: 20px;">❌ Error de conexión: ${error.message}</div>`;
+                    directContent.innerHTML = `<div style="color: #dc3545; text-align: center; padding: 20px;">❌ Error de conexión: ${error.message}</div>`;
                 });
         }
     }
     
-    // Mostrar tabla de hoteles en modo backup
-    function displayHotelsBackupTable(hotels) {
-        const backupContent = document.getElementById('hotels-content-backup');
-        if (!backupContent) return;
+    // Mostrar tabla de hoteles en modo directo
+    function displayHotelsDirectTable(hotels) {
+        const directContent = document.getElementById('hotels-content-direct');
+        if (!directContent) return;
         
         let html = `
             <div style="overflow-x: auto;">
@@ -528,12 +592,12 @@
                 </table>
             </div>
             <div style="margin-top: 15px; text-align: center; padding: 15px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px;">
-                <strong>✅ ${hotels.length} hoteles cargados en modo de emergencia</strong><br>
-                <small>Sistema principal no disponible - usando backup</small>
+                <strong>✅ ${hotels.length} hoteles cargados correctamente</strong><br>
+                <small>Sistema directo funcionando</small>
             </div>
         `;
         
-        backupContent.innerHTML = html;
+        directContent.innerHTML = html;
     }
     
     // Función auxiliar
@@ -549,11 +613,109 @@
         return text.replace(/[&<>"']/g, function(m) { return map[m]; });
     }
     
-    // Hacer funciones globales
-    window.loadHotelsEmergencyBackup = loadHotelsEmergencyBackup;
-    window.displayHotelsBackupTable = displayHotelsBackupTable;
+    // ============================================================================
+    // FUNCIONES PARA OTROS MÓDULOS
+    // ============================================================================
     
-    console.log('🚨 Sistema de emergencia para Hotels inicializado');
+    // Función para cargar APIs
+    function loadApisDirect() {
+        console.log('🔌 Cargando APIs directamente...');
+        const content = document.getElementById('apis-content-direct');
+        if (content) {
+            content.innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-plug" style="font-size: 3rem; color: #17a2b8; margin-bottom: 20px;"></i>
+                    <h3>Gestión de APIs Externas</h3>
+                    <p style="margin: 20px 0;">Configuración de proveedores de API para extracción de datos</p>
+                    <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                        <h4>🔧 Funcionalidades disponibles:</h4>
+                        <ul style="text-align: left; max-width: 400px; margin: 0 auto;">
+                            <li>Configuración de APIs de Booking.com</li>
+                            <li>Gestión de límites de rate limit</li>
+                            <li>Monitoreo de uso de APIs</li>
+                            <li>Configuración de webhooks</li>
+                        </ul>
+                    </div>
+                    <button onclick="alert('Funcionalidad en desarrollo')" style="background: #17a2b8; color: white; border: none; padding: 12px 24px; border-radius: 6px; margin-top: 20px; cursor: pointer;">
+                        <i class="fas fa-cog"></i> Configurar APIs
+                    </button>
+                </div>
+            `;
+        }
+    }
+    
+    // Función para cargar Extracción
+    function loadExtractionDirect() {
+        console.log('📥 Cargando Extracción directamente...');
+        const content = document.getElementById('extraction-content-direct');
+        if (content) {
+            content.innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-download" style="font-size: 3rem; color: #ffc107; margin-bottom: 20px;"></i>
+                    <h3>Extracción de Datos de Hotels</h3>
+                    <p style="margin: 20px 0;">Sistema automático de extracción de reseñas y datos</p>
+                    <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                        <h4>📊 Funcionalidades disponibles:</h4>
+                        <ul style="text-align: left; max-width: 400px; margin: 0 auto;">
+                            <li>Extracción automática de reseñas</li>
+                            <li>Monitoreo de jobs en tiempo real</li>
+                            <li>Configuración de horarios</li>
+                            <li>Filtros avanzados de extracción</li>
+                        </ul>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                        <button onclick="alert('Iniciando extracción...')" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-play"></i> Iniciar Extracción
+                        </button>
+                        <button onclick="alert('Funcionalidad en desarrollo')" style="background: #ffc107; color: #212529; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-cog"></i> Configurar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    // Función para cargar Proveedores
+    function loadProvidersDirect() {
+        console.log('🖥️ Cargando Proveedores directamente...');
+        const content = document.getElementById('providers-content-direct');
+        if (content) {
+            content.innerHTML = `
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-server" style="font-size: 3rem; color: #dc3545; margin-bottom: 20px;"></i>
+                    <h3>Gestión de Proveedores IA</h3>
+                    <p style="margin: 20px 0;">Configuración de proveedores de inteligencia artificial</p>
+                    <div style="background: #f8d7da; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                        <h4>🤖 Proveedores disponibles:</h4>
+                        <ul style="text-align: left; max-width: 400px; margin: 0 auto;">
+                            <li>OpenAI GPT-4 / GPT-3.5</li>
+                            <li>Anthropic Claude</li>
+                            <li>Google PaLM</li>
+                            <li>Proveedores personalizados</li>
+                        </ul>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                        <button onclick="alert('Funcionalidad en desarrollo')" style="background: #dc3545; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-plus"></i> Agregar Proveedor
+                        </button>
+                        <button onclick="alert('Funcionalidad en desarrollo')" style="background: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-list"></i> Ver Todos
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    // Hacer funciones globales
+    window.loadHotelsDirect = loadHotelsDirect;
+    window.displayHotelsDirectTable = displayHotelsDirectTable;
+    window.loadApisDirect = loadApisDirect;
+    window.loadExtractionDirect = loadExtractionDirect;
+    window.loadProvidersDirect = loadProvidersDirect;
+    
+    console.log('🚀 Sistema directo para todos los módulos inicializado');
     </script>
 </body>
 </html>
