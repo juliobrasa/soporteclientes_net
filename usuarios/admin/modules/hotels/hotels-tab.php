@@ -81,6 +81,9 @@
                 <p>Por favor espera mientras cargamos la información</p>
             </div>
         </div>
+        
+        <!-- Contenedor para datos directos -->
+        <div id="hotels-content" style="display: none;"></div>
 
         <!-- Paginación -->
         <div id="hotels-pagination" class="pagination" style="display: none;">
@@ -466,4 +469,238 @@ document.addEventListener('tabChanged', function(event) {
         }, 100);
     }
 });
+
+// ============================================================================
+// FUERZA BRUTA - Carga directa de datos para evitar loading infinito
+// ============================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Iniciando carga directa de hoteles...');
+    setTimeout(function() {
+        loadHotelsDirectly();
+    }, 1000);
+});
+
+function loadHotelsDirectly() {
+    console.log('⚡ Cargando hoteles directamente...');
+    fetch('admin_api.php?action=getHotels')
+        .then(response => {
+            console.log('📡 Respuesta recibida:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('📊 Datos procesados:', data);
+            if (data.success && data.hotels) {
+                console.log(`✅ ${data.hotels.length} hoteles recibidos`);
+                displayHotelsTable(data.hotels);
+            } else {
+                console.error('❌ Error en respuesta:', data.error || 'Sin datos');
+                showDirectError('Error en los datos: ' + (data.error || 'Respuesta inválida'));
+            }
+        })
+        .catch(error => {
+            console.error('💥 Error de conexión:', error);
+            showDirectError('Error de conexión: ' + error.message);
+        });
+}
+
+function displayHotelsTable(hotels) {
+    console.log('🎨 Generando tabla para', hotels.length, 'hoteles');
+    
+    // Ocultar loading y mostrar contenido
+    const loadingDiv = document.getElementById('hotels-loading');
+    const containerDiv = document.getElementById('hotels-list-container');
+    const contentDiv = document.getElementById('hotels-content');
+    
+    if (loadingDiv && loadingDiv.parentNode) {
+        loadingDiv.style.display = 'none';
+    }
+    if (containerDiv) {
+        containerDiv.style.display = 'none';
+    }
+    if (contentDiv) {
+        contentDiv.style.display = 'block';
+    }
+    
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th>Hotel</th>
+                        <th>Destino</th>
+                        <th style="width: 120px;">Reviews</th>
+                        <th style="width: 100px;">Rating</th>
+                        <th style="width: 100px;">Estado</th>
+                        <th style="width: 130px;">Fecha</th>
+                        <th style="width: 150px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    hotels.forEach(hotel => {
+        const statusClass = hotel.activo ? 'success' : 'danger';
+        const statusText = hotel.activo ? 'Activo' : 'Inactivo';
+        const rating = hotel.avg_rating ? parseFloat(hotel.avg_rating).toFixed(1) : '0.0';
+        const reviews = hotel.total_reviews || 0;
+        const createdAt = hotel.created_at || '';
+        
+        html += `
+            <tr>
+                <td><strong>#${hotel.id}</strong></td>
+                <td>
+                    <div>
+                        <strong>${escapeHtml(hotel.nombre_hotel)}</strong>
+                        ${hotel.url_booking ? `<br><small><a href="${hotel.url_booking}" target="_blank" class="text-muted">🔗 Ver en Booking</a></small>` : ''}
+                    </div>
+                </td>
+                <td><span class="text-capitalize">${escapeHtml(hotel.hoja_destino || 'N/A')}</span></td>
+                <td>
+                    <span class="badge bg-info">${reviews} reviews</span>
+                    ${hotel.recent_reviews ? `<br><small>${hotel.recent_reviews} recientes</small>` : ''}
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <span class="badge ${rating >= 8 ? 'bg-success' : rating >= 6 ? 'bg-warning' : 'bg-danger'}">${rating}</span>
+                        <small class="ms-1">⭐</small>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-${statusClass}">${statusText}</span>
+                </td>
+                <td>
+                    <small class="text-muted">${createdAt.split(' ')[0] || 'N/A'}</small>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-primary" onclick="editHotel(${hotel.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-info" onclick="viewHotel(${hotel.id})" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-${hotel.activo ? 'warning' : 'success'}" 
+                                onclick="toggleHotelStatus(${hotel.id}, ${hotel.activo})" 
+                                title="${hotel.activo ? 'Desactivar' : 'Activar'}">
+                            <i class="fas fa-${hotel.activo ? 'pause' : 'play'}"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="deleteHotel(${hotel.id}, '${escapeHtml(hotel.nombre_hotel)}')" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted">Total: ${hotels.length} hoteles</span>
+                <button class="btn btn-success" onclick="addHotel()">
+                    <i class="fas fa-plus"></i> Agregar Hotel
+                </button>
+            </div>
+        </div>
+    `;
+    
+    if (contentDiv) {
+        contentDiv.innerHTML = html;
+    }
+    
+    console.log('✅ Tabla generada exitosamente');
+}
+
+function showDirectError(message) {
+    const contentDiv = document.getElementById('hotels-content');
+    const loadingDiv = document.getElementById('hotels-loading');
+    
+    if (loadingDiv && loadingDiv.parentNode) {
+        loadingDiv.style.display = 'none';
+    }
+    
+    if (contentDiv) {
+        contentDiv.style.display = 'block';
+        contentDiv.innerHTML = `
+            <div class="alert alert-danger" role="alert">
+                <h4 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Error</h4>
+                <p>${message}</p>
+                <hr>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-danger" onclick="loadHotelsDirectly()">
+                        <i class="fas fa-redo"></i> Reintentar
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="addHotel()">
+                        <i class="fas fa-plus"></i> Agregar Hotel
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Funciones auxiliares
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+// Funciones de acción (placeholder - se pueden conectar con el módulo real)
+function editHotel(id) {
+    console.log('Editar hotel:', id);
+    if (window.hotelsModule && typeof window.hotelsModule.editHotel === 'function') {
+        window.hotelsModule.editHotel(id);
+    } else {
+        alert('Función de editar hotel no disponible');
+    }
+}
+
+function viewHotel(id) {
+    console.log('Ver hotel:', id);
+    if (window.hotelsModule && typeof window.hotelsModule.viewDetails === 'function') {
+        window.hotelsModule.viewDetails(id);
+    } else {
+        alert('Función de ver detalles no disponible');
+    }
+}
+
+function toggleHotelStatus(id, currentStatus) {
+    console.log('Toggle status hotel:', id, currentStatus);
+    if (window.hotelsModule && typeof window.hotelsModule.toggleStatus === 'function') {
+        window.hotelsModule.toggleStatus(id, currentStatus ? 'active' : 'inactive');
+    } else {
+        alert('Función de cambiar estado no disponible');
+    }
+}
+
+function deleteHotel(id, name) {
+    console.log('Eliminar hotel:', id, name);
+    if (confirm(`¿Estás seguro de que quieres eliminar el hotel "${name}"?`)) {
+        if (window.hotelsModule && typeof window.hotelsModule.confirmDelete === 'function') {
+            window.hotelsModule.confirmDelete(id, name);
+        } else {
+            alert('Función de eliminar hotel no disponible');
+        }
+    }
+}
+
+function addHotel() {
+    console.log('Agregar nuevo hotel');
+    if (window.hotelsModule && typeof window.hotelsModule.showAddModal === 'function') {
+        window.hotelsModule.showAddModal();
+    } else {
+        alert('Función de agregar hotel no disponible');
+    }
+}
 </script>

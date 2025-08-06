@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Hotels Module</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .loading-state { text-align: center; padding: 40px; }
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .btn { padding: 5px 10px; margin: 2px; border: none; cursor: pointer; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        .status-active { background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <h1>🧪 Test Hotels Module</h1>
+    
+    <div>
+        <button onclick="testDirectAPI()" class="btn btn-info">🔗 Test Direct API</button>
+        <button onclick="testModuleInit()" class="btn btn-success">🏨 Test Module Init</button>
+        <button onclick="testModuleRender()" class="btn btn-success">🎨 Test Module Render</button>
+    </div>
+    
+    <div id="results" style="margin-top: 20px;"></div>
+    
+    <!-- Simular estructura necesaria -->
+    <div id="hotels-list-container" style="margin-top: 20px;">
+        <div class="loading-state">
+            <i class="fas fa-spinner fa-spin spinner"></i>
+            <h3>Esperando test...</h3>
+        </div>
+    </div>
+
+    <!-- Templates necesarios -->
+    <template id="hotels-table-template">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre del Hotel</th>
+                        <th>Estado</th>
+                        <th>Fecha Creación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="hotels-table-body">
+                    <!-- Las filas se generan dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </template>
+
+    <template id="hotel-row-template">
+        <tr data-hotel-id="{id}">
+            <td>{id}</td>
+            <td>
+                <strong>{name}</strong>
+                {description}
+            </td>
+            <td>{status_badge}</td>
+            <td>{created_at}</td>
+            <td>
+                <button class="btn btn-info">Editar</button>
+            </td>
+        </tr>
+    </template>
+
+    <!-- Configuración y módulos -->
+    <script>
+        // Configuración mínima
+        window.AdminConfig = {
+            debug: { enabled: true },
+            api: { baseUrl: 'admin_api.php' }
+        };
+        
+        // Mock del apiClient
+        window.apiClient = {
+            async getHotels(params = {}) {
+                console.log('🔄 Mock apiClient.getHotels llamado con:', params);
+                const response = await fetch('admin_api.php?action=getHotels');
+                const data = await response.json();
+                console.log('📊 Datos recibidos:', data);
+                return data;
+            }
+        };
+        
+        // Funciones de test
+        async function testDirectAPI() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>🔄 Probando API directa...</p>';
+            
+            try {
+                const response = await fetch('admin_api.php?action=getHotels');
+                const data = await response.json();
+                
+                resultsDiv.innerHTML = `
+                    <h3>✅ API Test Results:</h3>
+                    <p><strong>Success:</strong> ${data.success}</p>
+                    <p><strong>Total Hotels:</strong> ${data.total}</p>
+                    <p><strong>Hotels Count:</strong> ${data.hotels ? data.hotels.length : 0}</p>
+                    <details>
+                        <summary>Ver JSON completo</summary>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </details>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `<p>❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        function testModuleInit() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <h3>🔍 Module Initialization Test:</h3>
+                <p><strong>hotelsModule exists:</strong> ${typeof window.hotelsModule !== 'undefined' ? '✅' : '❌'}</p>
+                <p><strong>loadHotels method:</strong> ${typeof window.hotelsModule?.loadHotels === 'function' ? '✅' : '❌'}</p>
+                <p><strong>renderHotelsList method:</strong> ${typeof window.hotelsModule?.renderHotelsList === 'function' ? '✅' : '❌'}</p>
+            `;
+        }
+        
+        async function testModuleRender() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>🎨 Probando renderizado del módulo...</p>';
+            
+            if (window.hotelsModule) {
+                try {
+                    await window.hotelsModule.loadHotels();
+                    resultsDiv.innerHTML = '<p>✅ Módulo ejecutado, revisa el contenedor de hoteles abajo.</p>';
+                } catch (error) {
+                    resultsDiv.innerHTML = `<p>❌ Error en módulo: ${error.message}</p>`;
+                }
+            } else {
+                resultsDiv.innerHTML = '<p>❌ hotelsModule no encontrado</p>';
+            }
+        }
+    </script>
+    
+    <!-- Cargar módulo de hoteles -->
+    <script src="assets/js/modules/hotels-module.js"></script>
+</body>
+</html>
