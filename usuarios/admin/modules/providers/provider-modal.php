@@ -252,6 +252,46 @@
     box-shadow: 0 0 0 3px var(--primary-bg);
 }
 
+/* Estados de validación */
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+    border-color: var(--danger);
+    background-color: #ffeaea;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.form-group input.success,
+.form-group select.success,
+.form-group textarea.success {
+    border-color: var(--success);
+    background-color: #eafff0;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+}
+
+.field-error {
+    color: var(--danger);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+/* Indicadores visuales para campos validados */
+.form-group input.success::after,
+.form-group select.success::after {
+    content: '✓';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--success);
+    font-weight: bold;
+}
+
+.form-group {
+    position: relative;
+}
+
 .form-help {
     font-size: 0.8rem;
     color: var(--text-muted);
@@ -603,6 +643,31 @@ document.addEventListener('DOMContentLoaded', function() {
             const providerType = document.getElementById('provider-type').value;
             
             testBtn.disabled = !hasApiKey && providerType !== 'local';
+            
+            // Validar formato de API key según el tipo
+            validateApiKey(providerType, this.value.trim());
+        });
+    }
+    
+    // Validación en tiempo real del formulario
+    const formInputs = providerForm.querySelectorAll('input[required], select[required]');
+    formInputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            validateField(this);
+        });
+        
+        input.addEventListener('input', function() {
+            if (this.classList.contains('error')) {
+                validateField(this);
+            }
+        });
+    });
+    
+    // Validar parámetros JSON
+    const customParamsInput = document.getElementById('custom-parameters');
+    if (customParamsInput) {
+        customParamsInput.addEventListener('blur', function() {
+            validateJsonParameters(this);
         });
     }
     
@@ -610,6 +675,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (providerForm) {
         providerForm.addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            // Validar formulario antes de enviar
+            if (!validateProviderForm()) {
+                showError('Por favor, corrije los errores en el formulario');
+                return;
+            }
             
             const saveBtn = document.getElementById('save-provider-btn');
             const originalText = saveBtn.innerHTML;
@@ -658,4 +729,173 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('✅ Modal de proveedores inicializado');
 });
+
+/**
+ * Funciones de validación
+ */
+
+// Validar campo individual
+function validateField(field) {
+    const value = field.value.trim();
+    const fieldName = field.name;
+    let isValid = true;
+    let errorMessage = '';
+    
+    // Remover clases de error anteriores
+    field.classList.remove('error', 'success');
+    removeFieldError(field);
+    
+    // Validaciones básicas
+    if (field.hasAttribute('required') && !value) {
+        isValid = false;
+        errorMessage = 'Este campo es requerido';
+    } else if (fieldName === 'name' && value.length < 3) {
+        isValid = false;
+        errorMessage = 'El nombre debe tener al menos 3 caracteres';
+    } else if (fieldName === 'api_url' && value && !isValidUrl(value)) {
+        isValid = false;
+        errorMessage = 'Debe ser una URL válida';
+    }
+    
+    // Aplicar estilos según validación
+    if (!isValid) {
+        field.classList.add('error');
+        showFieldError(field, errorMessage);
+    } else if (value) {
+        field.classList.add('success');
+    }
+    
+    return isValid;
+}
+
+// Validar API key según tipo de proveedor
+function validateApiKey(providerType, apiKey) {
+    const apiKeyInput = document.getElementById('api-key');
+    if (!apiKeyInput || !apiKey) return;
+    
+    let isValid = true;
+    let message = '';
+    
+    apiKeyInput.classList.remove('error', 'success');
+    removeFieldError(apiKeyInput);
+    
+    switch (providerType) {
+        case 'openai':
+            // OpenAI keys start with sk-
+            if (!apiKey.startsWith('sk-') || apiKey.length < 20) {
+                isValid = false;
+                message = 'Las API keys de OpenAI deben comenzar con "sk-"';
+            }
+            break;
+            
+        case 'claude':
+            // Claude keys start with sk-ant-
+            if (!apiKey.startsWith('sk-ant-') || apiKey.length < 30) {
+                isValid = false;
+                message = 'Las API keys de Claude deben comenzar con "sk-ant-"';
+            }
+            break;
+            
+        case 'deepseek':
+            // DeepSeek keys are typically longer
+            if (apiKey.length < 15) {
+                isValid = false;
+                message = 'API key de DeepSeek parece muy corta';
+            }
+            break;
+            
+        case 'gemini':
+            // Gemini keys are typically 39 characters
+            if (apiKey.length < 30) {
+                isValid = false;
+                message = 'API key de Gemini parece muy corta';
+            }
+            break;
+    }
+    
+    if (!isValid) {
+        apiKeyInput.classList.add('error');
+        showFieldError(apiKeyInput, message);
+    } else {
+        apiKeyInput.classList.add('success');
+    }
+}
+
+// Validar parámetros JSON
+function validateJsonParameters(textarea) {
+    const value = textarea.value.trim();
+    
+    textarea.classList.remove('error', 'success');
+    removeFieldError(textarea);
+    
+    if (!value) return true; // Opcional
+    
+    try {
+        JSON.parse(value);
+        textarea.classList.add('success');
+        return true;
+    } catch (e) {
+        textarea.classList.add('error');
+        showFieldError(textarea, 'JSON inválido: ' + e.message);
+        return false;
+    }
+}
+
+// Mostrar error en campo
+function showFieldError(field, message) {
+    removeFieldError(field);
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'field-error';
+    errorDiv.textContent = message;
+    errorDiv.style.cssText = `
+        color: var(--danger);
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+        display: block;
+    `;
+    
+    field.parentNode.appendChild(errorDiv);
+}
+
+// Remover error de campo
+function removeFieldError(field) {
+    const existingError = field.parentNode.querySelector('.field-error');
+    if (existingError) {
+        existingError.remove();
+    }
+}
+
+// Validar URL
+function isValidUrl(string) {
+    try {
+        new URL(string);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+// Validar todo el formulario
+function validateProviderForm() {
+    const form = document.getElementById('provider-form');
+    const requiredFields = form.querySelectorAll('input[required], select[required]');
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+        if (!validateField(field)) {
+            isValid = false;
+        }
+    });
+    
+    // Validar JSON si tiene contenido
+    const customParams = document.getElementById('custom-parameters');
+    if (customParams && customParams.value.trim()) {
+        if (!validateJsonParameters(customParams)) {
+            isValid = false;
+        }
+    }
+    
+    return isValid;
+}
 </script>
