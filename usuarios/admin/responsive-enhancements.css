@@ -1,0 +1,440 @@
+/* ==========================================================================
+   MEJORAS RESPONSIVE ADICIONALES - FASE 8
+   Kavia Hoteles Panel de Administración
+   Mejoras específicas para responsive design
+   ========================================================================== */
+
+/* Breakpoints mejorados para mejor cobertura de dispositivos */
+
+/* Extra Small devices (portrait phones, menos de 576px) */
+@media (max-width: 575.98px) {
+    .container {
+        padding: 0.5rem;
+    }
+    
+    .card {
+        margin-bottom: 0.75rem;
+        border-radius: 0.25rem;
+    }
+    
+    .card-header,
+    .card-body,
+    .card-footer {
+        padding: 0.75rem;
+    }
+    
+    .btn {
+        min-height: 44px; /* Tamaño mínimo para touch */
+        padding: 0.75rem 1rem;
+    }
+    
+    .btn-sm {
+        min-height: 38px;
+        font-size: 0.8rem;
+    }
+    
+    /* Navegación móvil mejorada */
+    .nav-tabs {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .nav-tabs .nav-item {
+        width: 100%;
+    }
+    
+    .nav-tabs .nav-link {
+        text-align: center;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Modales en móvil pequeño */
+    .modal-dialog {
+        width: calc(100% - 1rem);
+        margin: 0.5rem;
+    }
+    
+    .modal-content {
+        border-radius: 0.25rem;
+    }
+    
+    /* Tablas responsive mejoradas */
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.5rem 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80px;
+    }
+    
+    /* Grid responsive extremo */
+    .grid-cols-2,
+    .grid-cols-3,
+    .grid-cols-4 {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+}
+
+/* Small devices (landscape phones, 576px y arriba) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid-cols-3,
+    .grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .modal-dialog {
+        max-width: 90%;
+    }
+    
+    /* Navegación en móvil horizontal */
+    .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .nav-tabs .nav-link {
+        white-space: nowrap;
+        min-width: 120px;
+    }
+}
+
+/* Medium devices (tablets, 768px y arriba) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .container {
+        padding: 1.5rem;
+    }
+    
+    .grid-cols-3,
+    .grid-cols-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .modal-dialog {
+        max-width: 80%;
+    }
+    
+    /* Sidebar para tablets */
+    .sidebar {
+        width: 200px;
+    }
+    
+    .main-content {
+        margin-left: 200px;
+    }
+}
+
+/* Large devices (desktops, 992px y arriba) */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    .grid-cols-4 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .modal-lg {
+        max-width: 900px;
+    }
+}
+
+/* Extra large devices (large desktops, 1200px y arriba) */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1140px;
+        margin: 0 auto;
+    }
+    
+    .modal-xl {
+        max-width: 1140px;
+    }
+    
+    /* Aprovechar espacio en pantallas grandes */
+    .grid-cols-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .grid-cols-5 {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+/* Ultra wide screens (1400px y arriba) */
+@media (min-width: 1400px) {
+    .container {
+        max-width: 1320px;
+    }
+    
+    .grid-cols-6 {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+/* Mejoras específicas para componentes */
+
+/* Cards responsive mejoradas */
+@media (max-width: 767.98px) {
+    .card-horizontal {
+        flex-direction: column;
+    }
+    
+    .card-horizontal .card-image {
+        width: 100%;
+        height: 200px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .stat-card .stat-number {
+        font-size: 1.5rem;
+    }
+}
+
+/* Formularios responsive */
+@media (max-width: 767.98px) {
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .input-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .input-group .form-control,
+    .input-group .btn {
+        width: 100%;
+        border-radius: var(--border-radius);
+    }
+}
+
+/* Botones responsive */
+@media (max-width: 575.98px) {
+    .btn-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+        margin: 0;
+    }
+    
+    .btn-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+}
+
+/* Alertas responsive */
+@media (max-width: 575.98px) {
+    .alert {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .alert .btn-close {
+        min-height: 32px;
+        min-width: 32px;
+    }
+}
+
+/* Navegación responsive avanzada */
+@media (max-width: 991.98px) {
+    .navbar-nav {
+        padding: 1rem 0;
+    }
+    
+    .navbar-nav .nav-link {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .navbar-nav .nav-link:last-child {
+        border-bottom: none;
+    }
+}
+
+/* Mejoras de accesibilidad para touch */
+@media (hover: none) and (pointer: coarse) {
+    .btn,
+    .nav-link,
+    .dropdown-item,
+    .close,
+    .page-link {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .table td,
+    .table th {
+        padding: 0.75rem;
+    }
+    
+    /* Mejorar espaciado para dedos */
+    .btn-group .btn {
+        margin: 0.25rem;
+    }
+    
+    .nav-tabs .nav-link {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Optimizaciones de rendimiento */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --dark: #f3f4f6;
+        --light-gray: #1f2937;
+        --white: #111827;
+        --border-color: #374151;
+    }
+    
+    body {
+        background-color: #111827;
+        color: #f3f4f6;
+    }
+    
+    .card {
+        background: #1f2937;
+        border-color: #374151;
+    }
+    
+    .modal-content {
+        background: #1f2937;
+        color: #f3f4f6;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .btn-primary {
+        background-color: #000000;
+        border-color: #000000;
+        color: #ffffff;
+    }
+    
+    .btn-secondary {
+        background-color: #ffffff;
+        border-color: #000000;
+        color: #000000;
+    }
+    
+    .card {
+        border: 2px solid #000000;
+    }
+    
+    .alert {
+        border-width: 2px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .nav-tabs,
+    .btn,
+    .modal,
+    .sidebar,
+    .floating-panel {
+        display: none !important;
+    }
+    
+    .container {
+        width: 100% !important;
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    .card {
+        border: 1px solid #000000;
+        box-shadow: none;
+        break-inside: avoid;
+    }
+    
+    .table {
+        font-size: 10pt;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.25rem;
+        border: 1px solid #000000;
+    }
+}
+
+/* Utilidades responsive adicionales */
+.d-none { display: none !important; }
+.d-inline { display: inline !important; }
+.d-inline-block { display: inline-block !important; }
+.d-block { display: block !important; }
+.d-flex { display: flex !important; }
+
+/* Responsive display utilities */
+@media (max-width: 575.98px) {
+    .d-xs-none { display: none !important; }
+    .d-xs-inline { display: inline !important; }
+    .d-xs-inline-block { display: inline-block !important; }
+    .d-xs-block { display: block !important; }
+    .d-xs-flex { display: flex !important; }
+}
+
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .d-sm-none { display: none !important; }
+    .d-sm-inline { display: inline !important; }
+    .d-sm-inline-block { display: inline-block !important; }
+    .d-sm-block { display: block !important; }
+    .d-sm-flex { display: flex !important; }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .d-md-none { display: none !important; }
+    .d-md-inline { display: inline !important; }
+    .d-md-inline-block { display: inline-block !important; }
+    .d-md-block { display: block !important; }
+    .d-md-flex { display: flex !important; }
+}
+
+@media (min-width: 992px) {
+    .d-lg-none { display: none !important; }
+    .d-lg-inline { display: inline !important; }
+    .d-lg-inline-block { display: inline-block !important; }
+    .d-lg-block { display: block !important; }
+    .d-lg-flex { display: flex !important; }
+}
