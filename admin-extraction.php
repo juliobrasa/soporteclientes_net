@@ -594,7 +594,10 @@ $hotels = getActiveHotels();
             
             // En lugar de recargar completamente, actualizar la tabla y empezar polling
             if (successful.length > 0) {
-                startProgressPolling();
+                // Esperar un poco para asegurar que el DOM esté listo
+                setTimeout(() => {
+                    startProgressPolling();
+                }, 1000);
             } else {
                 location.reload();
             }
@@ -659,8 +662,45 @@ $hotels = getActiveHotels();
     }
 
     function deleteJob(id) {
-        if (confirm('¿Eliminar este trabajo de extracción?')) {
-            alert('Eliminar trabajo ID: ' + id);
+        if (confirm('¿Estás seguro de que quieres eliminar este trabajo de extracción?\n\nEsta acción no se puede deshacer.')) {
+            console.log('🗑️ Eliminando trabajo ID:', id);
+            
+            fetch(`api-extraction.php?job_id=${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Admin-Session': '<?php echo session_id(); ?>',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('📋 Respuesta eliminación:', data);
+                
+                if (data.success) {
+                    showToast('✅ Trabajo eliminado correctamente', 'success');
+                    
+                    // Remover la fila de la tabla
+                    const row = document.querySelector(`tr[data-job-id="${id}"]`);
+                    if (row) {
+                        row.remove();
+                        console.log('✅ Fila eliminada del DOM');
+                    }
+                    
+                    // Si la tabla queda vacía, recargar para mostrar mensaje
+                    const tbody = document.querySelector('#jobsTable tbody');
+                    if (tbody && tbody.children.length === 0) {
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                } else {
+                    showToast('❌ Error: ' + (data.error || 'Error desconocido'), 'danger');
+                    console.error('❌ Error eliminando:', data);
+                }
+            })
+            .catch(error => {
+                showToast('❌ Error de conexión al eliminar', 'danger');
+                console.error('❌ Error:', error);
+            });
         }
     }
 
@@ -677,20 +717,36 @@ $hotels = getActiveHotels();
     function startProgressPolling() {
         console.log('🔄 Iniciando polling de progreso...');
         
+        // Verificar que estamos en el DOM correcto
+        if (!document.body) {
+            console.error('❌ DOM no está listo para polling');
+            return;
+        }
+        
         // Limpiar polling anterior si existe
         if (pollingInterval) {
             clearInterval(pollingInterval);
         }
         
         // Mostrar indicador de que está activo el polling
-        showPollingIndicator();
+        try {
+            showPollingIndicator();
+        } catch (error) {
+            console.error('❌ Error mostrando indicador:', error);
+        }
         
         pollingCount = 0;
         pollingInterval = setInterval(() => {
             pollingCount++;
             console.log(`🔄 Polling #${pollingCount}`);
             
-            updateExtractionProgress();
+            try {
+                updateExtractionProgress();
+            } catch (error) {
+                console.error('❌ Error en polling:', error);
+                stopProgressPolling();
+                showToast('⚠️ Error en sistema de polling', 'warning');
+            }
             
             // Detener polling después del máximo
             if (pollingCount >= MAX_POLLING_COUNT) {
@@ -698,6 +754,8 @@ $hotels = getActiveHotels();
                 showToast('⏰ Tiempo límite de seguimiento alcanzado. Actualiza la página manualmente.', 'warning');
             }
         }, 120000); // Cada 2 minutos
+        
+        console.log('✅ Sistema de polling iniciado correctamente');
     }
     
     function stopProgressPolling() {
@@ -717,8 +775,15 @@ $hotels = getActiveHotels();
             },
             credentials: 'same-origin'
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('📊 Datos de polling recibidos:', data);
+            
             if (data.success && data.data) {
                 updateJobsTable(data.data);
                 
@@ -727,39 +792,54 @@ $hotels = getActiveHotels();
                     job.status === 'pending' || job.status === 'running'
                 );
                 
-                if (activeJobs.length === 0) {
+                console.log(`🔄 Jobs activos: ${activeJobs.length}/${data.data.length}`);
+                
+                if (activeJobs.length === 0 && data.data.length > 0) {
                     stopProgressPolling();
                     showToast('✅ Todas las extracciones han terminado', 'success');
-                    location.reload(); // Recargar para mostrar resultados finales
+                    setTimeout(() => location.reload(), 2000); // Recargar después de mostrar toast
                 }
+            } else if (!data.success) {
+                console.error('❌ Error en API:', data.error || 'Error desconocido');
+                showToast('⚠️ Error al actualizar estado de extracciones', 'warning');
             }
         })
         .catch(error => {
-            console.error('Error en polling:', error);
+            console.error('❌ Error en polling:', error);
+            showToast('⚠️ Error de conexión en polling', 'warning');
         });
     }
     
     function updateJobsTable(jobs) {
+        if (!jobs || !Array.isArray(jobs)) {
+            console.warn('⚠️ No hay datos de jobs para actualizar');
+            return;
+        }
+        
         // Actualizar filas existentes en la tabla
         jobs.forEach(job => {
+            if (!job.id) return;
+            
             const row = document.querySelector(`tr[data-job-id="${job.id}"]`);
             if (row) {
                 // Actualizar estado
                 const statusCell = row.querySelector('.job-status');
-                if (statusCell) {
+                if (statusCell && job.status) {
                     statusCell.innerHTML = getStatusBadge(job.status);
                 }
                 
                 // Actualizar progreso
                 const progressCell = row.querySelector('.job-progress');
                 if (progressCell) {
-                    progressCell.innerHTML = getProgressBar(job.progress || 0);
+                    const progress = job.progress || 0;
+                    progressCell.innerHTML = getProgressBar(progress);
                 }
                 
                 // Actualizar contador de reseñas
                 const reviewsCell = row.querySelector('.job-reviews');
                 if (reviewsCell) {
-                    reviewsCell.innerHTML = `<span class="badge bg-primary">${job.reviews_extracted || 0}</span>`;
+                    const reviews = job.reviews_extracted || 0;
+                    reviewsCell.innerHTML = `<span class="badge bg-primary">${reviews}</span>`;
                 }
             }
         });
@@ -789,9 +869,14 @@ $hotels = getActiveHotels();
     }
     
     function showPollingIndicator() {
+        // Evitar duplicados
+        if (document.getElementById('polling-indicator')) {
+            return;
+        }
+        
         const indicator = document.createElement('div');
         indicator.id = 'polling-indicator';
-        indicator.className = 'alert alert-info d-flex align-items-center';
+        indicator.className = 'alert alert-info d-flex align-items-center mb-3';
         indicator.innerHTML = `
             <div class="spinner-border spinner-border-sm me-2" role="status">
                 <span class="visually-hidden">Actualizando...</span>
@@ -800,9 +885,46 @@ $hotels = getActiveHotels();
             <button type="button" class="btn-close ms-auto" onclick="stopProgressPolling()"></button>
         `;
         
-        const container = document.querySelector('main .container-fluid');
-        const firstCard = container.querySelector('.card');
-        container.insertBefore(indicator, firstCard);
+        // Intentar múltiples ubicaciones para insertar el indicador
+        let inserted = false;
+        
+        // Opción 1: Después del breadcrumb/header
+        const mainHeader = document.querySelector('main h1');
+        if (mainHeader && !inserted) {
+            mainHeader.parentNode.insertBefore(indicator, mainHeader.nextSibling);
+            inserted = true;
+        }
+        
+        // Opción 2: Al inicio del contenido principal
+        if (!inserted) {
+            const container = document.querySelector('main .container-fluid');
+            if (container) {
+                container.insertBefore(indicator, container.firstChild);
+                inserted = true;
+            }
+        }
+        
+        // Opción 3: Al inicio del main
+        if (!inserted) {
+            const main = document.querySelector('main');
+            if (main) {
+                main.insertBefore(indicator, main.firstChild);
+                inserted = true;
+            }
+        }
+        
+        // Opción 4: Como último recurso, al body
+        if (!inserted) {
+            const body = document.body;
+            const navbar = document.querySelector('.navbar');
+            if (navbar && navbar.nextSibling) {
+                body.insertBefore(indicator, navbar.nextSibling);
+            } else {
+                body.appendChild(indicator);
+            }
+        }
+        
+        console.log('✅ Indicador de polling insertado correctamente');
     }
     
     function hidePollingIndicator() {

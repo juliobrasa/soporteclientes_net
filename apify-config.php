@@ -15,10 +15,16 @@ class ApifyClient {
     public function __construct($apiToken = null) {
         $this->apiToken = $apiToken ?: $_ENV['APIFY_API_TOKEN'] ?? null;
         
+        // Debug temporal
+        error_log("ApifyClient constructor - Token recibido: " . ($this->apiToken ?? 'NULL'));
+        
         // Modo demo si no hay token real
         if (!$this->apiToken || $this->apiToken === 'demo_token_replace_with_real') {
             $this->demoMode = true;
             $this->apiToken = 'demo_token';
+            error_log("ApifyClient - MODO DEMO activado");
+        } else {
+            error_log("ApifyClient - MODO REAL activado con token: " . substr($this->apiToken, 0, 20) . "...");
         }
     }
     
@@ -127,6 +133,18 @@ class ApifyClient {
     public function estimateCost($totalReviews) {
         $pricePerThousand = 1.50;
         return ($totalReviews / 1000) * $pricePerThousand;
+    }
+    
+    /**
+     * Debug temporal - obtener información del estado
+     */
+    public function getDebugInfo() {
+        return [
+            'demo_mode' => $this->demoMode,
+            'api_token' => $this->apiToken ? substr($this->apiToken, 0, 20) . '...' : 'NULL',
+            'base_url' => $this->baseUrl,
+            'actor_id' => $this->actorId
+        ];
     }
     
     /**
