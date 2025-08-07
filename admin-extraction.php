@@ -164,6 +164,11 @@ $hotels = getActiveHotels();
                                 <i class="fas fa-file-alt"></i> Logs del Sistema
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="admin-debug-logs.php" style="color: #ffc107;">
+                                <i class="fas fa-bug"></i> Debug Logs
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>
@@ -498,12 +503,16 @@ $hotels = getActiveHotels();
     <?php endif; ?>
 
     function startExtraction() {
+        console.log('🚀 Iniciando extracción...');
         const form = document.getElementById('newExtractionForm');
         const formData = new FormData(form);
         
         // Obtener hoteles seleccionados
         const selectedHotels = getSelectedHotels();
+        console.log('🏨 Hoteles seleccionados:', selectedHotels);
+        
         if (selectedHotels.length === 0) {
+            console.error('❌ No hay hoteles seleccionados');
             alert('Por favor selecciona al menos un hotel');
             return;
         }
@@ -512,7 +521,7 @@ $hotels = getActiveHotels();
         showExtractionLoader('Iniciando extracción con Apify Hotel Review Aggregator...');
         
         // Procesar cada hotel seleccionado
-        const extractions = selectedHotels.map(hotelId => {
+        const extractions = selectedHotels.map((hotelId, index) => {
             const data = {
                 hotel_id: hotelId,
                 max_reviews: formData.get('max_reviews') || 100,
@@ -521,6 +530,8 @@ $hotels = getActiveHotels();
                 sentiment_analysis: formData.get('sentiment_analysis') ? true : false,
                 generate_alerts: formData.get('generate_alerts') ? true : false
             };
+            
+            console.log(`📋 Datos para hotel ${hotelId}:`, data);
             
             return fetch('api-extraction.php', {
                 method: 'POST',
@@ -531,16 +542,32 @@ $hotels = getActiveHotels();
                 },
                 credentials: 'same-origin',
                 body: JSON.stringify(data)
-            }).then(response => response.json());
+            })
+            .then(response => {
+                console.log(`📡 Respuesta HTTP ${response.status} para hotel ${hotelId}`);
+                return response.json();
+            })
+            .then(result => {
+                console.log(`📋 Resultado para hotel ${hotelId}:`, result);
+                return result;
+            })
+            .catch(error => {
+                console.error(`❌ Error para hotel ${hotelId}:`, error);
+                throw error;
+            });
         });
         
         // Ejecutar todas las extracciones
         Promise.allSettled(extractions)
         .then(results => {
+            console.log('📊 Resultados finales:', results);
             hideExtractionLoader();
             
             const successful = results.filter(r => r.status === 'fulfilled' && r.value.success);
             const failed = results.filter(r => r.status === 'rejected' || !r.value.success);
+            
+            console.log(`✅ Exitosas: ${successful.length}/${selectedHotels.length}`);
+            console.log(`❌ Fallidas: ${failed.length}/${selectedHotels.length}`);
             
             let message = `✅ Extracciones iniciadas: ${successful.length}/${selectedHotels.length}`;
             
@@ -552,6 +579,15 @@ $hotels = getActiveHotels();
             
             if (failed.length > 0) {
                 message += `\n\n❌ Errores: ${failed.length}`;
+                // Mostrar detalles de los errores
+                failed.forEach((result, index) => {
+                    if (result.status === 'rejected') {
+                        console.error(`Error en hotel ${selectedHotels[index]}:`, result.reason);
+                    } else if (!result.value.success) {
+                        console.error(`Error en hotel ${selectedHotels[index]}:`, result.value);
+                    }
+                });
+                message += '\n\nRevisa la consola del navegador para más detalles.';
             }
             
             alert(message);

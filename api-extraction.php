@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'admin-config.php';
 require_once 'apify-config.php';
 require_once 'apify-data-processor.php';
+require_once 'debug-logger.php';
 
 function response($data, $status = 200) {
     http_response_code($status);
@@ -25,6 +26,13 @@ function response($data, $status = 200) {
 // Obtener input
 $input = json_decode(file_get_contents('php://input'), true);
 $method = $_SERVER['REQUEST_METHOD'];
+
+DebugLogger::info("Nueva petición de extracción", [
+    'method' => $method,
+    'input' => $input,
+    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
+    'referer' => $_SERVER['HTTP_REFERER'] ?? null
+]);
 
 // Verificar autenticación
 session_start();
@@ -41,7 +49,17 @@ if (!$isAuthenticated && isset($_SERVER['HTTP_X_ADMIN_SESSION'])) {
     }
 }
 
+DebugLogger::debug("Verificación de autenticación", [
+    'session_logged' => isset($_SESSION['admin_logged']),
+    'session_value' => $_SESSION['admin_logged'] ?? null,
+    'session_id' => session_id(),
+    'header_session' => $_SERVER['HTTP_X_ADMIN_SESSION'] ?? null,
+    'cookies_count' => count($_COOKIE),
+    'is_authenticated' => $isAuthenticated
+]);
+
 if (!$isAuthenticated) {
+    DebugLogger::error("Autenticación fallida");
     response([
         'error' => 'No autorizado',
         'debug' => [
@@ -95,8 +113,11 @@ switch ($method) {
  */
 function handleStartExtraction($input, $pdo) {
     try {
+        DebugLogger::info("Iniciando handleStartExtraction", ['input' => $input]);
+        
         // Validar input
         if (!isset($input['hotel_id']) || empty($input['hotel_id'])) {
+            DebugLogger::error("hotel_id faltante", ['input' => $input]);
             response(['error' => 'hotel_id es requerido'], 400);
         }
         
@@ -141,9 +162,12 @@ function handleStartExtraction($input, $pdo) {
         ];
         
         // Iniciar extracción en Apify
+        DebugLogger::info("Llamando a Apify", ['config' => $extractionConfig]);
         $apifyResponse = $apifyClient->startHotelExtraction($extractionConfig);
+        DebugLogger::info("Respuesta de Apify", ['response' => $apifyResponse]);
         
         if (!isset($apifyResponse['data']['id'])) {
+            DebugLogger::error("Apify no devolvió run ID", ['response' => $apifyResponse]);
             response([
                 'error' => 'Error iniciando extracción en Apify',
                 'details' => $apifyResponse
