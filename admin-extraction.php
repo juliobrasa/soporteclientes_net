@@ -405,6 +405,29 @@ $hotels = getActiveHotels();
                             </div>
                         </div>
                         <div class="mb-3">
+                            <label class="form-label">Modo de Extracción</label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="extraction_mode" id="mode_sync" value="sync" checked>
+                                        <label class="form-check-label" for="mode_sync">
+                                            <strong>🚀 Modo Rápido (Recomendado)</strong><br>
+                                            <small class="text-muted">Resultados inmediatos en 30-300 segundos. Máximo 100 reseñas.</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="extraction_mode" id="mode_async" value="async">
+                                        <label class="form-check-label" for="mode_async">
+                                            <strong>⏳ Modo Avanzado</strong><br>
+                                            <small class="text-muted">Mayor cantidad de reseñas. Requiere polling.</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label">Plataformas de Reseñas</label>
                             <div class="row">
                                 <div class="col-md-4">
@@ -520,18 +543,31 @@ $hotels = getActiveHotels();
             return;
         }
         
-        // Mostrar loader
-        showExtractionLoader('Iniciando extracción con Apify Hotel Review Aggregator...');
+        // Mostrar loader con mensaje específico según el modo
+        const loaderMessage = isSync 
+            ? '🚀 Ejecutando extracción rápida... Esto puede tomar hasta 5 minutos.'
+            : '⏳ Iniciando extracción avanzada con Apify Hotel Review Aggregator...';
+        showExtractionLoader(loaderMessage);
+        
+        // Detectar modo de extracción
+        const extractionMode = document.querySelector('input[name="extraction_mode"]:checked').value;
+        const isSync = extractionMode === 'sync';
+        
+        console.log(`🔧 Modo de extracción: ${extractionMode}`);
         
         // Procesar cada hotel seleccionado
         const extractions = selectedHotels.map((hotelId, index) => {
+            const maxReviews = parseInt(formData.get('max_reviews') || 100);
+            
             const data = {
                 hotel_id: hotelId,
-                max_reviews: formData.get('max_reviews') || 100,
+                max_reviews: isSync ? Math.min(maxReviews, 100) : maxReviews, // Limitar en modo sync
                 platforms: getSelectedPlatforms(),
                 languages: ['en', 'es'],
                 sentiment_analysis: formData.get('sentiment_analysis') ? true : false,
-                generate_alerts: formData.get('generate_alerts') ? true : false
+                generate_alerts: formData.get('generate_alerts') ? true : false,
+                sync_mode: isSync,
+                timeout: isSync ? 300 : null // 5 minutos máximo para sync
             };
             
             console.log(`📋 Datos para hotel ${hotelId}:`, data);
@@ -572,12 +608,26 @@ $hotels = getActiveHotels();
             console.log(`✅ Exitosas: ${successful.length}/${selectedHotels.length}`);
             console.log(`❌ Fallidas: ${failed.length}/${selectedHotels.length}`);
             
-            let message = `✅ Extracciones iniciadas: ${successful.length}/${selectedHotels.length}`;
+            const syncResults = successful.filter(r => r.value.sync_mode);
+            const asyncResults = successful.filter(r => !r.value.sync_mode);
             
-            if (successful.length > 0) {
-                const totalCost = successful.reduce((sum, r) => sum + parseFloat(r.value.cost_estimate || 0), 0);
-                message += `\n\nCosto total estimado: $${totalCost.toFixed(2)}`;
-                message += '\n\nLas extracciones pueden tomar varios minutos. Actualiza la página para ver el progreso.';
+            let message = '';
+            
+            if (syncResults.length > 0) {
+                const totalReviews = syncResults.reduce((sum, r) => sum + (r.value.reviews_saved || 0), 0);
+                const avgTime = syncResults.reduce((sum, r) => sum + (r.value.execution_time || 0), 0) / syncResults.length;
+                
+                message += `🚀 Extracciones rápidas completadas: ${syncResults.length}/${selectedHotels.length}\n`;
+                message += `📊 Total de reseñas obtenidas: ${totalReviews}\n`;
+                message += `⏱️ Tiempo promedio: ${Math.round(avgTime)}s\n\n`;
+                message += '¡Los datos ya están disponibles en tu base de datos!';
+            }
+            
+            if (asyncResults.length > 0) {
+                const totalCost = asyncResults.reduce((sum, r) => sum + parseFloat(r.value.cost_estimate || 0), 0);
+                message += `\n\n⏳ Extracciones avanzadas iniciadas: ${asyncResults.length}\n`;
+                message += `💰 Costo estimado: $${totalCost.toFixed(2)}\n`;
+                message += 'Estas extracciones pueden tomar varios minutos.';
             }
             
             if (failed.length > 0) {
@@ -595,12 +645,15 @@ $hotels = getActiveHotels();
             
             alert(message);
             
-            // En lugar de recargar completamente, actualizar la tabla y empezar polling
-            if (successful.length > 0) {
+            // Solo iniciar polling si hay extracciones asíncronas
+            if (asyncResults.length > 0) {
                 // Esperar un poco para asegurar que el DOM esté listo
                 setTimeout(() => {
                     startProgressPolling();
                 }, 1000);
+            } else if (syncResults.length > 0) {
+                // Para extracciones síncronas, solo recargar la tabla
+                setTimeout(() => location.reload(), 2000);
             } else {
                 location.reload();
             }

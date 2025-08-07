@@ -23,7 +23,7 @@ class ApifyClient {
     }
     
     /**
-     * Iniciar extracción de reseñas para un hotel
+     * Iniciar extracción de reseñas para un hotel (método asíncrono)
      */
     public function startHotelExtraction($config) {
         if ($this->demoMode) {
@@ -35,6 +35,28 @@ class ApifyClient {
         $response = $this->makeRequest('POST', "/acts/{$this->actorId}/runs", [
             'input' => $input
         ]);
+        
+        return $response;
+    }
+    
+    /**
+     * Ejecutar extracción síncrona y obtener resultados directamente
+     */
+    public function runHotelExtractionSync($config, $timeout = 300) {
+        if ($this->demoMode) {
+            return $this->simulateExtractionSync($config);
+        }
+        
+        $input = $this->buildExtractionInput($config);
+        
+        // Usar la API síncrona para obtener resultados directamente
+        $queryParams = http_build_query([
+            'timeout' => $timeout,
+            'memory' => 4096, // 4GB de memoria
+            'format' => 'json'
+        ]);
+        
+        $response = $this->makeRequest('POST', "/acts/{$this->actorId}/run-sync-get-dataset-items?{$queryParams}", $input);
         
         return $response;
     }
@@ -217,6 +239,68 @@ class ApifyClient {
             ],
             'success' => true,
             'demo_mode' => true
+        ];
+    }
+    
+    /**
+     * Simular extracción síncrona en modo demo
+     */
+    private function simulateExtractionSync($config) {
+        // Simular datos de reseñas realistas
+        $sampleReviews = [
+            [
+                'reviewId' => 'demo_review_' . uniqid(),
+                'reviewerName' => 'María González',
+                'rating' => 5,
+                'reviewText' => 'Excelente hotel, el servicio fue impecable y las instalaciones de primera calidad. Definitivamente regresaremos.',
+                'reviewDate' => date('Y-m-d', strtotime('-' . rand(1, 30) . ' days')),
+                'platform' => 'booking',
+                'sentiment' => 'positive',
+                'helpful' => rand(0, 15)
+            ],
+            [
+                'reviewId' => 'demo_review_' . uniqid(),
+                'reviewerName' => 'Carlos Martínez',
+                'rating' => 4,
+                'reviewText' => 'Muy buena ubicación, habitaciones limpias. Solo el desayuno podría mejorar un poco.',
+                'reviewDate' => date('Y-m-d', strtotime('-' . rand(1, 30) . ' days')),
+                'platform' => 'tripadvisor',
+                'sentiment' => 'positive',
+                'helpful' => rand(0, 10)
+            ],
+            [
+                'reviewId' => 'demo_review_' . uniqid(),
+                'reviewerName' => 'Ana Rodríguez',
+                'rating' => 3,
+                'reviewText' => 'Hotel decente pero el precio es un poco alto para lo que ofrece. El personal es amable.',
+                'reviewDate' => date('Y-m-d', strtotime('-' . rand(1, 30) . ' days')),
+                'platform' => 'google',
+                'sentiment' => 'neutral',
+                'helpful' => rand(0, 8)
+            ]
+        ];
+        
+        // Generar más reseñas basado en el maxReviews configurado
+        $maxReviews = $config['maxReviews'] ?? 10;
+        $reviews = [];
+        
+        for ($i = 0; $i < min($maxReviews, 50); $i++) {
+            $template = $sampleReviews[$i % count($sampleReviews)];
+            $template['reviewId'] = 'demo_review_' . uniqid();
+            $template['reviewDate'] = date('Y-m-d', strtotime('-' . rand(1, 365) . ' days'));
+            $reviews[] = $template;
+        }
+        
+        return [
+            'success' => true,
+            'demo_mode' => true,
+            'data' => $reviews,
+            'stats' => [
+                'totalReviews' => count($reviews),
+                'platforms' => $config['reviewPlatforms'] ?? ['booking', 'tripadvisor', 'google'],
+                'avgRating' => round(array_sum(array_column($reviews, 'rating')) / count($reviews), 2),
+                'executionTime' => rand(30, 180) // segundos
+            ]
         ];
     }
 }
