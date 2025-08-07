@@ -540,8 +540,17 @@ $hotels = getActiveHotels();
     });
     <?php endif; ?>
 
+    function getSelectedHotels() {
+        const hotels = [];
+        const checkboxes = document.querySelectorAll('input[name="hotel_ids[]"]:checked');
+        checkboxes.forEach(cb => hotels.push(parseInt(cb.value)));
+        return hotels;
+    }
+
     function startExtraction() {
         console.log('🚀 Iniciando extracción...');
+        
+        let formData, isSync, selectedHotels, extractionMode;
         
         try {
             console.log('🔍 Paso 1: Verificando formulario...');
@@ -554,11 +563,23 @@ $hotels = getActiveHotels();
             console.log('✅ Formulario encontrado:', form);
             
             console.log('🔍 Paso 2: Creando FormData...');
-            const formData = new FormData(form);
+            formData = new FormData(form);
             console.log('✅ FormData creado');
             
-            console.log('🔍 Paso 3: Obteniendo hoteles seleccionados...');
-            const selectedHotels = getSelectedHotels();
+            console.log('🔍 Paso 3: Detectando modo de extracción...');
+            const extractionModeElement = document.querySelector('input[name="extraction_mode"]:checked');
+            if (!extractionModeElement) {
+                console.error('❌ No se encontró modo de extracción seleccionado');
+                alert('Error: No se pudo detectar el modo de extracción');
+                return;
+            }
+            
+            extractionMode = extractionModeElement.value;
+            isSync = extractionMode === 'sync';
+            console.log(`✅ Modo de extracción: ${extractionMode}`);
+            
+            console.log('🔍 Paso 4: Obteniendo hoteles seleccionados...');
+            selectedHotels = getSelectedHotels();
             console.log('✅ Hoteles seleccionados:', selectedHotels);
             
             if (selectedHotels.length === 0) {
@@ -571,19 +592,6 @@ $hotels = getActiveHotels();
             alert('Error iniciando extracción: ' + error.message);
             return;
         }
-        
-        // Detectar modo de extracción PRIMERO
-        const extractionModeElement = document.querySelector('input[name="extraction_mode"]:checked');
-        if (!extractionModeElement) {
-            console.error('❌ No se encontró modo de extracción seleccionado');
-            alert('Error: No se pudo detectar el modo de extracción');
-            return;
-        }
-        
-        const extractionMode = extractionModeElement.value;
-        const isSync = extractionMode === 'sync';
-        
-        console.log(`🔧 Modo de extracción: ${extractionMode}`);
         
         // Mostrar loader con mensaje específico según el modo
         const loaderMessage = isSync 
@@ -714,13 +722,6 @@ $hotels = getActiveHotels();
         const checkboxes = document.querySelectorAll('input[name="platforms"]:checked');
         checkboxes.forEach(cb => platforms.push(cb.value));
         return platforms.length > 0 ? platforms : ['tripadvisor', 'booking', 'google'];
-    }
-    
-    function getSelectedHotels() {
-        const hotels = [];
-        const checkboxes = document.querySelectorAll('input[name="hotel_ids[]"]:checked');
-        checkboxes.forEach(cb => hotels.push(parseInt(cb.value)));
-        return hotels;
     }
     
     function toggleAllHotels() {
