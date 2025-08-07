@@ -246,11 +246,12 @@ class AdminAPIClient {
         if (endpoint.startsWith('hotels') && laravelModules.hotels) return true;
         if (endpoint.startsWith('ai-providers') && laravelModules.aiProviders) return true;
         if (endpoint.startsWith('prompts') && laravelModules.prompts) return true;
+        if (endpoint.startsWith('external-apis') && laravelModules.externalApis) return true;
         
         // Endpoints específicos de Laravel
         const laravelEndpoints = [
-            'hotels/', 'ai-providers/', 'prompts/',
-            'hotels/stats', 'ai-providers/stats', 'prompts/stats'
+            'hotels/', 'ai-providers/', 'prompts/', 'external-apis/',
+            'hotels/stats', 'ai-providers/stats', 'prompts/stats', 'external-apis/stats'
         ];
         
         return laravelEndpoints.some(prefix => endpoint.startsWith(prefix));
@@ -440,6 +441,10 @@ class AdminAPIClient {
         } else if (endpoint.includes('prompts')) {
             this.clearCache('prompts');
             this.clearCache('getPrompts');
+        } else if (endpoint.includes('external-apis')) {
+            this.clearCache('external-apis');
+            this.clearCache('getApiProviders');
+            this.clearCache('getExternalApis');
         }
     }
     
@@ -731,6 +736,106 @@ class AdminAPIClient {
     async exportPrompts(filters = {}) {
         if (AdminConfig?.api?.laravel?.migrated?.prompts) {
             return this.get('prompts/export', filters);
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
+    }
+    
+    // ================================================================
+    // MÉTODOS ESPECÍFICOS PARA EXTERNAL APIS - HÍBRIDO Laravel/Legacy
+    // ================================================================
+    
+    async getExternalApis(filters = {}) {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.get('external-apis', filters);
+        } else {
+            return this.call('getApiProviders', filters, { cache: true });
+        }
+    }
+    
+    async getApiProviders() {
+        return this.getExternalApis(); // Alias para compatibilidad
+    }
+    
+    async saveExternalApi(apiData) {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            if (apiData.id) {
+                return this.put(`external-apis/${apiData.id}`, apiData);
+            } else {
+                return this.post('external-apis', apiData);
+            }
+        } else {
+            const result = await this.call('saveApiProvider', apiData);
+            if (result.success) {
+                this.clearCache('getApiProviders');
+            }
+            return result;
+        }
+    }
+    
+    async saveApiProvider(providerData) {
+        return this.saveExternalApi(providerData); // Alias para compatibilidad
+    }
+    
+    async deleteExternalApi(apiId) {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.delete(`external-apis/${apiId}`);
+        } else {
+            const result = await this.call('deleteApiProvider', { id: apiId });
+            if (result.success) {
+                this.clearCache('getApiProviders');
+            }
+            return result;
+        }
+    }
+    
+    async deleteApiProvider(providerId) {
+        return this.deleteExternalApi(providerId); // Alias para compatibilidad
+    }
+    
+    async testExternalApi(apiId, testData = {}) {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.post(`external-apis/${apiId}/test`, testData);
+        } else {
+            return this.call('testApiProvider', { id: apiId });
+        }
+    }
+    
+    async testApiProvider(providerId) {
+        return this.testExternalApi(providerId); // Alias para compatibilidad
+    }
+    
+    async toggleExternalApi(apiId, status) {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.post(`external-apis/${apiId}/toggle`);
+        } else {
+            const result = await this.call('toggleApiProvider', { id: apiId, active: status });
+            if (result.success) {
+                this.clearCache('getApiProviders');
+            }
+            return result;
+        }
+    }
+    
+    async getExternalApiDefaults() {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.get('external-apis/defaults');
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
+    }
+    
+    async getExternalApiStats() {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.get('external-apis/stats');
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
+    }
+    
+    async incrementExternalApiUsage(apiId) {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.post(`external-apis/${apiId}/usage`);
         } else {
             return { success: false, error: 'No disponible en versión legacy' };
         }

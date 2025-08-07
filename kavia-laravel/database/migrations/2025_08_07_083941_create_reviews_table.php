@@ -11,10 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('reviews', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        // Solo crear si no existe
+        if (!Schema::hasTable('reviews')) {
+            Schema::create('reviews', function (Blueprint $table) {
+                $table->id();
+                $table->timestamps();
+            });
+        }
     }
 
     /**
