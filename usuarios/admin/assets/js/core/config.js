@@ -51,12 +51,21 @@ window.AdminConfig = {
                 recommended: 'prompts/recommended/{category}' // GET /api/prompts/recommended/{category}
             },
             
+            // === EXTERNAL APIS (MIGRADO A LARAVEL) ===
+            externalApis: {
+                list: 'external-apis',                  // GET /api/external-apis
+                create: 'external-apis',                // POST /api/external-apis
+                show: 'external-apis/{id}',             // GET /api/external-apis/{id}
+                update: 'external-apis/{id}',           // PUT /api/external-apis/{id}
+                delete: 'external-apis/{id}',           // DELETE /api/external-apis/{id}
+                toggle: 'external-apis/{id}/toggle',    // POST /api/external-apis/{id}/toggle
+                test: 'external-apis/{id}/test',        // POST /api/external-apis/{id}/test
+                usage: 'external-apis/{id}/usage',      // POST /api/external-apis/{id}/usage
+                stats: 'external-apis/stats',           // GET /api/external-apis/stats
+                defaults: 'external-apis/defaults'      // GET /api/external-apis/defaults
+            },
+            
             // === PENDIENTES DE MIGRAR (USAR admin_api.php TEMPORAL) ===
-            // APIs/Proveedores Externos
-            getApiProviders: 'getApiProviders',
-            saveApiProvider: 'saveApiProvider',
-            deleteApiProvider: 'deleteApiProvider',
-            testApiProvider: 'testApiProvider',
             
             // Extracción
             getExtractionHotels: 'getExtractionHotels',
@@ -85,7 +94,7 @@ window.AdminConfig = {
                 hotels: true,
                 aiProviders: true,
                 prompts: true,
-                apiProviders: false,    // Pendiente
+                externalApis: true,     // ✅ MIGRADO 
                 extraction: false,      // Pendiente
                 logs: false,            // Pendiente
                 tools: false           // Pendiente

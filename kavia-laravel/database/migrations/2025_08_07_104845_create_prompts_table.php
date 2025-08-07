@@ -11,7 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('prompts', function (Blueprint $table) {
+        // Solo crear si no existe
+        if (!Schema::hasTable('prompts')) {
+            Schema::create('prompts', function (Blueprint $table) {
             $table->id();
             $table->string('name')->comment('Nombre descriptivo del prompt');
             $table->enum('category', ['sentiment', 'extraction', 'translation', 'classification', 'summary', 'custom'])
@@ -34,9 +36,10 @@ return new class extends Migration
             $table->index('status');
             $table->index('usage_count');
             
-            // Índice full-text para búsqueda
-            $table->fullText(['name', 'description', 'content'], 'prompts_fulltext_search');
-        });
+                // Índice full-text para búsqueda
+                $table->fullText(['name', 'description', 'content'], 'prompts_fulltext_search');
+            });
+        }
     }
 
     /**

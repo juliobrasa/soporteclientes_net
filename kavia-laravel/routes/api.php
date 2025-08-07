@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\HotelController;
 use App\Http\Controllers\API\AiProviderController;
 use App\Http\Controllers\API\PromptController;
+use App\Http\Controllers\API\ExternalApiController;
 
 // ================================================================
 // RUTAS PÚBLICAS (SIN AUTENTICACIÓN)
@@ -85,6 +86,29 @@ Route::prefix('prompts')->group(function () {
 });
 
 // ================================================================
+// RUTAS DE EXTERNAL APIS (PÚBLICAS TEMPORALMENTE PARA TESTING)
+// ================================================================
+
+// Grupo de rutas para APIs externas
+Route::prefix('external-apis')->group(function () {
+    // Rutas especiales primero (antes del resource)
+    Route::get('/defaults', [ExternalApiController::class, 'defaults']);           // GET /api/external-apis/defaults
+    Route::get('/stats', [ExternalApiController::class, 'stats']);                // GET /api/external-apis/stats
+    
+    // CRUD básico
+    Route::get('/', [ExternalApiController::class, 'index']);                      // GET /api/external-apis
+    Route::post('/', [ExternalApiController::class, 'store']);                     // POST /api/external-apis
+    Route::get('/{externalApi}', [ExternalApiController::class, 'show']);          // GET /api/external-apis/{id}
+    Route::put('/{externalApi}', [ExternalApiController::class, 'update']);        // PUT /api/external-apis/{id}
+    Route::delete('/{externalApi}', [ExternalApiController::class, 'destroy']);    // DELETE /api/external-apis/{id}
+    
+    // Rutas adicionales
+    Route::post('/{externalApi}/toggle', [ExternalApiController::class, 'toggle']); // POST /api/external-apis/{id}/toggle
+    Route::post('/{externalApi}/test', [ExternalApiController::class, 'test']);     // POST /api/external-apis/{id}/test
+    Route::post('/{externalApi}/usage', [ExternalApiController::class, 'incrementUsage']); // POST /api/external-apis/{id}/usage
+});
+
+// ================================================================
 // RUTAS DE COMPATIBILIDAD CON SISTEMA ACTUAL
 // ================================================================
 
@@ -92,6 +116,7 @@ Route::prefix('prompts')->group(function () {
 Route::get('/legacy/hotels', [HotelController::class, 'index']);
 Route::get('/legacy/ai-providers', [AiProviderController::class, 'index']);
 Route::get('/legacy/prompts', [PromptController::class, 'index']);
+Route::get('/legacy/external-apis', [ExternalApiController::class, 'index']);
 
 // ================================================================
 // RUTAS PROTEGIDAS (COMENTADAS TEMPORALMENTE)

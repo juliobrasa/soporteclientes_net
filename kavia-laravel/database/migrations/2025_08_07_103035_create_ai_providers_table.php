@@ -11,7 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ai_providers', function (Blueprint $table) {
+        // Solo crear si no existe
+        if (!Schema::hasTable('ai_providers')) {
+            Schema::create('ai_providers', function (Blueprint $table) {
             $table->id();
             $table->string('name')->comment('Nombre del proveedor de IA');
             $table->enum('provider_type', ['openai', 'claude', 'deepseek', 'gemini', 'local'])
@@ -23,10 +25,11 @@ return new class extends Migration
             $table->boolean('is_active')->default(false)->comment('Estado activo/inactivo');
             $table->timestamps();
             
-            // Índices para optimizar búsquedas
-            $table->index(['provider_type', 'is_active']);
-            $table->index('is_active');
-        });
+                // Índices para optimizar búsquedas
+                $table->index(['provider_type', 'is_active']);
+                $table->index('is_active');
+            });
+        }
     }
 
     /**
