@@ -206,7 +206,13 @@ $apis = getExternalApis();
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <span class="text-muted">Nunca</span>
+                                            <?php if ($api['last_test_at']): ?>
+                                                <span class="badge bg-<?php echo $api['last_test_status'] == 'success' ? 'success' : 'danger'; ?>">
+                                                    <?php echo date('Y-m-d H:i', strtotime($api['last_test_at'])); ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="text-muted">Nunca</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
@@ -298,6 +304,10 @@ $apis = getExternalApis();
                             <textarea class="form-control" name="config" rows="3" placeholder='{"timeout": 30, "retries": 3}'></textarea>
                         </div>
                         <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" name="description" rows="2" placeholder="Descripción opcional de la API"></textarea>
+                        </div>
+                        <div class="mb-3">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="active" checked>
                                 <label class="form-check-label">API Activa</label>
@@ -337,13 +347,27 @@ $apis = getExternalApis();
         const formData = new FormData(form);
         
         let headers = {};
+        let config = {};
+        
+        // Parsear headers JSON
         try {
             const headersText = formData.get('headers');
-            if (headersText) {
+            if (headersText && headersText.trim()) {
                 headers = JSON.parse(headersText);
             }
         } catch (e) {
-            alert('Error en el formato JSON de headers');
+            alert('Error en el formato JSON de headers: ' + e.message);
+            return;
+        }
+        
+        // Parsear config JSON
+        try {
+            const configText = formData.get('config');
+            if (configText && configText.trim()) {
+                config = JSON.parse(configText);
+            }
+        } catch (e) {
+            alert('Error en el formato JSON de configuración: ' + e.message);
             return;
         }
         
@@ -352,6 +376,9 @@ $apis = getExternalApis();
             provider_type: formData.get('provider_type'),
             api_key: formData.get('api_key'),
             api_url: formData.get('api_url'),
+            auth_type: formData.get('auth_type'),
+            headers: headers,
+            config: config,
             description: formData.get('description'),
             is_active: formData.get('active') ? true : false
         };
@@ -370,6 +397,7 @@ $apis = getExternalApis();
         .then(data => {
             if (data.success) {
                 alert(data.message);
+                bootstrap.Modal.getInstance(document.getElementById('addApiModal')).hide();
                 location.reload();
             } else {
                 alert('Error: ' + data.error);
@@ -388,12 +416,29 @@ $apis = getExternalApis();
         .then(data => {
             if (data.success) {
                 const api = data.data;
-                document.querySelector('input[name="name"]').value = api.name;
-                document.querySelector('select[name="provider_type"]').value = api.provider_type || '';
+                document.querySelector('input[name="name"]').value = api.name || '';
+                document.querySelector('select[name="provider_type"]').value = api.provider_type || 'custom';
                 document.querySelector('input[name="api_url"]').value = api.api_url || '';
                 document.querySelector('input[name="api_key"]').value = api.api_key || '';
+                document.querySelector('select[name="auth_type"]').value = api.auth_type || 'none';
                 document.querySelector('textarea[name="description"]').value = api.description || '';
                 document.querySelector('input[name="active"]').checked = api.is_active == 1;
+                
+                // Manejar headers JSON
+                try {
+                    const headers = api.headers ? JSON.parse(api.headers) : {};
+                    document.querySelector('textarea[name="headers"]').value = Object.keys(headers).length > 0 ? JSON.stringify(headers, null, 2) : '';
+                } catch (e) {
+                    document.querySelector('textarea[name="headers"]').value = '';
+                }
+                
+                // Manejar config JSON
+                try {
+                    const config = api.config ? JSON.parse(api.config) : {};
+                    document.querySelector('textarea[name="config"]').value = Object.keys(config).length > 0 ? JSON.stringify(config, null, 2) : '';
+                } catch (e) {
+                    document.querySelector('textarea[name="config"]').value = '';
+                }
                 
                 document.querySelector('.modal-title').textContent = 'Editar API Externa';
                 new bootstrap.Modal(document.getElementById('addApiModal')).show();
@@ -427,11 +472,55 @@ $apis = getExternalApis();
     }
 
     function testExternalApi(id) {
-        alert('Función de test en desarrollo para API ID: ' + id);
+        const button = document.querySelector(`button[onclick="testExternalApi(${id})"]`);
+        const originalContent = button.innerHTML;
+        
+        // Mostrar loading
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+        
+        fetch(`api-external-apis.php?id=${id}&test=1`)
+        .then(response => response.json())
+        .then(data => {
+            button.innerHTML = originalContent;
+            button.disabled = false;
+            
+            if (data.success) {
+                alert(`✅ Test exitoso\n\nTiempo de respuesta: ${data.response_time}\nCódigo HTTP: ${data.http_code}\nEstado: ${data.status}`);
+            } else {
+                alert(`❌ Test fallido\n\nError: ${data.error}\nCódigo HTTP: ${data.http_code || 'N/A'}\nEstado: ${data.status || 'offline'}`);
+            }
+        })
+        .catch(error => {
+            button.innerHTML = originalContent;
+            button.disabled = false;
+            alert('❌ Error de conexión: ' + error.message);
+        });
     }
 
     function viewApiLogs(id) {
-        alert('Función de logs en desarrollo para API ID: ' + id);
+        // Obtener información de la API
+        fetch(`api-external-apis.php?id=${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const api = data.data;
+                let logInfo = `📋 Logs de API: ${api.name}\n\n`;
+                logInfo += `🔗 URL: ${api.api_url}\n`;
+                logInfo += `📅 Creada: ${api.created_at || 'N/A'}\n`;
+                logInfo += `🔄 Actualizada: ${api.updated_at || 'N/A'}\n`;
+                logInfo += `🧪 Último Test: ${api.last_test_at || 'Nunca'}\n`;
+                logInfo += `✅ Estado Test: ${api.last_test_status || 'N/A'}\n\n`;
+                logInfo += `ℹ️ Los logs detallados estarán disponibles pronto`;
+                
+                alert(logInfo);
+            } else {
+                alert('Error obteniendo información de la API');
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión: ' + error);
+        });
     }
 
     // Reset form when modal closes
