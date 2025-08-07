@@ -366,7 +366,7 @@ function handleGetRecentJobs($pdo) {
             FROM extraction_jobs ej
             JOIN hoteles h ON ej.hotel_id = h.id
             LEFT JOIN apify_extraction_runs aer ON aer.hotel_id = ej.hotel_id 
-                AND aer.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+                AND aer.started_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
             WHERE ej.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
             ORDER BY ej.created_at DESC
             LIMIT 50
@@ -439,7 +439,7 @@ function handleDeleteJob($jobId, $pdo) {
         $stmt->execute([$jobId]);
         
         // También eliminar los runs relacionados de Apify si existen
-        $stmt = $pdo->prepare("DELETE FROM apify_extraction_runs WHERE hotel_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)");
+        $stmt = $pdo->prepare("DELETE FROM apify_extraction_runs WHERE hotel_id = ? AND started_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)");
         $stmt->execute([$job['hotel_id']]);
         
         DebugLogger::info("Job eliminado exitosamente", ['job_id' => $jobId]);
