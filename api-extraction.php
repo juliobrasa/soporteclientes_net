@@ -79,7 +79,11 @@ if (!$pdo) {
 
 switch ($method) {
     case 'POST':
-        handleStartExtraction($input, $pdo);
+        if (isset($input['sync_mode']) && $input['sync_mode'] === true) {
+            handleSyncExtraction($input, $pdo);
+        } else {
+            handleStartExtraction($input, $pdo);
+        }
         break;
         
     case 'GET':
@@ -110,6 +114,168 @@ switch ($method) {
         
     default:
         response(['error' => 'Método no permitido'], 405);
+}
+
+/**
+ * Ejecutar extracción síncrona y procesar resultados inmediatamente
+ */
+function handleSyncExtraction($input, $pdo) {
+    try {
+        DebugLogger::info("Iniciando extracción síncrona", ['input' => $input]);
+        
+        // Validar input
+        if (!isset($input['hotel_id']) || empty($input['hotel_id'])) {
+            DebugLogger::error("hotel_id faltante", ['input' => $input]);
+            response(['error' => 'hotel_id es requerido'], 400);
+        }
+        
+        $hotelId = $input['hotel_id'];
+        $maxReviews = min($input['max_reviews'] ?? 50, 100); // Limitar para extracciones síncronas
+        $platforms = $input['platforms'] ?? ['tripadvisor', 'booking', 'google'];
+        $languages = $input['languages'] ?? ['en', 'es'];
+        $timeout = min($input['timeout'] ?? 300, 300); // Máximo 5 minutos
+        
+        // Verificar que el hotel existe y obtener su Place ID
+        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id FROM hoteles WHERE id = ?");
+        $stmt->execute([$hotelId]);
+        $hotel = $stmt->fetch();
+        
+        if (!$hotel) {
+            response(['error' => 'Hotel no encontrado'], 404);
+        }
+        
+        if (!$hotel['google_place_id']) {
+            response([
+                'error' => 'Hotel no tiene Google Place ID configurado',
+                'action_required' => 'configure_place_id',
+                'hotel_name' => $hotel['nombre_hotel']
+            ], 400);
+        }
+        
+        // Configurar extracción
+        $extractionConfig = [
+            'startIds' => [$hotel['google_place_id']],
+            'maxReviews' => $maxReviews,
+            'reviewPlatforms' => $platforms,
+            'reviewLanguages' => $languages,
+            'reviewDates' => [
+                'from' => date('Y-01-01'),
+                'to' => date('Y-12-31')
+            ]
+        ];
+        
+        // Ejecutar extracción síncrona
+        DebugLogger::info("Ejecutando extracción síncrona en Apify", [
+            'config' => $extractionConfig,
+            'timeout' => $timeout
+        ]);
+        
+        $startTime = time();
+        $apifyClient = new ApifyClient();
+        $apifyResponse = $apifyClient->runHotelExtractionSync($extractionConfig, $timeout);
+        $executionTime = time() - $startTime;
+        
+        DebugLogger::info("Respuesta síncrona de Apify", [
+            'success' => $apifyResponse['success'] ?? false,
+            'execution_time' => $executionTime,
+            'reviews_count' => count($apifyResponse['data'] ?? [])
+        ]);
+        
+        if (!$apifyResponse['success']) {
+            response([
+                'error' => 'Error ejecutando extracción síncrona',
+                'details' => $apifyResponse
+            ], 500);
+        }
+        
+        $reviews = $apifyResponse['data'] ?? [];
+        $stats = $apifyResponse['stats'] ?? [];
+        
+        // Procesar y guardar reseñas inmediatamente
+        $savedCount = 0;
+        foreach ($reviews as $review) {
+            try {
+                // Guardar reseña en base de datos
+                $stmt = $pdo->prepare("
+                    INSERT INTO reviews (
+                        hotel_id, review_id, reviewer_name, rating, review_text, 
+                        review_date, platform, sentiment, helpful_count, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                    ON DUPLICATE KEY UPDATE
+                        rating = VALUES(rating),
+                        review_text = VALUES(review_text),
+                        sentiment = VALUES(sentiment),
+                        helpful_count = VALUES(helpful_count)
+                ");
+                
+                $stmt->execute([
+                    $hotelId,
+                    $review['reviewId'],
+                    $review['reviewerName'] ?? 'Anónimo',
+                    $review['rating'] ?? 0,
+                    $review['reviewText'] ?? '',
+                    $review['reviewDate'] ?? date('Y-m-d'),
+                    $review['platform'] ?? 'unknown',
+                    $review['sentiment'] ?? 'neutral',
+                    $review['helpful'] ?? 0
+                ]);
+                
+                $savedCount++;
+            } catch (Exception $e) {
+                DebugLogger::error("Error guardando reseña", [
+                    'review_id' => $review['reviewId'] ?? 'unknown',
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+        
+        // Guardar registro de la extracción completada
+        $stmt = $pdo->prepare("
+            INSERT INTO extraction_jobs (
+                hotel_id, status, progress, reviews_extracted, 
+                created_at, updated_at, completed_at
+            ) VALUES (?, 'completed', 100, ?, NOW(), NOW(), NOW())
+        ");
+        $stmt->execute([$hotelId, $savedCount]);
+        
+        $jobId = $pdo->lastInsertId();
+        
+        DebugLogger::info("Extracción síncrona completada", [
+            'hotel_id' => $hotelId,
+            'job_id' => $jobId,
+            'reviews_processed' => count($reviews),
+            'reviews_saved' => $savedCount,
+            'execution_time' => $executionTime
+        ]);
+        
+        response([
+            'success' => true,
+            'sync_mode' => true,
+            'job_id' => $jobId,
+            'hotel_name' => $hotel['nombre_hotel'],
+            'reviews_extracted' => count($reviews),
+            'reviews_saved' => $savedCount,
+            'platforms' => $platforms,
+            'execution_time' => $executionTime,
+            'stats' => $stats,
+            'message' => 'Extracción completada exitosamente'
+        ]);
+        
+    } catch (Exception $e) {
+        $errorDetails = [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ];
+        
+        DebugLogger::error("Error en extracción síncrona", $errorDetails);
+        
+        response([
+            'error' => $e->getMessage(),
+            'sync_mode' => true,
+            'debug_info' => $_ENV['APP_DEBUG'] ?? false ? $errorDetails : null
+        ], 500);
+    }
 }
 
 /**
