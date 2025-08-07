@@ -203,8 +203,17 @@ class PromptsModule {
      * Carga la lista de prompts
      */
     async loadPrompts() {
+        console.log('📝 Iniciando carga de prompts...');
+        
         try {
             const loadingElement = document.getElementById('prompts-loading');
+            const container = document.getElementById('prompts-grid');
+            
+            console.log('🔍 Elementos encontrados:', {
+                loading: !!loadingElement,
+                container: !!container
+            });
+            
             if (loadingElement) {
                 loadingElement.style.display = 'flex';
             }
@@ -218,11 +227,17 @@ class PromptsModule {
                 language: this.currentFilter.language
             };
             
+            console.log('📤 Parámetros de consulta:', params);
+            
             const response = await apiClient.call('getPrompts', params);
             
-            if (response.success) {
-                this.prompts = response.data.prompts;
-                this.totalPrompts = response.data.total;
+            console.log('📥 Respuesta recibida:', response);
+            
+            if (response && response.success) {
+                this.prompts = response.data?.prompts || [];
+                this.totalPrompts = response.data?.total || 0;
+                
+                console.log(`✅ Prompts cargados: ${this.prompts.length} de ${this.totalPrompts}`);
                 
                 this.renderPrompts();
                 this.updatePagination();
@@ -233,15 +248,34 @@ class PromptsModule {
                     totalCountElement.textContent = this.totalPrompts;
                 }
             } else {
-                throw new Error(response.message || 'Error al cargar prompts');
+                throw new Error(response?.error || response?.message || 'Error desconocido al cargar prompts');
             }
         } catch (error) {
-            console.error('Error al cargar prompts:', error);
-            showError('Error al cargar prompts: ' + error.message);
+            console.error('❌ Error al cargar prompts:', error);
+            
+            // Mostrar error en el contenedor
+            const container = document.getElementById('prompts-grid');
+            if (container) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #dc3545;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                        <h3>Error al cargar prompts</h3>
+                        <p>${error.message}</p>
+                        <button class="btn btn-primary" onclick="promptsModule.loadPrompts()" style="margin-top: 15px;">
+                            <i class="fas fa-refresh"></i> Reintentar
+                        </button>
+                    </div>
+                `;
+            }
+            
+            if (window.showError) {
+                showError('Error al cargar prompts: ' + error.message);
+            }
         } finally {
             const loadingElement = document.getElementById('prompts-loading');
             if (loadingElement) {
                 loadingElement.style.display = 'none';
+                console.log('🔄 Elemento de carga ocultado');
             }
         }
     }
@@ -2146,3 +2180,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Exportar para uso global
 window.promptsModule = promptsModule;
+
+// Función para el tab-manager
+window.loadPromptsDirect = function() {
+    console.log('🔄 loadPromptsDirect llamado desde tab-manager');
+    
+    if (!window.promptsModule) {
+        console.log('📝 Inicializando módulo de prompts...');
+        window.promptsModule = new PromptsModule();
+    } else {
+        console.log('📝 Módulo ya existente, recargando prompts...');
+        window.promptsModule.loadPrompts();
+        window.promptsModule.loadStats();
+    }
+    
+    return Promise.resolve();
+};
