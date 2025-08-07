@@ -516,6 +516,18 @@ $hotels = getActiveHotels();
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     
     <script>
+    // Listener global de errores para debug
+    window.addEventListener('error', function(e) {
+        console.error('❌ Error JavaScript:', e.error);
+        console.error('📍 Archivo:', e.filename, 'Línea:', e.lineno);
+    });
+    
+    window.addEventListener('unhandledrejection', function(e) {
+        console.error('❌ Promise rechazada:', e.reason);
+    });
+    </script>
+    
+    <script>
     <?php if (!empty($jobs)): ?>
     $(document).ready(function() {
         $('#jobsTable').DataTable({
@@ -530,30 +542,54 @@ $hotels = getActiveHotels();
 
     function startExtraction() {
         console.log('🚀 Iniciando extracción...');
-        const form = document.getElementById('newExtractionForm');
-        const formData = new FormData(form);
         
-        // Obtener hoteles seleccionados
-        const selectedHotels = getSelectedHotels();
-        console.log('🏨 Hoteles seleccionados:', selectedHotels);
-        
-        if (selectedHotels.length === 0) {
-            console.error('❌ No hay hoteles seleccionados');
-            alert('Por favor selecciona al menos un hotel');
+        try {
+            console.log('🔍 Paso 1: Verificando formulario...');
+            const form = document.getElementById('newExtractionForm');
+            if (!form) {
+                console.error('❌ No se encontró el formulario newExtractionForm');
+                alert('Error: Formulario no encontrado');
+                return;
+            }
+            console.log('✅ Formulario encontrado:', form);
+            
+            console.log('🔍 Paso 2: Creando FormData...');
+            const formData = new FormData(form);
+            console.log('✅ FormData creado');
+            
+            console.log('🔍 Paso 3: Obteniendo hoteles seleccionados...');
+            const selectedHotels = getSelectedHotels();
+            console.log('✅ Hoteles seleccionados:', selectedHotels);
+            
+            if (selectedHotels.length === 0) {
+                console.error('❌ No hay hoteles seleccionados');
+                alert('Por favor selecciona al menos un hotel');
+                return;
+            }
+        } catch (error) {
+            console.error('❌ Error en startExtraction():', error);
+            alert('Error iniciando extracción: ' + error.message);
             return;
         }
+        
+        // Detectar modo de extracción PRIMERO
+        const extractionModeElement = document.querySelector('input[name="extraction_mode"]:checked');
+        if (!extractionModeElement) {
+            console.error('❌ No se encontró modo de extracción seleccionado');
+            alert('Error: No se pudo detectar el modo de extracción');
+            return;
+        }
+        
+        const extractionMode = extractionModeElement.value;
+        const isSync = extractionMode === 'sync';
+        
+        console.log(`🔧 Modo de extracción: ${extractionMode}`);
         
         // Mostrar loader con mensaje específico según el modo
         const loaderMessage = isSync 
             ? '🚀 Ejecutando extracción rápida... Esto puede tomar hasta 5 minutos.'
             : '⏳ Iniciando extracción avanzada con Apify Hotel Review Aggregator...';
         showExtractionLoader(loaderMessage);
-        
-        // Detectar modo de extracción
-        const extractionMode = document.querySelector('input[name="extraction_mode"]:checked').value;
-        const isSync = extractionMode === 'sync';
-        
-        console.log(`🔧 Modo de extracción: ${extractionMode}`);
         
         // Procesar cada hotel seleccionado
         const extractions = selectedHotels.map((hotelId, index) => {
@@ -664,7 +700,13 @@ $hotels = getActiveHotels();
             console.error('Error:', error);
         });
         
-        bootstrap.Modal.getInstance(document.getElementById('newExtractionModal')).hide();
+        // Cerrar modal al final del proceso
+        const modal = bootstrap.Modal.getInstance(document.getElementById('newExtractionModal'));
+        if (modal) {
+            modal.hide();
+        } else {
+            console.warn('⚠️ No se pudo obtener instancia del modal');
+        }
     }
     
     function getSelectedPlatforms() {
