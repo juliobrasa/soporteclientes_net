@@ -3,15 +3,22 @@
  * Configuración del cliente Apify para Hotel Review Aggregator
  */
 
+// Cargar variables de entorno
+require_once __DIR__ . '/env-loader.php';
+
 class ApifyClient {
     private $apiToken;
     private $baseUrl = 'https://api.apify.com/v2';
     private $actorId = 'tri_angle/hotel-review-aggregator';
+    private $demoMode = false;
     
     public function __construct($apiToken = null) {
         $this->apiToken = $apiToken ?: $_ENV['APIFY_API_TOKEN'] ?? null;
-        if (!$this->apiToken) {
-            throw new Exception('APIFY_API_TOKEN no configurado');
+        
+        // Modo demo si no hay token real
+        if (!$this->apiToken || $this->apiToken === 'demo_token_replace_with_real') {
+            $this->demoMode = true;
+            $this->apiToken = 'demo_token';
         }
     }
     
@@ -19,6 +26,10 @@ class ApifyClient {
      * Iniciar extracción de reseñas para un hotel
      */
     public function startHotelExtraction($config) {
+        if ($this->demoMode) {
+            return $this->simulateExtractionStart($config);
+        }
+        
         $input = $this->buildExtractionInput($config);
         
         $response = $this->makeRequest('POST', "/acts/{$this->actorId}/runs", [
@@ -57,6 +68,10 @@ class ApifyClient {
      * Obtener estado de una ejecución
      */
     public function getRunStatus($runId) {
+        if ($this->demoMode) {
+            return $this->simulateRunStatus($runId);
+        }
+        
         return $this->makeRequest('GET', "/actor-runs/{$runId}");
     }
     
@@ -147,6 +162,50 @@ class ApifyClient {
         // Nota: Conversión exacta requiere API de Google
         // Este es un placeholder para implementación futura
         return "ChIJ_cid_{$cid}";
+    }
+    
+    /**
+     * Simular inicio de extracción en modo demo
+     */
+    private function simulateExtractionStart($config) {
+        $runId = 'demo_' . uniqid();
+        
+        return [
+            'data' => [
+                'id' => $runId,
+                'status' => 'READY',
+                'createdAt' => date('c'),
+                'modifiedAt' => date('c'),
+                'input' => $config
+            ],
+            'success' => true,
+            'demo_mode' => true
+        ];
+    }
+    
+    /**
+     * Simular estado de ejecución en modo demo
+     */
+    private function simulateRunStatus($runId) {
+        // Simular diferentes estados basados en tiempo
+        $states = ['READY', 'RUNNING', 'SUCCEEDED'];
+        $randomState = $states[array_rand($states)];
+        
+        return [
+            'data' => [
+                'id' => $runId,
+                'status' => $randomState,
+                'startedAt' => date('c', strtotime('-5 minutes')),
+                'finishedAt' => $randomState === 'SUCCEEDED' ? date('c') : null,
+                'stats' => [
+                    'inputBodyLen' => 1024,
+                    'restartCount' => 0,
+                    'resurrectCount' => 0
+                ]
+            ],
+            'success' => true,
+            'demo_mode' => true
+        ];
     }
 }
 
