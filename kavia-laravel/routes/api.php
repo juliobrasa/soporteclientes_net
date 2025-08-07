@@ -8,6 +8,7 @@ use App\Http\Controllers\API\PromptController;
 use App\Http\Controllers\API\ExternalApiController;
 use App\Http\Controllers\API\SystemLogController;
 use App\Http\Controllers\API\ExtractionController;
+use App\Http\Controllers\API\ToolsController;
 
 // ================================================================
 // RUTAS PÚBLICAS (SIN AUTENTICACIÓN)
@@ -167,6 +168,20 @@ Route::prefix('extraction-jobs')->group(function () {
 });
 
 // ================================================================
+// RUTAS DE HERRAMIENTAS (PÚBLICAS TEMPORALMENTE PARA TESTING)
+// ================================================================
+
+// Grupo de rutas para herramientas de sistema
+Route::prefix('tools')->group(function () {
+    Route::get('/stats', [ToolsController::class, 'getStats']);                    // GET /api/tools/stats
+    Route::get('/duplicates', [ToolsController::class, 'scanDuplicates']);         // GET /api/tools/duplicates
+    Route::delete('/duplicates', [ToolsController::class, 'deleteDuplicates']);    // DELETE /api/tools/duplicates
+    Route::post('/optimize', [ToolsController::class, 'optimizeTables']);          // POST /api/tools/optimize
+    Route::get('/integrity', [ToolsController::class, 'checkIntegrity']);          // GET /api/tools/integrity
+    Route::get('/system-info', [ToolsController::class, 'getSystemInfo']);        // GET /api/tools/system-info
+});
+
+// ================================================================
 // RUTAS DE COMPATIBILIDAD CON SISTEMA ACTUAL
 // ================================================================
 
@@ -177,6 +192,7 @@ Route::get('/legacy/prompts', [PromptController::class, 'index']);
 Route::get('/legacy/external-apis', [ExternalApiController::class, 'index']);
 Route::get('/legacy/system-logs', [SystemLogController::class, 'index']);
 Route::get('/legacy/extraction-jobs', [ExtractionController::class, 'index']);
+Route::get('/legacy/tools', [ToolsController::class, 'getStats']);
 
 // ================================================================
 // RUTAS PROTEGIDAS (COMENTADAS TEMPORALMENTE)
