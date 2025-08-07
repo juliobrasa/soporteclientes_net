@@ -13,7 +13,7 @@ function getExternalApis() {
     if (!$pdo) return [];
     
     try {
-        $stmt = $pdo->query("SELECT * FROM external_apis ORDER BY name ASC");
+        $stmt = $pdo->query("SELECT * FROM api_providers ORDER BY name ASC");
         return $stmt->fetchAll();
     } catch (PDOException $e) {
         error_log("Error obteniendo APIs externas: " . $e->getMessage());
@@ -72,8 +72,18 @@ $apis = getExternalApis();
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="admin-extraction.php">
+                                <i class="fas fa-download"></i> Extracción
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link active" href="admin-apis.php">
                                 <i class="fas fa-plug"></i> APIs Externas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="admin-tools.php">
+                                <i class="fas fa-tools"></i> Herramientas
                             </a>
                         </li>
                         <li class="nav-item">
@@ -183,13 +193,13 @@ $apis = getExternalApis();
                                         <td><?php echo $api['id']; ?></td>
                                         <td><strong><?php echo htmlspecialchars($api['name']); ?></strong></td>
                                         <td>
-                                            <span class="badge bg-secondary"><?php echo htmlspecialchars($api['type'] ?? 'REST'); ?></span>
+                                            <span class="badge bg-secondary"><?php echo htmlspecialchars($api['provider_type'] ?? 'custom'); ?></span>
                                         </td>
                                         <td>
-                                            <code><?php echo htmlspecialchars($api['base_url'] ?? ''); ?></code>
+                                            <code><?php echo htmlspecialchars($api['api_url'] ?? ''); ?></code>
                                         </td>
                                         <td>
-                                            <?php if ($api['active']): ?>
+                                            <?php if ($api['is_active']): ?>
                                                 <span class="badge bg-success"><i class="fas fa-check"></i> Activa</span>
                                             <?php else: ?>
                                                 <span class="badge bg-secondary"><i class="fas fa-pause"></i> Inactiva</span>
@@ -244,20 +254,20 @@ $apis = getExternalApis();
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Tipo</label>
-                                    <select class="form-select" name="type">
-                                        <option value="rest">REST API</option>
-                                        <option value="soap">SOAP</option>
-                                        <option value="graphql">GraphQL</option>
+                                    <label class="form-label">Tipo de Proveedor</label>
+                                    <select class="form-select" name="provider_type">
+                                        <option value="apify">Apify</option>
                                         <option value="booking">Booking API</option>
-                                        <option value="review">Review API</option>
+                                        <option value="tripadvisor">TripAdvisor</option>
+                                        <option value="google">Google APIs</option>
+                                        <option value="custom">Personalizada</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">URL Base *</label>
-                            <input type="url" class="form-control" name="base_url" required placeholder="https://api.ejemplo.com/v1">
+                            <label class="form-label">URL API *</label>
+                            <input type="url" class="form-control" name="api_url" required placeholder="https://api.apify.com/v2">
                         </div>
                         <div class="row">
                             <div class="col-md-6">
@@ -339,11 +349,10 @@ $apis = getExternalApis();
         
         const data = {
             name: formData.get('name'),
-            description: formData.get('description'),
-            base_url: formData.get('endpoint'),
+            provider_type: formData.get('provider_type'),
             api_key: formData.get('api_key'),
-            method: formData.get('method'),
-            headers: headers,
+            api_url: formData.get('api_url'),
+            description: formData.get('description'),
             is_active: formData.get('active') ? true : false
         };
 
@@ -380,11 +389,10 @@ $apis = getExternalApis();
             if (data.success) {
                 const api = data.data;
                 document.querySelector('input[name="name"]').value = api.name;
-                document.querySelector('textarea[name="description"]').value = api.description || '';
-                document.querySelector('input[name="endpoint"]').value = api.base_url || '';
+                document.querySelector('select[name="provider_type"]').value = api.provider_type || '';
+                document.querySelector('input[name="api_url"]').value = api.api_url || '';
                 document.querySelector('input[name="api_key"]').value = api.api_key || '';
-                document.querySelector('select[name="method"]').value = api.method || 'GET';
-                document.querySelector('textarea[name="headers"]').value = api.headers || '';
+                document.querySelector('textarea[name="description"]').value = api.description || '';
                 document.querySelector('input[name="active"]').checked = api.is_active == 1;
                 
                 document.querySelector('.modal-title').textContent = 'Editar API Externa';
