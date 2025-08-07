@@ -83,7 +83,9 @@ switch ($method) {
         break;
         
     case 'GET':
-        if (isset($_GET['run_id'])) {
+        if (isset($_GET['action']) && $_GET['action'] === 'get_recent') {
+            handleGetRecentJobs($pdo);
+        } elseif (isset($_GET['run_id'])) {
             handleGetRunStatus($_GET['run_id'], $pdo);
         } elseif (isset($_GET['hotel_id'])) {
             handleGetHotelExtractions($_GET['hotel_id'], $pdo);
@@ -333,6 +335,47 @@ function handleGetHotelExtractions($hotelId, $pdo) {
         response([
             'success' => true,
             'data' => $runs
+        ]);
+        
+    } catch (Exception $e) {
+        response(['error' => $e->getMessage()], 500);
+    }
+}
+
+/**
+ * Obtener trabajos recientes para polling
+ */
+function handleGetRecentJobs($pdo) {
+    try {
+        $stmt = $pdo->query("
+            SELECT 
+                ej.id,
+                ej.hotel_id,
+                ej.status,
+                ej.progress,
+                ej.reviews_extracted,
+                ej.created_at,
+                ej.updated_at,
+                h.nombre_hotel,
+                aer.apify_run_id,
+                aer.cost_estimate,
+                aer.platforms_requested,
+                TIMESTAMPDIFF(SECOND, ej.updated_at, NOW()) as seconds_since_update
+            FROM extraction_jobs ej
+            JOIN hoteles h ON ej.hotel_id = h.id
+            LEFT JOIN apify_extraction_runs aer ON aer.hotel_id = ej.hotel_id 
+                AND aer.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+            WHERE ej.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)
+            ORDER BY ej.created_at DESC
+            LIMIT 50
+        ");
+        
+        $jobs = $stmt->fetchAll();
+        
+        response([
+            'success' => true,
+            'data' => $jobs,
+            'timestamp' => time()
         ]);
         
     } catch (Exception $e) {

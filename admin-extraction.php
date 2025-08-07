@@ -284,10 +284,10 @@ $hotels = getActiveHotels();
                                 </thead>
                                 <tbody>
                                     <?php foreach ($jobs as $job): ?>
-                                    <tr>
+                                    <tr data-job-id="<?php echo $job['id']; ?>">
                                         <td><?php echo $job['id']; ?></td>
                                         <td><strong><?php echo htmlspecialchars($job['nombre_hotel'] ?? 'Hotel N/A'); ?></strong></td>
-                                        <td>
+                                        <td class="job-status">
                                             <?php 
                                             $status = $job['status'] ?? 'pending';
                                             $status_colors = [
@@ -303,7 +303,7 @@ $hotels = getActiveHotels();
                                                 <?php echo ucfirst($status); ?>
                                             </span>
                                         </td>
-                                        <td>
+                                        <td class="job-progress">
                                             <?php 
                                             $progress = $job['progress'] ?? 0;
                                             $progressColor = $progress == 100 ? 'bg-success' : ($progress > 50 ? 'bg-info' : 'bg-warning');
@@ -314,8 +314,8 @@ $hotels = getActiveHotels();
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>
-                                            <span class="badge bg-primary"><?php echo $job['extracted_count'] ?? 0; ?></span>
+                                        <td class="job-reviews">
+                                            <span class="badge bg-primary"><?php echo $job['reviews_extracted'] ?? 0; ?></span>
                                         </td>
                                         <td><?php echo date('Y-m-d H:i', strtotime($job['created_at'] ?? 'now')); ?></td>
                                         <td>
@@ -591,7 +591,13 @@ $hotels = getActiveHotels();
             }
             
             alert(message);
-            location.reload();
+            
+            // En lugar de recargar completamente, actualizar la tabla y empezar polling
+            if (successful.length > 0) {
+                startProgressPolling();
+            } else {
+                location.reload();
+            }
         })
         .catch(error => {
             hideExtractionLoader();
@@ -660,6 +666,183 @@ $hotels = getActiveHotels();
 
     function refreshJobs() {
         location.reload();
+    }
+
+    // Variables para polling
+    let pollingInterval = null;
+    let pollingCount = 0;
+    const MAX_POLLING_COUNT = 30; // 60 minutos máximo (2min * 30 = 3600seg)
+    
+    // Sistema de polling para actualizar estado de extracciones
+    function startProgressPolling() {
+        console.log('🔄 Iniciando polling de progreso...');
+        
+        // Limpiar polling anterior si existe
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+        }
+        
+        // Mostrar indicador de que está activo el polling
+        showPollingIndicator();
+        
+        pollingCount = 0;
+        pollingInterval = setInterval(() => {
+            pollingCount++;
+            console.log(`🔄 Polling #${pollingCount}`);
+            
+            updateExtractionProgress();
+            
+            // Detener polling después del máximo
+            if (pollingCount >= MAX_POLLING_COUNT) {
+                stopProgressPolling();
+                showToast('⏰ Tiempo límite de seguimiento alcanzado. Actualiza la página manualmente.', 'warning');
+            }
+        }, 120000); // Cada 2 minutos
+    }
+    
+    function stopProgressPolling() {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+        hidePollingIndicator();
+        console.log('⏹️  Polling detenido');
+    }
+    
+    function updateExtractionProgress() {
+        fetch('api-extraction.php?action=get_recent', {
+            headers: {
+                'X-Admin-Session': '<?php echo session_id(); ?>',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data) {
+                updateJobsTable(data.data);
+                
+                // Verificar si todas las extracciones han terminado
+                const activeJobs = data.data.filter(job => 
+                    job.status === 'pending' || job.status === 'running'
+                );
+                
+                if (activeJobs.length === 0) {
+                    stopProgressPolling();
+                    showToast('✅ Todas las extracciones han terminado', 'success');
+                    location.reload(); // Recargar para mostrar resultados finales
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error en polling:', error);
+        });
+    }
+    
+    function updateJobsTable(jobs) {
+        // Actualizar filas existentes en la tabla
+        jobs.forEach(job => {
+            const row = document.querySelector(`tr[data-job-id="${job.id}"]`);
+            if (row) {
+                // Actualizar estado
+                const statusCell = row.querySelector('.job-status');
+                if (statusCell) {
+                    statusCell.innerHTML = getStatusBadge(job.status);
+                }
+                
+                // Actualizar progreso
+                const progressCell = row.querySelector('.job-progress');
+                if (progressCell) {
+                    progressCell.innerHTML = getProgressBar(job.progress || 0);
+                }
+                
+                // Actualizar contador de reseñas
+                const reviewsCell = row.querySelector('.job-reviews');
+                if (reviewsCell) {
+                    reviewsCell.innerHTML = `<span class="badge bg-primary">${job.reviews_extracted || 0}</span>`;
+                }
+            }
+        });
+    }
+    
+    function getStatusBadge(status) {
+        const statusColors = {
+            'pending': 'bg-warning',
+            'running': 'bg-info',
+            'completed': 'bg-success',
+            'failed': 'bg-danger',
+            'cancelled': 'bg-secondary'
+        };
+        const color = statusColors[status] || 'bg-secondary';
+        return `<span class="badge ${color}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
+    }
+    
+    function getProgressBar(progress) {
+        const progressColor = progress == 100 ? 'bg-success' : (progress > 50 ? 'bg-info' : 'bg-warning');
+        return `
+            <div class="progress" style="width: 100px;">
+                <div class="progress-bar ${progressColor}" role="progressbar" style="width: ${progress}%">
+                    ${progress}%
+                </div>
+            </div>
+        `;
+    }
+    
+    function showPollingIndicator() {
+        const indicator = document.createElement('div');
+        indicator.id = 'polling-indicator';
+        indicator.className = 'alert alert-info d-flex align-items-center';
+        indicator.innerHTML = `
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+                <span class="visually-hidden">Actualizando...</span>
+            </div>
+            <span>🔄 Actualizando estado de extracciones automáticamente...</span>
+            <button type="button" class="btn-close ms-auto" onclick="stopProgressPolling()"></button>
+        `;
+        
+        const container = document.querySelector('main .container-fluid');
+        const firstCard = container.querySelector('.card');
+        container.insertBefore(indicator, firstCard);
+    }
+    
+    function hidePollingIndicator() {
+        const indicator = document.getElementById('polling-indicator');
+        if (indicator) {
+            indicator.remove();
+        }
+    }
+    
+    function showToast(message, type = 'info') {
+        // Crear toast notification
+        const toastContainer = document.getElementById('toast-container') || createToastContainer();
+        
+        const toastId = 'toast-' + Date.now();
+        const toastEl = document.createElement('div');
+        toastEl.id = toastId;
+        toastEl.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : (type === 'warning' ? 'warning' : 'info')} border-0`;
+        toastEl.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toastEl);
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+        
+        // Auto-remove después de que se oculte
+        toastEl.addEventListener('hidden.bs.toast', () => {
+            toastEl.remove();
+        });
+    }
+    
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(container);
+        return container;
     }
 
     // Reset form when modal closes
