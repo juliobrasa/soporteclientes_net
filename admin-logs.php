@@ -97,8 +97,18 @@ $stats = getLogStats();
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="admin-extraction.php">
+                                <i class="fas fa-download"></i> Extracción
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="admin-apis.php">
                                 <i class="fas fa-plug"></i> APIs Externas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="admin-tools.php">
+                                <i class="fas fa-tools"></i> Herramientas
                             </a>
                         </li>
                         <li class="nav-item">

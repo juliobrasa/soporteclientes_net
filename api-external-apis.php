@@ -24,7 +24,7 @@ switch ($method) {
     case 'GET':
         try {
             if (isset($_GET['id'])) {
-                $stmt = $pdo->prepare("SELECT * FROM external_apis WHERE id = ?");
+                $stmt = $pdo->prepare("SELECT * FROM api_providers WHERE id = ?");
                 $stmt->execute([$_GET['id']]);
                 $api = $stmt->fetch();
                 if ($api) {
@@ -33,7 +33,7 @@ switch ($method) {
                     response(['error' => 'API no encontrada'], 404);
                 }
             } else {
-                $stmt = $pdo->query("SELECT * FROM external_apis ORDER BY name ASC");
+                $stmt = $pdo->query("SELECT * FROM api_providers ORDER BY name ASC");
                 $apis = $stmt->fetchAll();
                 response(['success' => true, 'data' => $apis]);
             }
@@ -44,20 +44,20 @@ switch ($method) {
 
     case 'POST':
         try {
-            $required = ['name', 'base_url'];
+            $required = ['name', 'provider_type'];
             foreach ($required as $field) {
                 if (!isset($input[$field]) || empty($input[$field])) {
                     response(['error' => "Campo requerido: $field"], 400);
                 }
             }
 
-            $stmt = $pdo->prepare("INSERT INTO external_apis (name, description, base_url, credentials, configuration, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+            $stmt = $pdo->prepare("INSERT INTO api_providers (name, provider_type, api_key, api_url, description, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
             $result = $stmt->execute([
                 $input['name'],
-                $input['description'] ?? null,
-                $input['base_url'],
+                $input['provider_type'],
                 $input['api_key'] ?? null,
-                isset($input['headers']) ? json_encode($input['headers']) : null,
+                $input['api_url'] ?? null,
+                $input['description'] ?? null,
                 isset($input['is_active']) && $input['is_active'] ? 1 : 0
             ]);
 
@@ -79,13 +79,13 @@ switch ($method) {
             }
 
             $id = $_GET['id'];
-            $stmt = $pdo->prepare("UPDATE external_apis SET name = ?, description = ?, base_url = ?, credentials = ?, configuration = ?, is_active = ?, updated_at = NOW() WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE api_providers SET name = ?, provider_type = ?, api_key = ?, api_url = ?, description = ?, is_active = ?, updated_at = NOW() WHERE id = ?");
             $result = $stmt->execute([
                 $input['name'],
-                $input['description'] ?? null,
-                $input['base_url'],
+                $input['provider_type'],
                 $input['api_key'] ?? null,
-                isset($input['headers']) ? json_encode($input['headers']) : null,
+                $input['api_url'] ?? null,
+                $input['description'] ?? null,
                 isset($input['is_active']) && $input['is_active'] ? 1 : 0,
                 $id
             ]);
@@ -107,7 +107,7 @@ switch ($method) {
             }
 
             $id = $_GET['id'];
-            $stmt = $pdo->prepare("DELETE FROM external_apis WHERE id = ?");
+            $stmt = $pdo->prepare("DELETE FROM api_providers WHERE id = ?");
             $result = $stmt->execute([$id]);
 
             if ($result) {
