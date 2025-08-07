@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Módulo Prompts Kavia Hoteles</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="assets/css/prompts-templates.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .test-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary { background: #667eea; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+        
+        .status-indicator {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .status-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        
+        .console-output {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: monospace;
+            min-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 10px;
+            padding: 0;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🧪 Test Módulo Prompts - Kavia Hoteles</h1>
+            <p>Prueba de funcionalidad del módulo de gestión de prompts</p>
+        </div>
+        
+        <div id="status-indicator" class="status-indicator status-warning">
+            <i class="fas fa-spinner fa-spin"></i> Inicializando módulo...
+        </div>
+        
+        <div class="test-buttons">
+            <button class="btn btn-primary" onclick="testCreatePrompt()">
+                <i class="fas fa-plus"></i>
+                Crear Prompt
+            </button>
+            
+            <button class="btn btn-info" onclick="testShowLibrary()">
+                <i class="fas fa-book"></i>
+                Ver Biblioteca
+            </button>
+            
+            <button class="btn btn-success" onclick="testLoadPrompts()">
+                <i class="fas fa-list"></i>
+                Cargar Prompts
+            </button>
+            
+            <button class="btn btn-secondary" onclick="testGetStats()">
+                <i class="fas fa-chart-bar"></i>
+                Obtener Stats
+            </button>
+        </div>
+        
+        <div>
+            <h3>📋 Console Output:</h3>
+            <div id="console-output" class="console-output">
+                Esperando acciones...\n
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de prueba -->
+    <div id="test-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus"></i> Crear Nuevo Prompt</h3>
+                <button class="modal-close" onclick="closeTestModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="test-prompt-form">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Nombre del Prompt:</label>
+                        <input type="text" id="prompt-name" placeholder="Ej: Análisis de Sentimiento" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Categoría:</label>
+                        <select id="prompt-category" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                            <option value="sentiment">Análisis de Sentimiento</option>
+                            <option value="extraction">Extracción de Datos</option>
+                            <option value="translation">Traducción</option>
+                            <option value="classification">Clasificación</option>
+                            <option value="summary">Resumen</option>
+                            <option value="custom">Personalizado</option>
+                        </select>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Contenido del Prompt:</label>
+                        <textarea id="prompt-content" rows="6" placeholder="Ingresa el contenido del prompt aquí..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical; box-sizing: border-box;"></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="button" onclick="saveTestPrompt()" style="flex: 1; background: #667eea; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-save"></i> Guardar Prompt
+                        </button>
+                        <button type="button" onclick="closeTestModal()" style="background: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de API
+        const API_BASE = './admin_api.php';
+        
+        // Utilidades
+        function logToConsole(message, type = 'info') {
+            const console = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            console.innerHTML += `[${timestamp}] ${icon} ${message}\n`;
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const indicator = document.getElementById('status-indicator');
+            indicator.className = `status-indicator status-${type}`;
+            
+            const icon = type === 'error' ? 'fa-exclamation-triangle' : 
+                        type === 'success' ? 'fa-check-circle' : 
+                        type === 'warning' ? 'fa-exclamation-circle' : 'fa-info-circle';
+            
+            indicator.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
+        }
+        
+        // Función para hacer requests a la API
+        async function makeAPIRequest(action, data = {}) {
+            try {
+                logToConsole(`Haciendo request: ${action}`, 'info');
+                
+                const url = new URL(API_BASE, window.location.origin + window.location.pathname);
+                
+                let response;
+                if (Object.keys(data).length === 0) {
+                    // GET request
+                    url.searchParams.append('action', action);
+                    response = await fetch(url);
+                } else {
+                    // POST request
+                    const formData = new FormData();
+                    formData.append('action', action);
+                    Object.entries(data).forEach(([key, value]) => {
+                        formData.append(key, value);
+                    });
+                    
+                    response = await fetch(API_BASE, {
+                        method: 'POST',
+                        body: formData
+                    });
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                logToConsole(`Response: ${JSON.stringify(result, null, 2)}`, result.success ? 'success' : 'error');
+                
+                return result;
+                
+            } catch (error) {
+                logToConsole(`Error en ${action}: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+        
+        // Funciones de test
+        async function testCreatePrompt() {
+            logToConsole('=== INICIANDO TEST: Crear Prompt ===', 'info');
+            document.getElementById('test-modal').style.display = 'flex';
+        }
+        
+        async function testShowLibrary() {
+            logToConsole('=== INICIANDO TEST: Mostrar Biblioteca ===', 'info');
+            updateStatus('Cargando biblioteca de templates...', 'warning');
+            
+            try {
+                const result = await makeAPIRequest('getTemplatesLibrary');
+                
+                if (result.success) {
+                    updateStatus(`Biblioteca cargada: ${result.data.metadata.total_templates} templates`, 'success');
+                    
+                    // Mostrar algunos templates
+                    result.data.templates.slice(0, 3).forEach(template => {
+                        logToConsole(`📝 Template: ${template.name} (${template.category})`, 'info');
+                    });
+                } else {
+                    throw new Error(result.error || 'Error al cargar biblioteca');
+                }
+            } catch (error) {
+                updateStatus('Error al cargar biblioteca', 'error');
+                logToConsole(error.message, 'error');
+            }
+        }
+        
+        async function testLoadPrompts() {
+            logToConsole('=== INICIANDO TEST: Cargar Prompts ===', 'info');
+            updateStatus('Cargando prompts existentes...', 'warning');
+            
+            try {
+                const result = await makeAPIRequest('getPrompts', { page: 1, limit: 10 });
+                
+                if (result.success) {
+                    updateStatus(`Prompts cargados: ${result.data.total} total`, 'success');
+                    
+                    if (result.data.prompts.length > 0) {
+                        result.data.prompts.forEach(prompt => {
+                            logToConsole(`📋 Prompt: ${prompt.name} (${prompt.status})`, 'info');
+                        });
+                    } else {
+                        logToConsole('No hay prompts en la base de datos', 'warning');
+                    }
+                } else {
+                    throw new Error(result.error || 'Error al cargar prompts');
+                }
+            } catch (error) {
+                updateStatus('Error al cargar prompts', 'error');
+                logToConsole(error.message, 'error');
+            }
+        }
+        
+        async function testGetStats() {
+            logToConsole('=== INICIANDO TEST: Obtener Estadísticas ===', 'info');
+            updateStatus('Obteniendo estadísticas...', 'warning');
+            
+            try {
+                const result = await makeAPIRequest('getPromptsStats');
+                
+                if (result.success) {
+                    updateStatus('Estadísticas obtenidas correctamente', 'success');
+                    
+                    const stats = result.data;
+                    logToConsole(`📊 Total: ${stats.total}, Activos: ${stats.active}, IA: ${stats.ai_prompts}`, 'success');
+                    logToConsole(`📊 Uso total: ${stats.total_usage}, Idiomas: ${stats.languages}`, 'success');
+                } else {
+                    throw new Error(result.error || 'Error al obtener estadísticas');
+                }
+            } catch (error) {
+                updateStatus('Error al obtener estadísticas', 'error');
+                logToConsole(error.message, 'error');
+            }
+        }
+        
+        async function saveTestPrompt() {
+            const name = document.getElementById('prompt-name').value.trim();
+            const category = document.getElementById('prompt-category').value;
+            const content = document.getElementById('prompt-content').value.trim();
+            
+            if (!name || !category || !content) {
+                alert('Por favor completa todos los campos requeridos');
+                return;
+            }
+            
+            logToConsole('=== INICIANDO TEST: Guardar Prompt ===', 'info');
+            updateStatus('Guardando nuevo prompt...', 'warning');
+            
+            try {
+                const result = await makeAPIRequest('createPrompt', {
+                    name: name,
+                    category: category,
+                    content: content,
+                    language: 'es',
+                    status: 'draft',
+                    description: 'Prompt creado desde test'
+                });
+                
+                if (result.success) {
+                    updateStatus('Prompt creado correctamente', 'success');
+                    logToConsole(`✅ Nuevo prompt creado con ID: ${result.data.id}`, 'success');
+                    closeTestModal();
+                    
+                    // Limpiar formulario
+                    document.getElementById('test-prompt-form').reset();
+                } else {
+                    throw new Error(result.error || 'Error al crear prompt');
+                }
+            } catch (error) {
+                updateStatus('Error al crear prompt', 'error');
+                logToConsole(error.message, 'error');
+            }
+        }
+        
+        function closeTestModal() {
+            document.getElementById('test-modal').style.display = 'none';
+        }
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            logToConsole('🚀 Sistema de pruebas inicializado', 'success');
+            updateStatus('Sistema listo para pruebas', 'success');
+            
+            // Hacer una prueba inicial de conexión
+            setTimeout(async () => {
+                try {
+                    await testGetStats();
+                } catch (error) {
+                    logToConsole('⚠️ Test inicial falló - pero el sistema está listo para pruebas manuales', 'warning');
+                }
+            }, 1000);
+        });
+        
+        // Cerrar modal con Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeTestModal();
+            }
+        });
+    </script>
+</body>
+</html>

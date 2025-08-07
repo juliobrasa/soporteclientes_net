@@ -218,7 +218,7 @@ class PromptsModule {
                 language: this.currentFilter.language
             };
             
-            const response = await AdminAPI.request('getPrompts', params);
+            const response = await apiClient.call('getPrompts', params);
             
             if (response.success) {
                 this.prompts = response.data.prompts;
@@ -251,7 +251,7 @@ class PromptsModule {
      */
     async loadStats() {
         try {
-            const response = await AdminAPI.request('getPromptsStats');
+            const response = await apiClient.call('getPromptsStats');
             
             if (response.success) {
                 const stats = response.data;
@@ -644,7 +644,7 @@ class PromptsModule {
      */
     async editPrompt(id) {
         try {
-            const response = await AdminAPI.request('getPrompt', { id });
+            const response = await apiClient.call('getPrompt', { id });
             
             if (response.success) {
                 this.currentPrompt = response.data;
@@ -1083,7 +1083,7 @@ class PromptsModule {
      */
     async loadTestProviders() {
         try {
-            const response = await AdminAPI.request('getAIProviders', { status: 'active' });
+            const response = await apiClient.call('getAIProviders', { status: 'active' });
             
             if (response.success) {
                 const select = document.getElementById('test-provider');
@@ -1226,7 +1226,7 @@ class PromptsModule {
             
             const startTime = Date.now();
             
-            const response = await AdminAPI.request('testPrompt', {
+            const response = await apiClient.call('testPrompt', {
                 provider_id: providerSelect.value,
                 content: contentElement.value,
                 variables: variables,
@@ -1465,7 +1465,7 @@ class PromptsModule {
                 showInfo(isCreating ? 'Creando prompt...' : 'Actualizando prompt...');
             }
             
-            const response = await AdminAPI.request(endpoint, formData);
+            const response = await apiClient.call(endpoint, formData);
             
             if (response.success) {
                 this.currentPrompt = response.data;
@@ -1665,7 +1665,7 @@ class PromptsModule {
      */
     async duplicatePrompt(id) {
         try {
-            const response = await AdminAPI.request('duplicatePrompt', { id });
+            const response = await apiClient.call('duplicatePrompt', { id });
             
             if (response.success) {
                 showSuccess('Prompt duplicado correctamente');
@@ -1688,7 +1688,7 @@ class PromptsModule {
         }
         
         try {
-            const response = await AdminAPI.request('updatePrompt', {
+            const response = await apiClient.call('updatePrompt', {
                 id: id,
                 status: 'archived'
             });
@@ -1714,7 +1714,7 @@ class PromptsModule {
         }
         
         try {
-            const response = await AdminAPI.request('deletePrompt', { id });
+            const response = await apiClient.call('deletePrompt', { id });
             
             if (response.success) {
                 showSuccess('Prompt eliminado correctamente');
@@ -1733,7 +1733,7 @@ class PromptsModule {
      */
     async exportPrompts() {
         try {
-            const response = await AdminAPI.request('exportPrompts', {
+            const response = await apiClient.call('exportPrompts', {
                 format: 'json',
                 filters: this.currentFilter
             });
@@ -1778,7 +1778,7 @@ class PromptsModule {
                 const text = await file.text();
                 const data = JSON.parse(text);
                 
-                const response = await AdminAPI.request('importPrompts', { data });
+                const response = await apiClient.call('importPrompts', { data });
                 
                 if (response.success) {
                     showSuccess(`${response.data.imported} prompts importados correctamente`);
@@ -1800,7 +1800,7 @@ class PromptsModule {
      */
     async showTemplatesLibrary() {
         try {
-            const response = await AdminAPI.request('getTemplatesLibrary');
+            const response = await apiClient.call('getTemplatesLibrary');
             
             if (response.success) {
                 this.renderTemplatesLibrary(response.data);
@@ -1923,7 +1923,7 @@ class PromptsModule {
      */
     async previewTemplate(templateName) {
         try {
-            const response = await AdminAPI.request('getTemplatesLibrary');
+            const response = await apiClient.call('getTemplatesLibrary');
             if (response.success) {
                 const template = response.data.templates.find(t => t.name === templateName);
                 if (template) {
@@ -2036,11 +2036,11 @@ class PromptsModule {
      */
     async importTemplate(templateName) {
         try {
-            const response = await AdminAPI.request('getTemplatesLibrary');
+            const response = await apiClient.call('getTemplatesLibrary');
             if (response.success) {
                 const template = response.data.templates.find(t => t.name === templateName);
                 if (template) {
-                    const importResponse = await AdminAPI.request('importTemplate', { template });
+                    const importResponse = await apiClient.call('importTemplate', { template });
                     
                     if (importResponse.success) {
                         showSuccess('Template importado correctamente');
