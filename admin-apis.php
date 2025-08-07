@@ -390,6 +390,8 @@ $apis = getExternalApis();
             method: method,
             headers: {
                 'Content-Type': 'application/json',
+                'X-Admin-Session': '<?php echo session_id(); ?>',
+                'X-Requested-With': 'XMLHttpRequest'
             },
             credentials: 'same-origin',
             body: JSON.stringify(data)
@@ -413,6 +415,10 @@ $apis = getExternalApis();
         editingId = id;
         
         fetch(`api-external-apis.php?id=${id}`, {
+            headers: {
+                'X-Admin-Session': '<?php echo session_id(); ?>',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             credentials: 'same-origin'
         })
         .then(response => response.json())
@@ -458,6 +464,10 @@ $apis = getExternalApis();
         if (confirm(`¿Estás seguro de que quieres eliminar la API "${name}"?`)) {
             fetch(`api-external-apis.php?id=${id}`, {
                 method: 'DELETE',
+                headers: {
+                    'X-Admin-Session': '<?php echo session_id(); ?>',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
                 credentials: 'same-origin'
             })
             .then(response => response.json())
@@ -484,6 +494,10 @@ $apis = getExternalApis();
         button.disabled = true;
         
         fetch(`api-external-apis.php?id=${id}&test=1`, {
+            headers: {
+                'X-Admin-Session': '<?php echo session_id(); ?>',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             credentials: 'same-origin'
         })
         .then(response => response.json())
@@ -507,6 +521,10 @@ $apis = getExternalApis();
     function viewApiLogs(id) {
         // Obtener información de la API
         fetch(`api-external-apis.php?id=${id}`, {
+            headers: {
+                'X-Admin-Session': '<?php echo session_id(); ?>',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             credentials: 'same-origin'
         })
         .then(response => response.json())

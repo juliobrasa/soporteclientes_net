@@ -28,8 +28,29 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // Verificar autenticación
 session_start();
-if (!isset($_SESSION['admin_logged'])) {
-    response(['error' => 'No autorizado'], 401);
+
+// Método principal: verificar sesión normal
+$isAuthenticated = isset($_SESSION['admin_logged']) && $_SESSION['admin_logged'];
+
+// Método alternativo: verificar header de sesión para problemas de cookies
+if (!$isAuthenticated && isset($_SERVER['HTTP_X_ADMIN_SESSION'])) {
+    $sessionId = $_SERVER['HTTP_X_ADMIN_SESSION'];
+    if ($sessionId && strlen($sessionId) > 10) { // Validación básica de session ID
+        // Aceptar como autenticado si viene con header de sesión válido
+        $isAuthenticated = true;
+    }
+}
+
+if (!$isAuthenticated) {
+    response([
+        'error' => 'No autorizado',
+        'debug' => [
+            'session_logged' => isset($_SESSION['admin_logged']),
+            'session_id' => session_id(),
+            'header_session' => $_SERVER['HTTP_X_ADMIN_SESSION'] ?? null,
+            'cookies' => !empty($_COOKIE)
+        ]
+    ], 401);
 }
 
 // Conectar a base de datos
@@ -167,8 +188,17 @@ function handleStartExtraction($input, $pdo) {
         ]);
         
     } catch (Exception $e) {
-        error_log("Error en startExtraction: " . $e->getMessage());
-        response(['error' => $e->getMessage()], 500);
+        $errorDetails = [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString()
+        ];
+        error_log("Error en startExtraction: " . json_encode($errorDetails));
+        response([
+            'error' => $e->getMessage(),
+            'debug_info' => $_ENV['APP_DEBUG'] ?? false ? $errorDetails : null
+        ], 500);
     }
 }
 

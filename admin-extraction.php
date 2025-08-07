@@ -526,6 +526,8 @@ $hotels = getActiveHotels();
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-Admin-Session': '<?php echo session_id(); ?>',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'same-origin',
                 body: JSON.stringify(data)

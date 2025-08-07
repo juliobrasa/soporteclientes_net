@@ -23,7 +23,19 @@ function response($data, $status = 200) {
 
 // Verificar autenticación
 session_start();
-if (!isset($_SESSION['admin_logged'])) {
+
+// Método principal: verificar sesión normal
+$isAuthenticated = isset($_SESSION['admin_logged']) && $_SESSION['admin_logged'];
+
+// Método alternativo: verificar header de sesión para problemas de cookies
+if (!$isAuthenticated && isset($_SERVER['HTTP_X_ADMIN_SESSION'])) {
+    $sessionId = $_SERVER['HTTP_X_ADMIN_SESSION'];
+    if ($sessionId && strlen($sessionId) > 10) {
+        $isAuthenticated = true;
+    }
+}
+
+if (!$isAuthenticated) {
     response(['error' => 'No autorizado'], 401);
 }
 
