@@ -81,6 +81,11 @@ $recent_activity = getRecentActivity();
                                 <i class="fas fa-file-alt"></i> Logs del Sistema
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="admin-debug-logs.php" style="color: #ffc107;">
+                                <i class="fas fa-bug"></i> Debug Logs
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>
