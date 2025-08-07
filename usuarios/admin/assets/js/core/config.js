@@ -9,30 +9,30 @@
 window.AdminConfig = {
     // Configuración de la API - MIGRADO A LARAVEL
     api: {
-        baseUrl: 'public/api',  // URL base para Laravel API
+        baseUrl: 'http://localhost:8000/api/legacy',  // URL base para Laravel API (legacy endpoints)
         endpoints: {
             // === HOTELES (MIGRADO A LARAVEL) ===
             hotels: {
-                list: 'hotels',                        // GET /api/hotels
-                create: 'hotels',                       // POST /api/hotels
-                show: 'hotels/{id}',                    // GET /api/hotels/{id}
-                update: 'hotels/{id}',                  // PUT /api/hotels/{id}
-                delete: 'hotels/{id}',                  // DELETE /api/hotels/{id}
-                toggleStatus: 'hotels/{id}/toggle-status', // POST /api/hotels/{id}/toggle-status
-                stats: 'hotels/stats/summary'           // GET /api/hotels/stats/summary
+                list: 'hotels',                        // GET /api/legacy/hotels
+                create: 'hotels',                       // POST /api/legacy/hotels
+                show: 'hotels/{id}',                    // GET /api/legacy/hotels/{id}
+                update: 'hotels/{id}',                  // PUT /api/legacy/hotels/{id}
+                delete: 'hotels/{id}',                  // DELETE /api/legacy/hotels/{id}
+                toggleStatus: 'hotels/{id}/toggle-status', // POST /api/legacy/hotels/{id}/toggle-status
+                stats: 'hotels/stats/summary'           // GET /api/legacy/hotels/stats/summary
             },
             
             // === AI PROVIDERS (MIGRADO A LARAVEL) ===
             aiProviders: {
-                list: 'ai-providers',                   // GET /api/ai-providers
-                create: 'ai-providers',                 // POST /api/ai-providers
-                show: 'ai-providers/{id}',              // GET /api/ai-providers/{id}
-                update: 'ai-providers/{id}',            // PUT /api/ai-providers/{id}
-                delete: 'ai-providers/{id}',            // DELETE /api/ai-providers/{id}
-                toggle: 'ai-providers/{id}/toggle',     // POST /api/ai-providers/{id}/toggle
-                test: 'ai-providers/{id}/test',         // POST /api/ai-providers/{id}/test
-                stats: 'ai-providers/stats',            // GET /api/ai-providers/stats
-                defaults: 'ai-providers/defaults'       // GET /api/ai-providers/defaults
+                list: 'ai-providers',                   // GET /api/legacy/ai-providers
+                create: 'ai-providers',                 // POST /api/legacy/ai-providers
+                show: 'ai-providers/{id}',              // GET /api/legacy/ai-providers/{id}
+                update: 'ai-providers/{id}',            // PUT /api/legacy/ai-providers/{id}
+                delete: 'ai-providers/{id}',            // DELETE /api/legacy/ai-providers/{id}
+                toggle: 'ai-providers/{id}/toggle',     // POST /api/legacy/ai-providers/{id}/toggle
+                test: 'ai-providers/{id}/test',         // POST /api/legacy/ai-providers/{id}/test
+                stats: 'ai-providers/stats',            // GET /api/legacy/ai-providers/stats
+                defaults: 'ai-providers/defaults'       // GET /api/legacy/ai-providers/defaults
             },
             
             // === PROMPTS (MIGRADO A LARAVEL) ===
