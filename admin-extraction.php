@@ -605,7 +605,7 @@ $hotels = getActiveHotels();
             
             const data = {
                 hotel_id: hotelId,
-                max_reviews: isSync ? Math.min(maxReviews, 100) : maxReviews, // Limitar en modo sync
+                max_reviews: maxReviews, // Usar valor completo sin limitación
                 platforms: getSelectedPlatforms(),
                 languages: ['en', 'es'],
                 sentiment_analysis: formData.get('sentiment_analysis') ? true : false,

@@ -284,7 +284,7 @@ class ApifyClient {
         $maxReviews = $config['maxReviews'] ?? 10;
         $reviews = [];
         
-        for ($i = 0; $i < min($maxReviews, 50); $i++) {
+        for ($i = 0; $i < min($maxReviews, 500); $i++) { // Aumentar límite de simulación
             $template = $sampleReviews[$i % count($sampleReviews)];
             $template['reviewId'] = 'demo_review_' . uniqid();
             $template['reviewDate'] = date('Y-m-d', strtotime('-' . rand(1, 365) . ' days'));
