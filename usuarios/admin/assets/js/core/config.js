@@ -7,38 +7,62 @@
 
 // Configuración global del sistema
 window.AdminConfig = {
-    // Configuración de la API
+    // Configuración de la API - MIGRADO A LARAVEL
     api: {
-        baseUrl: 'admin_api.php',  // URL base para las llamadas API (ahora en el mismo directorio)
+        baseUrl: 'public/api',  // URL base para Laravel API
         endpoints: {
-            // Hoteles
-            getHotels: 'getHotels',
-            saveHotel: 'saveHotel',
-            deleteHotel: 'deleteHotel',
+            // === HOTELES (MIGRADO A LARAVEL) ===
+            hotels: {
+                list: 'hotels',                        // GET /api/hotels
+                create: 'hotels',                       // POST /api/hotels
+                show: 'hotels/{id}',                    // GET /api/hotels/{id}
+                update: 'hotels/{id}',                  // PUT /api/hotels/{id}
+                delete: 'hotels/{id}',                  // DELETE /api/hotels/{id}
+                toggleStatus: 'hotels/{id}/toggle-status', // POST /api/hotels/{id}/toggle-status
+                stats: 'hotels/stats/summary'           // GET /api/hotels/stats/summary
+            },
             
-            // APIs/Proveedores
+            // === AI PROVIDERS (MIGRADO A LARAVEL) ===
+            aiProviders: {
+                list: 'ai-providers',                   // GET /api/ai-providers
+                create: 'ai-providers',                 // POST /api/ai-providers
+                show: 'ai-providers/{id}',              // GET /api/ai-providers/{id}
+                update: 'ai-providers/{id}',            // PUT /api/ai-providers/{id}
+                delete: 'ai-providers/{id}',            // DELETE /api/ai-providers/{id}
+                toggle: 'ai-providers/{id}/toggle',     // POST /api/ai-providers/{id}/toggle
+                test: 'ai-providers/{id}/test',         // POST /api/ai-providers/{id}/test
+                stats: 'ai-providers/stats',            // GET /api/ai-providers/stats
+                defaults: 'ai-providers/defaults'       // GET /api/ai-providers/defaults
+            },
+            
+            // === PROMPTS (MIGRADO A LARAVEL) ===
+            prompts: {
+                list: 'prompts',                        // GET /api/prompts
+                create: 'prompts',                      // POST /api/prompts
+                show: 'prompts/{id}',                   // GET /api/prompts/{id}
+                update: 'prompts/{id}',                 // PUT /api/prompts/{id}
+                delete: 'prompts/{id}',                 // DELETE /api/prompts/{id}
+                duplicate: 'prompts/{id}/duplicate',    // POST /api/prompts/{id}/duplicate
+                test: 'prompts/{id}/test',              // POST /api/prompts/{id}/test
+                stats: 'prompts/stats',                 // GET /api/prompts/stats
+                templates: 'prompts/templates-library', // GET /api/prompts/templates-library
+                importTemplate: 'prompts/import-template', // POST /api/prompts/import-template
+                export: 'prompts/export',               // GET /api/prompts/export
+                recommended: 'prompts/recommended/{category}' // GET /api/prompts/recommended/{category}
+            },
+            
+            // === PENDIENTES DE MIGRAR (USAR admin_api.php TEMPORAL) ===
+            // APIs/Proveedores Externos
             getApiProviders: 'getApiProviders',
             saveApiProvider: 'saveApiProvider',
             deleteApiProvider: 'deleteApiProvider',
             testApiProvider: 'testApiProvider',
-            
-            // Proveedores IA
-            getAiProviders: 'getAiProviders',
-            saveAiProvider: 'saveAiProvider',
-            toggleAiProvider: 'toggleAiProvider',
-            testAiProvider: 'testAiProvider',
             
             // Extracción
             getExtractionHotels: 'getExtractionHotels',
             startExtraction: 'startExtraction',
             getExtractionStatus: 'getExtractionStatus',
             getApifyStatus: 'getApifyStatus',
-            
-            // Prompts
-            getPrompts: 'getPrompts',
-            savePrompt: 'savePrompt',
-            deletePrompt: 'deletePrompt',
-            togglePrompt: 'togglePrompt',
             
             // Logs
             getLogs: 'getLogs',
@@ -52,7 +76,29 @@ window.AdminConfig = {
             checkIntegrity: 'checkIntegrity'
         },
         timeout: 30000, // 30 segundos
-        retries: 3
+        retries: 3,
+        
+        // Configuración para Laravel
+        laravel: {
+            // Módulos ya migrados a Laravel (true = usar Laravel API, false = usar admin_api.php)
+            migrated: {
+                hotels: true,
+                aiProviders: true,
+                prompts: true,
+                apiProviders: false,    // Pendiente
+                extraction: false,      // Pendiente
+                logs: false,            // Pendiente
+                tools: false           // Pendiente
+            },
+            
+            // Headers para requests a Laravel
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+                // 'Authorization': 'Bearer {token}' // Para cuando implementemos auth
+            }
+        }
     },
     
     // Configuración de UI
