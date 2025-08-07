@@ -510,6 +510,36 @@ $hotels = getActiveHotels();
         </div>
     </div>
 
+    <!-- Modal de Detalles del Trabajo -->
+    <div class="modal fade" id="jobDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-info-circle me-2"></i>Detalles de la Extracción
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="jobDetailsContent">
+                        <div class="text-center p-4">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Cargando detalles...</span>
+                            </div>
+                            <p>Cargando detalles de la extracción...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="refreshJobDetails">
+                        <i class="fas fa-sync-alt me-1"></i>Actualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
@@ -745,7 +775,274 @@ $hotels = getActiveHotels();
     }
 
     function viewJobDetails(id) {
-        alert('Ver detalles del trabajo ID: ' + id);
+        // Mostrar el modal
+        const modal = new bootstrap.Modal(document.getElementById('jobDetailsModal'));
+        modal.show();
+        
+        // Resetear contenido
+        const contentDiv = document.getElementById('jobDetailsContent');
+        contentDiv.innerHTML = `
+            <div class="text-center p-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Cargando detalles...</span>
+                </div>
+                <p>Cargando detalles de la extracción...</p>
+            </div>
+        `;
+        
+        // Cargar detalles del trabajo
+        loadJobDetails(id);
+        
+        // Configurar botón de actualizar
+        document.getElementById('refreshJobDetails').onclick = () => loadJobDetails(id);
+    }
+    
+    function loadJobDetails(id) {
+        fetch(`api-extraction.php?job_id=${id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Admin-Session': '<?php echo session_id(); ?>',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            const contentDiv = document.getElementById('jobDetailsContent');
+            
+            if (data.success) {
+                contentDiv.innerHTML = buildJobDetailsHTML(data.data);
+            } else {
+                contentDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error cargando detalles: ${data.error || 'Error desconocido'}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            const contentDiv = document.getElementById('jobDetailsContent');
+            contentDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error de conexión: ${error.message}
+                </div>
+            `;
+        });
+    }
+    
+    function buildJobDetailsHTML(job) {
+        const statusBadge = getStatusBadge(job.status);
+        const createdDate = new Date(job.created_at).toLocaleString('es-ES');
+        const updatedDate = new Date(job.updated_at).toLocaleString('es-ES');
+        
+        return `
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información General</h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>ID de Trabajo:</strong></td>
+                                    <td>${job.id}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Hotel:</strong></td>
+                                    <td>${job.nombre_hotel || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Estado:</strong></td>
+                                    <td>${statusBadge}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Progreso:</strong></td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: ${job.progress || 0}%">
+                                                ${job.progress || 0}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Reseñas Extraídas:</strong></td>
+                                    <td><span class="badge bg-success">${job.reviews_extracted || 0}</span></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-clock me-2"></i>Fechas y Tiempos</h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Creado:</strong></td>
+                                    <td>${createdDate}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Actualizado:</strong></td>
+                                    <td>${updatedDate}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Duración:</strong></td>
+                                    <td>${calculateDuration(job.created_at, job.updated_at)}</td>
+                                </tr>
+                                ${job.completed_at ? `
+                                <tr>
+                                    <td><strong>Completado:</strong></td>
+                                    <td>${new Date(job.completed_at).toLocaleString('es-ES')}</td>
+                                </tr>
+                                ` : ''}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            ${job.apify_run_id ? `
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Detalles de Apify</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Run ID:</strong><br>
+                            <code>${job.apify_run_id}</code>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Plataformas:</strong><br>
+                            ${job.platforms_requested ? JSON.parse(job.platforms_requested).join(', ') : 'N/A'}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Costo Estimado:</strong><br>
+                            <span class="badge bg-info">$${job.cost_estimate || '0.00'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+            
+            ${job.review_stats ? `
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Estadísticas de Reseñas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <div class="h4 text-primary">${job.review_stats.total_reviews || 0}</div>
+                            <small class="text-muted">Total Reseñas</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="h4 text-success">${parseFloat(job.review_stats.average_rating || 0).toFixed(1)}</div>
+                            <small class="text-muted">Rating Promedio</small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2">
+                                <small>Booking: <span class="badge bg-primary">${job.review_stats.booking_reviews || 0}</span></small>
+                            </div>
+                            <div class="mb-2">
+                                <small>TripAdvisor: <span class="badge bg-success">${job.review_stats.tripadvisor_reviews || 0}</span></small>
+                            </div>
+                            <div class="mb-2">
+                                <small>Google: <span class="badge bg-info">${job.review_stats.google_reviews || 0}</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+            
+            ${job.recent_logs && job.recent_logs.length > 0 ? `
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>Logs Recientes</h6>
+                </div>
+                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                    ${job.recent_logs.map(log => `
+                        <div class="border-bottom pb-2 mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge ${getLogLevelBadge(log.level)} me-2">${log.level.toUpperCase()}</span>
+                                <small class="text-muted">${new Date(log.created_at).toLocaleString('es-ES')}</small>
+                            </div>
+                            <div class="mt-1">
+                                <small>${log.message}</small>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-list me-2"></i>Acciones Disponibles</h6>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-sm btn-outline-primary me-2" onclick="pauseJob(${job.id})">
+                        <i class="fas fa-pause me-1"></i>Pausar
+                    </button>
+                    <button class="btn btn-sm btn-outline-success me-2" onclick="restartJob(${job.id})">
+                        <i class="fas fa-redo me-1"></i>Reiniciar
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteJob(${job.id})">
+                        <i class="fas fa-trash me-1"></i>Eliminar
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    function getStatusBadge(status) {
+        const statusMap = {
+            'pending': '<span class="badge bg-warning">Pendiente</span>',
+            'running': '<span class="badge bg-primary">En Ejecución</span>',
+            'completed': '<span class="badge bg-success">Completado</span>',
+            'failed': '<span class="badge bg-danger">Fallido</span>',
+            'cancelled': '<span class="badge bg-secondary">Cancelado</span>'
+        };
+        return statusMap[status] || '<span class="badge bg-light text-dark">Desconocido</span>';
+    }
+    
+    function getLogLevelBadge(level) {
+        const levelMap = {
+            'info': 'bg-info',
+            'error': 'bg-danger',
+            'warning': 'bg-warning',
+            'debug': 'bg-secondary',
+            'success': 'bg-success'
+        };
+        return levelMap[level] || 'bg-secondary';
+    }
+    
+    function calculateDuration(start, end) {
+        const startTime = new Date(start);
+        const endTime = new Date(end);
+        const diffMs = endTime - startTime;
+        
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+        
+        if (hours > 0) {
+            return `${hours}h ${minutes}m ${seconds}s`;
+        } else if (minutes > 0) {
+            return `${minutes}m ${seconds}s`;
+        } else {
+            return `${seconds}s`;
+        }
     }
 
     function pauseJob(id) {
