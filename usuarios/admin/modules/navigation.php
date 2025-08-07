@@ -856,6 +856,12 @@ class NavigationManagerV2 {
         // Animación de entrada
         this.playEntryAnimation();
         
+        // IMPORTANTE: Activar el tab inicial después de la inicialización
+        setTimeout(() => {
+            console.log(`🎯 Activando tab inicial: ${this.currentTab}`);
+            this.switchTab(this.currentTab, false);
+        }, 200);
+        
         console.log('✅ Navigation Manager v2.0 listo');
     }
     
