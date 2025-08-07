@@ -9,22 +9,16 @@ require_once __DIR__ . '/env-loader.php';
 class ApifyClient {
     private $apiToken;
     private $baseUrl = 'https://api.apify.com/v2';
-    private $actorId = 'tri_angle/hotel-review-aggregator';
+    private $actorId = 'tri_angle~hotel-review-aggregator';
     private $demoMode = false;
     
     public function __construct($apiToken = null) {
         $this->apiToken = $apiToken ?: $_ENV['APIFY_API_TOKEN'] ?? null;
         
-        // Debug temporal
-        error_log("ApifyClient constructor - Token recibido: " . ($this->apiToken ?? 'NULL'));
-        
         // Modo demo si no hay token real
         if (!$this->apiToken || $this->apiToken === 'demo_token_replace_with_real') {
             $this->demoMode = true;
             $this->apiToken = 'demo_token';
-            error_log("ApifyClient - MODO DEMO activado");
-        } else {
-            error_log("ApifyClient - MODO REAL activado con token: " . substr($this->apiToken, 0, 20) . "...");
         }
     }
     

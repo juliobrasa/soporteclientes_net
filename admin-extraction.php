@@ -185,6 +185,9 @@ $hotels = getActiveHotels();
                             <button type="button" class="btn btn-outline-primary" onclick="refreshJobs()">
                                 <i class="fas fa-sync-alt"></i> Actualizar
                             </button>
+                            <a href="admin-place-ids.php" class="btn btn-warning">
+                                <i class="fas fa-map-marker-alt"></i> Configurar Place IDs
+                            </a>
                         </div>
                     </div>
                 </div>
