@@ -65,6 +65,20 @@ window.AdminConfig = {
                 defaults: 'external-apis/defaults'      // GET /api/external-apis/defaults
             },
             
+            // === SYSTEM LOGS (MIGRADO A LARAVEL) ===
+            systemLogs: {
+                list: 'system-logs',                       // GET /api/system-logs
+                create: 'system-logs',                      // POST /api/system-logs
+                show: 'system-logs/{id}',                   // GET /api/system-logs/{id}
+                delete: 'system-logs/{id}',                 // DELETE /api/system-logs/{id}
+                resolve: 'system-logs/{id}/resolve',        // POST /api/system-logs/{id}/resolve
+                stats: 'system-logs/stats',                 // GET /api/system-logs/stats
+                timeline: 'system-logs/timeline',           // GET /api/system-logs/timeline
+                config: 'system-logs/config',               // GET /api/system-logs/config
+                export: 'system-logs/export',               // GET /api/system-logs/export
+                cleanup: 'system-logs/cleanup'              // POST /api/system-logs/cleanup
+            },
+            
             // === PENDIENTES DE MIGRAR (USAR admin_api.php TEMPORAL) ===
             
             // Extracción
@@ -73,9 +87,6 @@ window.AdminConfig = {
             getExtractionStatus: 'getExtractionStatus',
             getApifyStatus: 'getApifyStatus',
             
-            // Logs
-            getLogs: 'getLogs',
-            clearLogs: 'clearLogs',
             
             // Herramientas
             getDbStats: 'getDbStats',
@@ -95,8 +106,8 @@ window.AdminConfig = {
                 aiProviders: true,
                 prompts: true,
                 externalApis: true,     // ✅ MIGRADO 
+                systemLogs: true,       // ✅ MIGRADO
                 extraction: false,      // Pendiente
-                logs: false,            // Pendiente
                 tools: false           // Pendiente
             },
             

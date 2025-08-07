@@ -6,6 +6,7 @@ use App\Http\Controllers\API\HotelController;
 use App\Http\Controllers\API\AiProviderController;
 use App\Http\Controllers\API\PromptController;
 use App\Http\Controllers\API\ExternalApiController;
+use App\Http\Controllers\API\SystemLogController;
 
 // ================================================================
 // RUTAS PÚBLICAS (SIN AUTENTICACIÓN)
@@ -112,11 +113,39 @@ Route::prefix('external-apis')->group(function () {
 // RUTAS DE COMPATIBILIDAD CON SISTEMA ACTUAL
 // ================================================================
 
+// ================================================================
+// RUTAS DE SYSTEM LOGS (PÚBLICAS TEMPORALMENTE PARA TESTING)
+// ================================================================
+
+// Grupo de rutas para logs del sistema  
+Route::prefix('system-logs')->group(function () {
+    // Rutas especiales primero (antes del resource)
+    Route::get('/stats', [SystemLogController::class, 'stats']);             // GET /api/system-logs/stats
+    Route::get('/timeline', [SystemLogController::class, 'timeline']);       // GET /api/system-logs/timeline
+    Route::get('/config', [SystemLogController::class, 'config']);           // GET /api/system-logs/config
+    Route::get('/export', [SystemLogController::class, 'export']);           // GET /api/system-logs/export
+    Route::post('/cleanup', [SystemLogController::class, 'cleanup']);        // POST /api/system-logs/cleanup
+    
+    // CRUD básico
+    Route::get('/', [SystemLogController::class, 'index']);                   // GET /api/system-logs
+    Route::post('/', [SystemLogController::class, 'store']);                  // POST /api/system-logs
+    Route::get('/{systemLog}', [SystemLogController::class, 'show']);         // GET /api/system-logs/{id}
+    Route::delete('/{systemLog}', [SystemLogController::class, 'destroy']);   // DELETE /api/system-logs/{id}
+    
+    // Rutas adicionales
+    Route::post('/{systemLog}/resolve', [SystemLogController::class, 'resolve']); // POST /api/system-logs/{id}/resolve
+});
+
+// ================================================================
+// RUTAS DE COMPATIBILIDAD CON SISTEMA ACTUAL
+// ================================================================
+
 // Rutas de compatibilidad para el sistema actual
 Route::get('/legacy/hotels', [HotelController::class, 'index']);
 Route::get('/legacy/ai-providers', [AiProviderController::class, 'index']);
 Route::get('/legacy/prompts', [PromptController::class, 'index']);
 Route::get('/legacy/external-apis', [ExternalApiController::class, 'index']);
+Route::get('/legacy/system-logs', [SystemLogController::class, 'index']);
 
 // ================================================================
 // RUTAS PROTEGIDAS (COMENTADAS TEMPORALMENTE)

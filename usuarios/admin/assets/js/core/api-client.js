@@ -247,11 +247,12 @@ class AdminAPIClient {
         if (endpoint.startsWith('ai-providers') && laravelModules.aiProviders) return true;
         if (endpoint.startsWith('prompts') && laravelModules.prompts) return true;
         if (endpoint.startsWith('external-apis') && laravelModules.externalApis) return true;
+        if (endpoint.startsWith('system-logs') && laravelModules.systemLogs) return true;
         
         // Endpoints específicos de Laravel
         const laravelEndpoints = [
-            'hotels/', 'ai-providers/', 'prompts/', 'external-apis/',
-            'hotels/stats', 'ai-providers/stats', 'prompts/stats', 'external-apis/stats'
+            'hotels/', 'ai-providers/', 'prompts/', 'external-apis/', 'system-logs/',
+            'hotels/stats', 'ai-providers/stats', 'prompts/stats', 'external-apis/stats', 'system-logs/stats'
         ];
         
         return laravelEndpoints.some(prefix => endpoint.startsWith(prefix));
@@ -445,6 +446,10 @@ class AdminAPIClient {
             this.clearCache('external-apis');
             this.clearCache('getApiProviders');
             this.clearCache('getExternalApis');
+        } else if (endpoint.includes('system-logs')) {
+            this.clearCache('system-logs');
+            this.clearCache('getLogs');
+            this.clearCache('getSystemLogs');
         }
     }
     
@@ -841,14 +846,87 @@ class AdminAPIClient {
         }
     }
     
-    // Logs
+    // ================================================================
+    // MÉTODOS ESPECÍFICOS PARA SYSTEM LOGS - HÍBRIDO Laravel/Legacy
+    // ================================================================
+    
     async getLogs(filters = {}) {
-        return this.call('getLogs', filters);
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.get('system-logs', filters);
+        } else {
+            return this.call('getLogs', filters);
+        }
+    }
+    
+    async getSystemLogs(filters = {}) {
+        return this.getLogs(filters); // Alias
+    }
+    
+    async createSystemLog(logData) {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.post('system-logs', logData);
+        } else {
+            return { success: false, error: 'Creación de logs no disponible en versión legacy' };
+        }
     }
     
     async clearLogs() {
-        return this.call('clearLogs');
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            // En Laravel usamos cleanup en lugar de clear
+            return this.post('system-logs/cleanup', { days: 1 });
+        } else {
+            return this.call('clearLogs');
+        }
     }
+    
+    async resolveSystemLog(logId, notes = null) {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.post(`system-logs/${logId}/resolve`, { resolution_notes: notes });
+        } else {
+            return { success: false, error: 'Resolución de logs no disponible en versión legacy' };
+        }
+    }
+    
+    async getSystemLogsStats(period = '24h') {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.get('system-logs/stats', { period });
+        } else {
+            return { success: false, error: 'Estadísticas no disponibles en versión legacy' };
+        }
+    }
+    
+    async getSystemLogsTimeline(period = '24h', interval = '1h') {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.get('system-logs/timeline', { period, interval });
+        } else {
+            return { success: false, error: 'Timeline no disponible en versión legacy' };
+        }
+    }
+    
+    async getSystemLogsConfig() {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.get('system-logs/config');
+        } else {
+            return { success: false, error: 'Configuración no disponible en versión legacy' };
+        }
+    }
+    
+    async exportSystemLogs(filters = {}, format = 'json') {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.get('system-logs/export', { ...filters, format });
+        } else {
+            return { success: false, error: 'Exportación no disponible en versión legacy' };
+        }
+    }
+    
+    async cleanupSystemLogs(days = 90) {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.post('system-logs/cleanup', { days });
+        } else {
+            return { success: false, error: 'Limpieza avanzada no disponible en versión legacy' };
+        }
+    }
+    
     
     // Herramientas
     async getDbStats() {
