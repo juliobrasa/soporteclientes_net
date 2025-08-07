@@ -130,7 +130,7 @@ function handleSyncExtraction($input, $pdo) {
         }
         
         $hotelId = $input['hotel_id'];
-        $maxReviews = min($input['max_reviews'] ?? 50, 100); // Limitar para extracciones síncronas
+        $maxReviews = $input['max_reviews'] ?? 200; // Sin limitación artificial en sync
         $platforms = $input['platforms'] ?? ['tripadvisor', 'booking', 'google'];
         $languages = $input['languages'] ?? ['en', 'es'];
         $timeout = min($input['timeout'] ?? 300, 300); // Máximo 5 minutos
