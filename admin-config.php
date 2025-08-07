@@ -54,7 +54,7 @@ function getAIStats() {
     try {
         $stmt = $pdo->query("SELECT 
             COUNT(*) as total,
-            COUNT(CASE WHEN active = 1 THEN 1 END) as active
+            COUNT(CASE WHEN is_active = 1 THEN 1 END) as active
             FROM ai_providers");
         return $stmt->fetch();
     } catch (PDOException $e) {
