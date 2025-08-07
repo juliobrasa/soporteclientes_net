@@ -121,7 +121,8 @@ class AdminAPIClient {
      * Realiza la request HTTP real
      */
     async makeHttpRequest(endpoint, data, config) {
-        const url = this.buildUrl(endpoint, data);
+        const isLaravelEndpoint = this.isLaravelEndpoint(endpoint);
+        const url = this.buildUrl(endpoint, config.method === 'GET' ? data : {}, config.method);
         const controller = new AbortController();
         
         // Timeout
@@ -130,27 +131,43 @@ class AdminAPIClient {
         try {
             const requestOptions = {
                 method: config.method,
-                headers: {
+                signal: controller.signal,
+                headers: {}
+            };
+            
+            if (isLaravelEndpoint) {
+                // Configuración para Laravel API
+                requestOptions.headers = {
+                    ...AdminConfig.api.laravel.headers,
+                    ...(config.headers || {})
+                };
+                
+                // Para Laravel, siempre enviar JSON (excepto GET)
+                if (config.method !== 'GET') {
+                    requestOptions.body = JSON.stringify(data);
+                }
+                
+            } else {
+                // Configuración para admin_api.php legacy
+                requestOptions.headers = {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                     ...config.headers
-                },
-                signal: controller.signal
-            };
-            
-            // Agregar datos según el método
-            if (config.method === 'GET') {
-                // Para GET simples sin parámetros, usar GET
-                if (Object.keys(data).length === 0) {
-                    // No hay datos adicionales, solo el action como query param
-                    // La URL ya incluye el action en buildUrl
+                };
+                
+                // Agregar datos según el método para legacy
+                if (config.method === 'GET') {
+                    // Para GET simples sin parámetros, usar GET
+                    if (Object.keys(data).length === 0) {
+                        // No hay datos adicionales, solo el action como query param
+                    } else {
+                        // Si hay parámetros, cambiar a POST
+                        requestOptions.method = 'POST';
+                        requestOptions.body = JSON.stringify({ action: endpoint, ...data });
+                    }
                 } else {
-                    // Si hay parámetros, cambiar a POST
-                    requestOptions.method = 'POST';
                     requestOptions.body = JSON.stringify({ action: endpoint, ...data });
                 }
-            } else {
-                requestOptions.body = JSON.stringify({ action: endpoint, ...data });
             }
             
             const response = await fetch(url, requestOptions);
@@ -182,32 +199,61 @@ class AdminAPIClient {
     }
     
     /**
-     * Construye la URL completa
+     * Construye la URL completa - HÍBRIDO Laravel/Legacy
      */
-    buildUrl(endpoint, data = {}) {
+    buildUrl(endpoint, data = {}, method = 'POST') {
         // Si ya es una URL completa, usarla tal como está
         if (endpoint.startsWith('http')) {
             return endpoint;
         }
         
-        // Usar admin_api.php como endpoint por defecto
-        const baseUrl = this.baseUrl || 'admin_api.php';
+        // Determinar si es endpoint de Laravel o legacy
+        const isLaravelEndpoint = this.isLaravelEndpoint(endpoint);
         
-        let finalUrl;
-        
-        // Si baseUrl no termina en .php, asumir que es un directorio
-        if (!baseUrl.includes('.php')) {
-            finalUrl = `${baseUrl.replace(/\/$/, '')}/admin_api.php`;
+        if (isLaravelEndpoint) {
+            // Usar API de Laravel
+            const baseUrl = this.baseUrl || 'public/api';
+            let finalUrl = `${baseUrl.replace(/\/$/, '')}/${endpoint}`;
+            
+            // Para GET requests con parámetros, agregar query string
+            if (method === 'GET' && Object.keys(data).length > 0) {
+                const params = new URLSearchParams(data);
+                finalUrl += `?${params}`;
+            }
+            
+            return finalUrl;
         } else {
-            finalUrl = baseUrl;
+            // Usar admin_api.php legacy
+            const baseUrl = 'admin_api.php';
+            let finalUrl = baseUrl;
+            
+            // Para requests legacy, agregar action como query parameter
+            if (Object.keys(data).length === 0) {
+                finalUrl += `?action=${endpoint}`;
+            }
+            
+            return finalUrl;
         }
+    }
+    
+    /**
+     * Determina si es un endpoint de Laravel o legacy
+     */
+    isLaravelEndpoint(endpoint) {
+        const laravelModules = AdminConfig?.api?.laravel?.migrated || {};
         
-        // Para GET requests, agregar action como query parameter
-        if (Object.keys(data).length === 0) {
-            finalUrl += `?action=${endpoint}`;
-        }
+        // Verificar por módulo
+        if (endpoint.startsWith('hotels') && laravelModules.hotels) return true;
+        if (endpoint.startsWith('ai-providers') && laravelModules.aiProviders) return true;
+        if (endpoint.startsWith('prompts') && laravelModules.prompts) return true;
         
-        return finalUrl;
+        // Endpoints específicos de Laravel
+        const laravelEndpoints = [
+            'hotels/', 'ai-providers/', 'prompts/',
+            'hotels/stats', 'ai-providers/stats', 'prompts/stats'
+        ];
+        
+        return laravelEndpoints.some(prefix => endpoint.startsWith(prefix));
     }
     
     /**
@@ -342,29 +388,113 @@ class AdminAPIClient {
         }
     }
     
-    // Métodos específicos para endpoints del sistema
+    // ================================================================
+    // MÉTODOS REST ESTÁNDAR PARA LARAVEL
+    // ================================================================
     
-    // Hoteles
+    /**
+     * GET request
+     */
+    async get(endpoint, params = {}) {
+        return this.call(endpoint, params, { method: 'GET', cache: true });
+    }
+    
+    /**
+     * POST request
+     */
+    async post(endpoint, data = {}) {
+        const result = await this.call(endpoint, data, { method: 'POST' });
+        this.invalidateRelatedCache(endpoint);
+        return result;
+    }
+    
+    /**
+     * PUT request
+     */
+    async put(endpoint, data = {}) {
+        const result = await this.call(endpoint, data, { method: 'PUT' });
+        this.invalidateRelatedCache(endpoint);
+        return result;
+    }
+    
+    /**
+     * DELETE request
+     */
+    async delete(endpoint, data = {}) {
+        const result = await this.call(endpoint, data, { method: 'DELETE' });
+        this.invalidateRelatedCache(endpoint);
+        return result;
+    }
+    
+    /**
+     * Invalida cache relacionado basado en el endpoint
+     */
+    invalidateRelatedCache(endpoint) {
+        if (endpoint.includes('hotels')) {
+            this.clearCache('hotels');
+            this.clearCache('getHotels');
+            this.clearCache('getExtractionHotels');
+        } else if (endpoint.includes('ai-providers')) {
+            this.clearCache('ai-providers');
+            this.clearCache('getProviders');
+        } else if (endpoint.includes('prompts')) {
+            this.clearCache('prompts');
+            this.clearCache('getPrompts');
+        }
+    }
+    
+    // ================================================================
+    // MÉTODOS ESPECÍFICOS PARA HOTELES - HÍBRIDO Laravel/Legacy
+    // ================================================================
+    
     async getHotels(filters = {}) {
-        return this.call('getHotels', filters, { cache: true });
+        if (AdminConfig?.api?.laravel?.migrated?.hotels) {
+            return this.get('hotels', filters);
+        } else {
+            return this.call('getHotels', filters, { cache: true });
+        }
     }
     
     async saveHotel(hotelData) {
-        const result = await this.call('saveHotel', hotelData);
-        if (result.success) {
-            this.clearCache('getHotels');
-            this.clearCache('getExtractionHotels');
+        if (AdminConfig?.api?.laravel?.migrated?.hotels) {
+            if (hotelData.id) {
+                return this.put(`hotels/${hotelData.id}`, hotelData);
+            } else {
+                return this.post('hotels', hotelData);
+            }
+        } else {
+            const result = await this.call('saveHotel', hotelData);
+            if (result.success) {
+                this.clearCache('getHotels');
+                this.clearCache('getExtractionHotels');
+            }
+            return result;
         }
-        return result;
     }
     
     async deleteHotel(hotelId) {
-        const result = await this.call('deleteHotel', { id: hotelId });
-        if (result.success) {
-            this.clearCache('getHotels');
-            this.clearCache('getExtractionHotels');
+        if (AdminConfig?.api?.laravel?.migrated?.hotels) {
+            return this.delete(`hotels/${hotelId}`);
+        } else {
+            const result = await this.call('deleteHotel', { id: hotelId });
+            if (result.success) {
+                this.clearCache('getHotels');
+                this.clearCache('getExtractionHotels');
+            }
+            return result;
         }
-        return result;
+    }
+    
+    async toggleHotelStatus(hotelId) {
+        if (AdminConfig?.api?.laravel?.migrated?.hotels) {
+            return this.post(`hotels/${hotelId}/toggle-status`);
+        } else {
+            const result = await this.call('toggleHotelStatus', { id: hotelId });
+            if (result.success) {
+                this.clearCache('getHotels');
+            }
+            return result;
+        }
     }
     
     // API Providers
@@ -392,37 +522,84 @@ class AdminAPIClient {
         return result;
     }
     
-    // Proveedores IA
+    // ================================================================
+    // MÉTODOS ESPECÍFICOS PARA AI PROVIDERS - HÍBRIDO Laravel/Legacy
+    // ================================================================
+    
     async getProviders() {
-        return this.call('getProviders', {}, { cache: true });
+        if (AdminConfig?.api?.laravel?.migrated?.aiProviders) {
+            return this.get('ai-providers');
+        } else {
+            return this.call('getProviders', {}, { cache: true });
+        }
+    }
+    
+    async getAiProviders() {
+        return this.getProviders(); // Alias
     }
     
     async saveAiProvider(providerData) {
-        const result = await this.call('saveAiProvider', providerData);
-        if (result.success) {
-            this.clearCache('getProviders');
+        if (AdminConfig?.api?.laravel?.migrated?.aiProviders) {
+            if (providerData.id) {
+                return this.put(`ai-providers/${providerData.id}`, providerData);
+            } else {
+                return this.post('ai-providers', providerData);
+            }
+        } else {
+            const result = await this.call('saveAiProvider', providerData);
+            if (result.success) {
+                this.clearCache('getProviders');
+            }
+            return result;
         }
-        return result;
     }
     
     async toggleAiProvider(providerId, status) {
-        const result = await this.call('toggleAiProvider', { id: providerId, active: status });
-        if (result.success) {
-            this.clearCache('getProviders');
+        if (AdminConfig?.api?.laravel?.migrated?.aiProviders) {
+            return this.post(`ai-providers/${providerId}/toggle`);
+        } else {
+            const result = await this.call('toggleAiProvider', { id: providerId, active: status });
+            if (result.success) {
+                this.clearCache('getProviders');
+            }
+            return result;
         }
-        return result;
     }
     
-    async testAiProvider(providerId) {
-        return this.call('testAiProvider', { id: providerId });
+    async testAiProvider(providerId, testData = {}) {
+        if (AdminConfig?.api?.laravel?.migrated?.aiProviders) {
+            return this.post(`ai-providers/${providerId}/test`, testData);
+        } else {
+            return this.call('testAiProvider', { id: providerId });
+        }
     }
     
     async deleteAiProvider(providerId) {
-        const result = await this.call('deleteAiProvider', { id: providerId });
-        if (result.success) {
-            this.clearCache('getProviders');
+        if (AdminConfig?.api?.laravel?.migrated?.aiProviders) {
+            return this.delete(`ai-providers/${providerId}`);
+        } else {
+            const result = await this.call('deleteAiProvider', { id: providerId });
+            if (result.success) {
+                this.clearCache('getProviders');
+            }
+            return result;
         }
-        return result;
+    }
+    
+    async getAiProvidersDefaults() {
+        if (AdminConfig?.api?.laravel?.migrated?.aiProviders) {
+            return this.get('ai-providers/defaults');
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
+    }
+    
+    async getAiProvidersStats() {
+        if (AdminConfig?.api?.laravel?.migrated?.aiProviders) {
+            return this.get('ai-providers/stats');
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
     }
     
     // Extracción
@@ -438,45 +615,125 @@ class AdminAPIClient {
         return this.call('getApifyStatus', {}, { cache: true });
     }
     
-    // Prompts
-    async getPrompts() {
-        return this.call('getPrompts', {}, { cache: true });
+    // ================================================================
+    // MÉTODOS ESPECÍFICOS PARA PROMPTS - HÍBRIDO Laravel/Legacy
+    // ================================================================
+    
+    async getPrompts(filters = {}) {
+        if (AdminConfig?.api?.laravel?.migrated?.prompts) {
+            return this.get('prompts', filters);
+        } else {
+            return this.call('getPrompts', {}, { cache: true });
+        }
     }
     
     async savePrompt(promptData) {
-        const result = await this.call('savePrompt', promptData);
-        if (result.success) {
-            this.clearCache('getPrompts');
+        if (AdminConfig?.api?.laravel?.migrated?.prompts) {
+            if (promptData.id) {
+                return this.put(`prompts/${promptData.id}`, promptData);
+            } else {
+                return this.post('prompts', promptData);
+            }
+        } else {
+            const result = await this.call('savePrompt', promptData);
+            if (result.success) {
+                this.clearCache('getPrompts');
+            }
+            return result;
         }
-        return result;
     }
     
     async updatePrompt(promptData) {
-        const result = await this.call('updatePrompt', promptData);
-        if (result.success) {
-            this.clearCache('getPrompts');
+        if (AdminConfig?.api?.laravel?.migrated?.prompts) {
+            return this.put(`prompts/${promptData.id}`, promptData);
+        } else {
+            const result = await this.call('updatePrompt', promptData);
+            if (result.success) {
+                this.clearCache('getPrompts');
+            }
+            return result;
         }
-        return result;
     }
     
     async deletePrompt(promptId) {
-        const result = await this.call('deletePrompt', { id: promptId });
-        if (result.success) {
-            this.clearCache('getPrompts');
+        if (AdminConfig?.api?.laravel?.migrated?.prompts) {
+            return this.delete(`prompts/${promptId}`);
+        } else {
+            const result = await this.call('deletePrompt', { id: promptId });
+            if (result.success) {
+                this.clearCache('getPrompts');
+            }
+            return result;
         }
-        return result;
     }
     
     async togglePrompt(promptId, status) {
-        const result = await this.call('togglePrompt', { id: promptId, active: status });
-        if (result.success) {
-            this.clearCache('getPrompts');
+        if (AdminConfig?.api?.laravel?.migrated?.prompts) {
+            // En Laravel no existe toggle para prompts, usar update status
+            return this.put(`prompts/${promptId}`, { status: status ? 'active' : 'draft' });
+        } else {
+            const result = await this.call('togglePrompt', { id: promptId, active: status });
+            if (result.success) {
+                this.clearCache('getPrompts');
+            }
+            return result;
         }
-        return result;
     }
     
     async editPrompt(promptId) {
-        return this.call('editPrompt', { id: promptId });
+        if (AdminConfig?.api?.laravel?.migrated?.prompts) {
+            return this.get(`prompts/${promptId}`);
+        } else {
+            return this.call('editPrompt', { id: promptId });
+        }
+    }
+    
+    async duplicatePrompt(promptId) {
+        if (AdminConfig?.api?.laravel?.migrated?.prompts) {
+            return this.post(`prompts/${promptId}/duplicate`);
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
+    }
+    
+    async testPrompt(promptId, testData) {
+        if (AdminConfig?.api?.laravel?.migrated?.prompts) {
+            return this.post(`prompts/${promptId}/test`, testData);
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
+    }
+    
+    async getPromptsStats() {
+        if (AdminConfig?.api?.laravel?.migrated?.prompts) {
+            return this.get('prompts/stats');
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
+    }
+    
+    async getPromptsTemplatesLibrary() {
+        if (AdminConfig?.api?.laravel?.migrated?.prompts) {
+            return this.get('prompts/templates-library');
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
+    }
+    
+    async importPromptTemplate(templateData) {
+        if (AdminConfig?.api?.laravel?.migrated?.prompts) {
+            return this.post('prompts/import-template', templateData);
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
+    }
+    
+    async exportPrompts(filters = {}) {
+        if (AdminConfig?.api?.laravel?.migrated?.prompts) {
+            return this.get('prompts/export', filters);
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
     }
     
     // Logs
