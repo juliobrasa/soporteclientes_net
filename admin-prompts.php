@@ -13,7 +13,7 @@ function getPrompts() {
     if (!$pdo) return [];
     
     try {
-        $stmt = $pdo->query("SELECT * FROM prompts ORDER BY name ASC");
+        $stmt = $pdo->query("SELECT * FROM ai_prompts ORDER BY name ASC");
         return $stmt->fetchAll();
     } catch (PDOException $e) {
         error_log("Error obteniendo prompts: " . $e->getMessage());
@@ -117,7 +117,7 @@ $prompts = getPrompts();
                                 <div class="d-flex justify-content-between">
                                     <div>
                                         <h6>Prompts Activos</h6>
-                                        <h3><?php echo count(array_filter($prompts, fn($p) => $p['status'] == 'active')); ?></h3>
+                                        <h3><?php echo count(array_filter($prompts, fn($p) => $p['is_active'] == 1)); ?></h3>
                                     </div>
                                     <div>
                                         <i class="fas fa-check fa-2x"></i>
@@ -131,8 +131,8 @@ $prompts = getPrompts();
                             <div class="card-body">
                                 <div class="d-flex justify-content-between">
                                     <div>
-                                        <h6>Categorías</h6>
-                                        <h3><?php echo count(array_unique(array_column($prompts, 'category'))); ?></h3>
+                                        <h6>Tipos</h6>
+                                        <h3><?php echo count(array_unique(array_column($prompts, 'prompt_type'))); ?></h3>
                                     </div>
                                     <div>
                                         <i class="fas fa-tags fa-2x"></i>
@@ -155,8 +155,8 @@ $prompts = getPrompts();
                                     <tr>
                                         <th>ID</th>
                                         <th>Nombre</th>
-                                        <th>Categoría</th>
-                                        <th>Descripción</th>
+                                        <th>Tipo</th>
+                                        <th>Idioma</th>
                                         <th>Estado</th>
                                         <th>Creado</th>
                                         <th>Acciones</th>
@@ -168,28 +168,17 @@ $prompts = getPrompts();
                                         <td><?php echo $prompt['id']; ?></td>
                                         <td><strong><?php echo htmlspecialchars($prompt['name']); ?></strong></td>
                                         <td>
-                                            <span class="badge bg-info"><?php echo htmlspecialchars($prompt['category'] ?? 'General'); ?></span>
+                                            <span class="badge bg-info"><?php echo htmlspecialchars($prompt['prompt_type'] ?? 'response'); ?></span>
                                         </td>
                                         <td>
-                                            <?php 
-                                            $desc = htmlspecialchars($prompt['description'] ?? '');
-                                            echo strlen($desc) > 50 ? substr($desc, 0, 50) . '...' : $desc;
-                                            ?>
+                                            <span class="badge bg-secondary"><?php echo htmlspecialchars($prompt['language'] ?? 'es'); ?></span>
                                         </td>
                                         <td>
-                                            <?php 
-                                            $status = $prompt['status'] ?? 'draft';
-                                            $status_colors = [
-                                                'active' => 'bg-success',
-                                                'draft' => 'bg-warning text-dark',
-                                                'archived' => 'bg-secondary'
-                                            ];
-                                            $color = $status_colors[$status] ?? 'bg-secondary';
-                                            ?>
-                                            <span class="badge <?php echo $color; ?>">
-                                                <i class="fas fa-<?php echo $status == 'active' ? 'check' : ($status == 'draft' ? 'edit' : 'archive'); ?>"></i> 
-                                                <?php echo ucfirst($status); ?>
-                                            </span>
+                                            <?php if ($prompt['is_active']): ?>
+                                                <span class="badge bg-success"><i class="fas fa-check"></i> Activo</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary"><i class="fas fa-pause"></i> Inactivo</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td><?php echo date('Y-m-d', strtotime($prompt['created_at'] ?? 'now')); ?></td>
                                         <td>
@@ -238,46 +227,40 @@ $prompts = getPrompts();
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Categoría</label>
-                                    <select class="form-select" name="category">
-                                        <option value="extraction">Extracción</option>
-                                        <option value="analysis">Análisis</option>
+                                    <label class="form-label">Tipo de Prompt</label>
+                                    <select class="form-select" name="prompt_type">
+                                        <option value="response" selected>Respuesta</option>
+                                        <option value="translation">Traducción</option>
                                         <option value="summary">Resumen</option>
-                                        <option value="classification">Clasificación</option>
-                                        <option value="general">General</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Descripción</label>
-                            <textarea class="form-control" name="description" rows="2" placeholder="Breve descripción del prompt"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Contenido del Prompt *</label>
-                            <textarea class="form-control" name="content" rows="8" required placeholder="Eres un asistente experto en analizar reseñas de hoteles..."></textarea>
-                        </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Variables (separadas por comas)</label>
-                                    <input type="text" class="form-control" name="variables" placeholder="hotel_name, review_text, rating">
+                                    <label class="form-label">Idioma</label>
+                                    <select class="form-select" name="language">
+                                        <option value="es" selected>Español</option>
+                                        <option value="en">Inglés</option>
+                                        <option value="fr">Francés</option>
+                                        <option value="de">Alemán</option>
+                                        <option value="it">Italiano</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Versión</label>
-                                    <input type="text" class="form-control" name="version" value="1.0">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" name="is_active" checked>
+                                        <label class="form-check-label">Prompt Activo</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Estado</label>
-                            <select class="form-select" name="status">
-                                <option value="active" selected>Activo</option>
-                                <option value="draft">Borrador</option>
-                                <option value="archived">Archivado</option>
-                            </select>
+                            <label class="form-label">Texto del Prompt *</label>
+                            <textarea class="form-control" name="prompt_text" rows="8" required placeholder="Eres un asistente experto en analizar reseñas de hoteles..."></textarea>
                         </div>
                     </form>
                 </div>
@@ -314,12 +297,10 @@ $prompts = getPrompts();
         
         const data = {
             name: formData.get('name'),
-            category: formData.get('category'),
-            description: formData.get('description'),
-            content: formData.get('content'),
-            variables: formData.get('variables'),
-            version: formData.get('version'),
-            active: formData.get('status') === 'active'
+            prompt_text: formData.get('prompt_text'),
+            prompt_type: formData.get('prompt_type'),
+            language: formData.get('language'),
+            active: formData.get('is_active') ? true : false
         };
 
         const url = editingId ? `api-prompts.php?id=${editingId}` : 'api-prompts.php';
@@ -355,12 +336,10 @@ $prompts = getPrompts();
             if (data.success) {
                 const prompt = data.data;
                 document.querySelector('input[name="name"]').value = prompt.name;
-                document.querySelector('select[name="category"]').value = prompt.category || 'general';
-                document.querySelector('textarea[name="description"]').value = prompt.description || '';
-                document.querySelector('textarea[name="content"]').value = prompt.content || '';
-                document.querySelector('input[name="variables"]').value = prompt.variables || '';
-                document.querySelector('input[name="version"]').value = prompt.version || '1.0';
-                document.querySelector('select[name="status"]').value = prompt.status || 'draft';
+                document.querySelector('select[name="prompt_type"]').value = prompt.prompt_type || 'response';
+                document.querySelector('select[name="language"]').value = prompt.language || 'es';
+                document.querySelector('textarea[name="prompt_text"]').value = prompt.prompt_text || '';
+                document.querySelector('input[name="is_active"]').checked = prompt.is_active == 1;
                 
                 document.querySelector('.modal-title').textContent = 'Editar Prompt';
                 new bootstrap.Modal(document.getElementById('addPromptModal')).show();
@@ -399,7 +378,7 @@ $prompts = getPrompts();
         .then(data => {
             if (data.success) {
                 const prompt = data.data;
-                alert(`Prompt: ${prompt.name}\n\nContent: ${prompt.content}`);
+                alert(`Prompt: ${prompt.name}\n\nTipo: ${prompt.prompt_type}\n\nTexto: ${prompt.prompt_text}`);
             } else {
                 alert('Error: ' + data.error);
             }

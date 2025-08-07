@@ -44,21 +44,20 @@ switch ($method) {
 
     case 'POST':
         try {
-            $required = ['name', 'endpoint_url'];
+            $required = ['name', 'base_url'];
             foreach ($required as $field) {
                 if (!isset($input[$field]) || empty($input[$field])) {
                     response(['error' => "Campo requerido: $field"], 400);
                 }
             }
 
-            $stmt = $pdo->prepare("INSERT INTO external_apis (name, description, endpoint_url, api_key, headers, method, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+            $stmt = $pdo->prepare("INSERT INTO external_apis (name, description, base_url, credentials, configuration, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
             $result = $stmt->execute([
                 $input['name'],
                 $input['description'] ?? null,
-                $input['endpoint_url'],
+                $input['base_url'],
                 $input['api_key'] ?? null,
                 isset($input['headers']) ? json_encode($input['headers']) : null,
-                $input['method'] ?? 'GET',
                 isset($input['is_active']) && $input['is_active'] ? 1 : 0
             ]);
 
@@ -80,14 +79,13 @@ switch ($method) {
             }
 
             $id = $_GET['id'];
-            $stmt = $pdo->prepare("UPDATE external_apis SET name = ?, description = ?, endpoint_url = ?, api_key = ?, headers = ?, method = ?, is_active = ?, updated_at = NOW() WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE external_apis SET name = ?, description = ?, base_url = ?, credentials = ?, configuration = ?, is_active = ?, updated_at = NOW() WHERE id = ?");
             $result = $stmt->execute([
                 $input['name'],
                 $input['description'] ?? null,
-                $input['endpoint_url'],
+                $input['base_url'],
                 $input['api_key'] ?? null,
                 isset($input['headers']) ? json_encode($input['headers']) : null,
-                $input['method'] ?? 'GET',
                 isset($input['is_active']) && $input['is_active'] ? 1 : 0,
                 $id
             ]);

@@ -24,7 +24,7 @@ switch ($method) {
     case 'GET':
         try {
             if (isset($_GET['id'])) {
-                $stmt = $pdo->prepare("SELECT * FROM prompts WHERE id = ?");
+                $stmt = $pdo->prepare("SELECT * FROM ai_prompts WHERE id = ?");
                 $stmt->execute([$_GET['id']]);
                 $prompt = $stmt->fetch();
                 if ($prompt) {
@@ -33,7 +33,7 @@ switch ($method) {
                     response(['error' => 'Prompt no encontrado'], 404);
                 }
             } else {
-                $stmt = $pdo->query("SELECT * FROM prompts ORDER BY name ASC");
+                $stmt = $pdo->query("SELECT * FROM ai_prompts ORDER BY name ASC");
                 $prompts = $stmt->fetchAll();
                 response(['success' => true, 'data' => $prompts]);
             }
@@ -44,22 +44,20 @@ switch ($method) {
 
     case 'POST':
         try {
-            $required = ['name', 'content'];
+            $required = ['name', 'prompt_text'];
             foreach ($required as $field) {
                 if (!isset($input[$field]) || empty($input[$field])) {
                     response(['error' => "Campo requerido: $field"], 400);
                 }
             }
 
-            $stmt = $pdo->prepare("INSERT INTO prompts (name, category, description, content, variables, version, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+            $stmt = $pdo->prepare("INSERT INTO ai_prompts (name, prompt_text, prompt_type, language, is_active, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
             $result = $stmt->execute([
                 $input['name'],
-                $input['category'] ?? 'general',
-                $input['description'] ?? null,
-                $input['content'],
-                $input['variables'] ?? null,
-                $input['version'] ?? '1.0',
-                isset($input['active']) && $input['active'] ? 'active' : 'draft'
+                $input['prompt_text'],
+                $input['prompt_type'] ?? 'response',
+                $input['language'] ?? 'es',
+                isset($input['active']) && $input['active'] ? 1 : 0
             ]);
 
             if ($result) {
@@ -80,15 +78,13 @@ switch ($method) {
             }
 
             $id = $_GET['id'];
-            $stmt = $pdo->prepare("UPDATE prompts SET name = ?, category = ?, description = ?, content = ?, variables = ?, version = ?, status = ?, updated_at = NOW() WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE ai_prompts SET name = ?, prompt_text = ?, prompt_type = ?, language = ?, is_active = ?, updated_at = NOW() WHERE id = ?");
             $result = $stmt->execute([
                 $input['name'],
-                $input['category'] ?? 'general',
-                $input['description'] ?? null,
-                $input['content'],
-                $input['variables'] ?? null,
-                $input['version'] ?? '1.0',
-                isset($input['active']) && $input['active'] ? 'active' : 'draft',
+                $input['prompt_text'],
+                $input['prompt_type'] ?? 'response',
+                $input['language'] ?? 'es',
+                isset($input['active']) && $input['active'] ? 1 : 0,
                 $id
             ]);
 
@@ -109,7 +105,7 @@ switch ($method) {
             }
 
             $id = $_GET['id'];
-            $stmt = $pdo->prepare("DELETE FROM prompts WHERE id = ?");
+            $stmt = $pdo->prepare("DELETE FROM ai_prompts WHERE id = ?");
             $result = $stmt->execute([$id]);
 
             if ($result) {
