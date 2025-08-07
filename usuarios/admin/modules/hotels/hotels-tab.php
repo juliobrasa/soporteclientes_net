@@ -509,8 +509,12 @@ function loadHotelsDirectly() {
     showLoadingState();
     updateStatus('Conectando con la base de datos...');
     
-    // Realizar petición a la API
-    fetch('admin_api.php?action=getHotels')
+    // Realizar petición a la API Laravel
+    const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+        ? 'http://localhost:8000/api/legacy'  // Desarrollo local
+        : '/kavia-laravel/public/api/legacy';  // Producción
+    
+    fetch(`${baseUrl}/hotels`)
         .then(response => {
             console.log('📡 Respuesta recibida:', response.status, response.statusText);
             updateStatus('Procesando respuesta del servidor...');
