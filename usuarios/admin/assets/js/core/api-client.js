@@ -212,7 +212,7 @@ class AdminAPIClient {
         
         if (isLaravelEndpoint) {
             // Usar API de Laravel
-            const baseUrl = this.baseUrl || 'public/api';
+            const baseUrl = this.baseUrl;
             let finalUrl = `${baseUrl.replace(/\/$/, '')}/${endpoint}`;
             
             // Para GET requests con parámetros, agregar query string
