@@ -1,10 +1,10 @@
 <?php
 // Configuración de base de datos
 $db_config = [
-    'host' => 'localhost',
-    'database' => 'soporteia_kavia', // Ajusta según tu BD
-    'username' => 'soporteia_admin', // Ajusta según tu usuario
-    'password' => 'TU_PASSWORD_AQUI' // Actualiza con tu password real
+    'host' => 'soporteclientes.net',
+    'database' => 'soporteia_bookingkavia',
+    'username' => 'soporteia_admin',
+    'password' => 'QCF8RhS*}.Oj0u(v'
 ];
 
 // Función para conectar a la base de datos
