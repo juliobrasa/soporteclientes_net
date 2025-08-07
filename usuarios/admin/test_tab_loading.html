@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tab Loading - Prompts</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        .log {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-family: monospace;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+        .loading-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Tab Loading - Módulo Prompts</h1>
+        <p>Prueba directa de la función loadPromptsDirect</p>
+        
+        <div>
+            <button class="btn" onclick="testLoadPromptsDirect()">
+                <i class="fas fa-play"></i> Test loadPromptsDirect()
+            </button>
+            <button class="btn" onclick="testDirectAPI()">
+                <i class="fas fa-database"></i> Test API Directo
+            </button>
+            <button class="btn" onclick="clearLog()">
+                <i class="fas fa-eraser"></i> Limpiar Log
+            </button>
+        </div>
+        
+        <!-- Simular elementos del tab -->
+        <div id="prompts-loading" class="loading-state" style="display: none;">
+            <i class="fas fa-spinner fa-spin"></i>
+            <h3>Cargando prompts</h3>
+            <p>Por favor espera mientras cargamos el contenido</p>
+        </div>
+        
+        <div id="prompts-grid" style="min-height: 200px; border: 1px solid #ddd; margin: 20px 0; padding: 20px; border-radius: 6px;">
+            <p>Grid de prompts (vacío inicialmente)</p>
+        </div>
+        
+        <div id="log" class="log">
+            === LOG INICIADO ===\n
+        </div>
+    </div>
+    
+    <!-- Incluir el módulo de prompts -->
+    <script src="assets/js/core/api-client.js"></script>
+    <script src="assets/js/modules/prompts-module.js"></script>
+    
+    <script>
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '=== LOG LIMPIADO ===\n';
+        }
+        
+        async function testLoadPromptsDirect() {
+            log('🧪 Iniciando test de loadPromptsDirect...');
+            
+            try {
+                log('🔍 Verificando si window.loadPromptsDirect existe...');
+                if (typeof window.loadPromptsDirect === 'function') {
+                    log('✅ window.loadPromptsDirect encontrada');
+                    
+                    log('🔄 Ejecutando loadPromptsDirect...');
+                    const result = await window.loadPromptsDirect();
+                    log('✅ loadPromptsDirect completado: ' + JSON.stringify(result));
+                } else {
+                    log('❌ window.loadPromptsDirect NO encontrada');
+                    log('📋 Funciones window disponibles: ' + Object.keys(window).filter(k => k.includes('prompt') || k.includes('load')).join(', '));
+                }
+            } catch (error) {
+                log('❌ Error en loadPromptsDirect: ' + error.message);
+                console.error('Error completo:', error);
+            }
+        }
+        
+        async function testDirectAPI() {
+            log('🧪 Iniciando test directo de API...');
+            
+            try {
+                log('🔍 Verificando apiClient...');
+                if (typeof apiClient !== 'undefined' && apiClient.call) {
+                    log('✅ apiClient encontrado');
+                    
+                    log('📤 Llamando getPrompts...');
+                    const result = await apiClient.call('getPrompts', { page: 1, limit: 10 });
+                    log('📥 Respuesta API: ' + JSON.stringify(result, null, 2));
+                } else {
+                    log('❌ apiClient NO encontrado o no tiene método call');
+                }
+            } catch (error) {
+                log('❌ Error en API: ' + error.message);
+                console.error('Error completo:', error);
+            }
+        }
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 DOM cargado, inicializando...');
+            log('🔍 Elementos encontrados:');
+            log('  - prompts-loading: ' + (document.getElementById('prompts-loading') ? 'SÍ' : 'NO'));
+            log('  - prompts-grid: ' + (document.getElementById('prompts-grid') ? 'SÍ' : 'NO'));
+            
+            setTimeout(() => {
+                log('⏰ Verificando después de 1 segundo...');
+                log('📋 window.promptsModule: ' + (window.promptsModule ? 'SÍ' : 'NO'));
+                log('📋 window.loadPromptsDirect: ' + (window.loadPromptsDirect ? 'SÍ' : 'NO'));
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
