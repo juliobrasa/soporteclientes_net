@@ -117,7 +117,7 @@ $prompts = getPrompts();
                                 <div class="d-flex justify-content-between">
                                     <div>
                                         <h6>Prompts Activos</h6>
-                                        <h3><?php echo count(array_filter($prompts, fn($p) => $p['active'] == 1)); ?></h3>
+                                        <h3><?php echo count(array_filter($prompts, fn($p) => $p['status'] == 'active')); ?></h3>
                                     </div>
                                     <div>
                                         <i class="fas fa-check fa-2x"></i>
@@ -177,11 +177,19 @@ $prompts = getPrompts();
                                             ?>
                                         </td>
                                         <td>
-                                            <?php if ($prompt['active']): ?>
-                                                <span class="badge bg-success"><i class="fas fa-check"></i> Activo</span>
-                                            <?php else: ?>
-                                                <span class="badge bg-secondary"><i class="fas fa-pause"></i> Inactivo</span>
-                                            <?php endif; ?>
+                                            <?php 
+                                            $status = $prompt['status'] ?? 'draft';
+                                            $status_colors = [
+                                                'active' => 'bg-success',
+                                                'draft' => 'bg-warning text-dark',
+                                                'archived' => 'bg-secondary'
+                                            ];
+                                            $color = $status_colors[$status] ?? 'bg-secondary';
+                                            ?>
+                                            <span class="badge <?php echo $color; ?>">
+                                                <i class="fas fa-<?php echo $status == 'active' ? 'check' : ($status == 'draft' ? 'edit' : 'archive'); ?>"></i> 
+                                                <?php echo ucfirst($status); ?>
+                                            </span>
                                         </td>
                                         <td><?php echo date('Y-m-d', strtotime($prompt['created_at'] ?? 'now')); ?></td>
                                         <td>
@@ -189,13 +197,13 @@ $prompts = getPrompts();
                                                 <button type="button" class="btn btn-sm btn-outline-info" title="Ver" onclick="viewPrompt(<?php echo $prompt['id']; ?>)">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-primary" title="Editar">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" title="Editar" onclick="editPrompt(<?php echo $prompt['id']; ?>)">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-success" title="Test">
+                                                <button type="button" class="btn btn-sm btn-outline-success" title="Test" onclick="testPrompt(<?php echo $prompt['id']; ?>)">
                                                     <i class="fas fa-play"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="deletePrompt(<?php echo $prompt['id']; ?>, '<?php echo addslashes($prompt['name']); ?>')">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -264,16 +272,18 @@ $prompts = getPrompts();
                             </div>
                         </div>
                         <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="active" checked>
-                                <label class="form-check-label">Prompt Activo</label>
-                            </div>
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" name="status">
+                                <option value="active" selected>Activo</option>
+                                <option value="draft">Borrador</option>
+                                <option value="archived">Archivado</option>
+                            </select>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary">Guardar Prompt</button>
+                    <button type="button" class="btn btn-primary" onclick="savePrompt()">Guardar Prompt</button>
                 </div>
             </div>
         </div>
@@ -285,8 +295,11 @@ $prompts = getPrompts();
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     
     <script>
+    let table;
+    let editingId = null;
+
     $(document).ready(function() {
-        $('#promptsTable').DataTable({
+        table = $('#promptsTable').DataTable({
             language: {
                 url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
             },
@@ -295,10 +308,117 @@ $prompts = getPrompts();
         });
     });
 
-    function viewPrompt(id) {
-        // Aquí iría la lógica para mostrar el prompt completo
-        alert('Ver prompt ID: ' + id);
+    function savePrompt() {
+        const form = document.getElementById('addPromptForm');
+        const formData = new FormData(form);
+        
+        const data = {
+            name: formData.get('name'),
+            category: formData.get('category'),
+            description: formData.get('description'),
+            content: formData.get('content'),
+            variables: formData.get('variables'),
+            version: formData.get('version'),
+            active: formData.get('status') === 'active'
+        };
+
+        const url = editingId ? `api-prompts.php?id=${editingId}` : 'api-prompts.php';
+        const method = editingId ? 'PUT' : 'POST';
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión: ' + error);
+        });
     }
+
+    function editPrompt(id) {
+        editingId = id;
+        
+        fetch(`api-prompts.php?id=${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const prompt = data.data;
+                document.querySelector('input[name="name"]').value = prompt.name;
+                document.querySelector('select[name="category"]').value = prompt.category || 'general';
+                document.querySelector('textarea[name="description"]').value = prompt.description || '';
+                document.querySelector('textarea[name="content"]').value = prompt.content || '';
+                document.querySelector('input[name="variables"]').value = prompt.variables || '';
+                document.querySelector('input[name="version"]').value = prompt.version || '1.0';
+                document.querySelector('select[name="status"]').value = prompt.status || 'draft';
+                
+                document.querySelector('.modal-title').textContent = 'Editar Prompt';
+                new bootstrap.Modal(document.getElementById('addPromptModal')).show();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión: ' + error);
+        });
+    }
+
+    function deletePrompt(id, name) {
+        if (confirm(`¿Estás seguro de que quieres eliminar el prompt "${name}"?`)) {
+            fetch(`api-prompts.php?id=${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error de conexión: ' + error);
+            });
+        }
+    }
+
+    function viewPrompt(id) {
+        fetch(`api-prompts.php?id=${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const prompt = data.data;
+                alert(`Prompt: ${prompt.name}\n\nContent: ${prompt.content}`);
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión: ' + error);
+        });
+    }
+
+    function testPrompt(id) {
+        alert('Función de test en desarrollo para prompt ID: ' + id);
+    }
+
+    // Reset form when modal closes
+    $('#addPromptModal').on('hidden.bs.modal', function () {
+        document.getElementById('addPromptForm').reset();
+        editingId = null;
+        document.querySelector('.modal-title').textContent = 'Crear Nuevo Prompt';
+    });
     </script>
 </body>
 </html>

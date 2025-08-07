@@ -117,7 +117,7 @@ $providers = getAIProviders();
                                 <div class="d-flex justify-content-between">
                                     <div>
                                         <h6>Providers Activos</h6>
-                                        <h3><?php echo count(array_filter($providers, fn($p) => $p['active'] == 1)); ?></h3>
+                                        <h3><?php echo count(array_filter($providers, fn($p) => $p['is_active'] == 1)); ?></h3>
                                     </div>
                                     <div>
                                         <i class="fas fa-check fa-2x"></i>
@@ -132,7 +132,7 @@ $providers = getAIProviders();
                                 <div class="d-flex justify-content-between">
                                     <div>
                                         <h6>Providers Inactivos</h6>
-                                        <h3><?php echo count(array_filter($providers, fn($p) => $p['active'] == 0)); ?></h3>
+                                        <h3><?php echo count(array_filter($providers, fn($p) => $p['is_active'] == 0)); ?></h3>
                                     </div>
                                     <div>
                                         <i class="fas fa-pause fa-2x"></i>
@@ -168,7 +168,7 @@ $providers = getAIProviders();
                                         <td><?php echo $provider['id']; ?></td>
                                         <td><strong><?php echo htmlspecialchars($provider['name']); ?></strong></td>
                                         <td>
-                                            <span class="badge bg-secondary"><?php echo htmlspecialchars($provider['type'] ?? 'N/A'); ?></span>
+                                            <span class="badge bg-secondary"><?php echo htmlspecialchars($provider['provider_type'] ?? 'N/A'); ?></span>
                                         </td>
                                         <td>
                                             <?php if (!empty($provider['api_key'])): ?>
@@ -178,7 +178,7 @@ $providers = getAIProviders();
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <?php if ($provider['active']): ?>
+                                            <?php if ($provider['is_active']): ?>
                                                 <span class="badge bg-success"><i class="fas fa-check"></i> Activo</span>
                                             <?php else: ?>
                                                 <span class="badge bg-secondary"><i class="fas fa-pause"></i> Inactivo</span>
@@ -229,12 +229,13 @@ $providers = getAIProviders();
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Tipo *</label>
-                                    <select class="form-select" name="type" required>
+                                    <select class="form-select" name="provider_type" required>
                                         <option value="">Seleccionar...</option>
                                         <option value="openai">OpenAI</option>
-                                        <option value="anthropic">Anthropic</option>
-                                        <option value="google">Google AI</option>
-                                        <option value="azure">Azure OpenAI</option>
+                                        <option value="claude">Claude</option>
+                                        <option value="gemini">Gemini</option>
+                                        <option value="deepseek">DeepSeek</option>
+                                        <option value="local">Local</option>
                                     </select>
                                 </div>
                             </div>
@@ -244,8 +245,8 @@ $providers = getAIProviders();
                             <input type="password" class="form-control" name="api_key" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Base URL</label>
-                            <input type="url" class="form-control" name="base_url" placeholder="https://api.openai.com/v1">
+                            <label class="form-label">API URL</label>
+                            <input type="url" class="form-control" name="api_url" placeholder="https://api.openai.com/v1/chat/completions">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Configuración (JSON)</label>
@@ -253,7 +254,7 @@ $providers = getAIProviders();
                         </div>
                         <div class="mb-3">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="active" checked>
+                                <input class="form-check-input" type="checkbox" name="is_active" checked>
                                 <label class="form-check-label">Provider Activo</label>
                             </div>
                         </div>
@@ -292,11 +293,11 @@ $providers = getAIProviders();
         
         const data = {
             name: formData.get('name'),
-            type: formData.get('type'),
+            provider_type: formData.get('provider_type'),
             api_key: formData.get('api_key'),
-            base_url: formData.get('base_url'),
+            api_url: formData.get('api_url'),
             config: formData.get('config'),
-            active: formData.get('active') ? true : false
+            is_active: formData.get('is_active') ? true : false
         };
 
         const url = editingId ? `api-ai-providers.php?id=${editingId}` : 'api-ai-providers.php';
@@ -332,11 +333,11 @@ $providers = getAIProviders();
             if (data.success) {
                 const provider = data.data;
                 document.querySelector('input[name="name"]').value = provider.name;
-                document.querySelector('select[name="type"]').value = provider.type || '';
+                document.querySelector('select[name="provider_type"]').value = provider.provider_type || '';
                 document.querySelector('input[name="api_key"]').value = provider.api_key || '';
-                document.querySelector('input[name="base_url"]').value = provider.base_url || '';
+                document.querySelector('input[name="api_url"]').value = provider.api_url || '';
                 document.querySelector('textarea[name="config"]').value = provider.config || '';
-                document.querySelector('input[name="active"]').checked = provider.active == 1;
+                document.querySelector('input[name="is_active"]').checked = provider.is_active == 1;
                 
                 document.querySelector('.modal-title').textContent = 'Editar AI Provider';
                 new bootstrap.Modal(document.getElementById('addProviderModal')).show();

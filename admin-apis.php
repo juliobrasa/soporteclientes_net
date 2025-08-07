@@ -200,16 +200,16 @@ $apis = getExternalApis();
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-success" title="Test Conexión">
+                                                <button type="button" class="btn btn-sm btn-outline-success" title="Test Conexión" onclick="testExternalApi(<?php echo $api['id']; ?>)">
                                                     <i class="fas fa-wifi"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-primary" title="Editar">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" title="Editar" onclick="editExternalApi(<?php echo $api['id']; ?>)">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-info" title="Logs">
+                                                <button type="button" class="btn btn-sm btn-outline-info" title="Logs" onclick="viewApiLogs(<?php echo $api['id']; ?>)">
                                                     <i class="fas fa-file-alt"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="deleteExternalApi(<?php echo $api['id']; ?>, '<?php echo addslashes($api['name']); ?>')">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -297,7 +297,7 @@ $apis = getExternalApis();
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary">Guardar API</button>
+                    <button type="button" class="btn btn-primary" onclick="saveExternalApi()">Guardar API</button>
                 </div>
             </div>
         </div>
@@ -309,14 +309,128 @@ $apis = getExternalApis();
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     
     <script>
+    let table;
+    let editingId = null;
+
     $(document).ready(function() {
-        $('#apisTable').DataTable({
+        table = $('#apisTable').DataTable({
             language: {
                 url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
             },
             pageLength: 25,
             order: [[1, 'asc']]
         });
+    });
+
+    function saveExternalApi() {
+        const form = document.getElementById('addApiForm');
+        const formData = new FormData(form);
+        
+        let headers = {};
+        try {
+            const headersText = formData.get('headers');
+            if (headersText) {
+                headers = JSON.parse(headersText);
+            }
+        } catch (e) {
+            alert('Error en el formato JSON de headers');
+            return;
+        }
+        
+        const data = {
+            name: formData.get('name'),
+            description: formData.get('description'),
+            endpoint_url: formData.get('endpoint'),
+            api_key: formData.get('api_key'),
+            method: formData.get('method'),
+            headers: headers,
+            is_active: formData.get('active') ? true : false
+        };
+
+        const url = editingId ? `api-external-apis.php?id=${editingId}` : 'api-external-apis.php';
+        const method = editingId ? 'PUT' : 'POST';
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión: ' + error);
+        });
+    }
+
+    function editExternalApi(id) {
+        editingId = id;
+        
+        fetch(`api-external-apis.php?id=${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const api = data.data;
+                document.querySelector('input[name="name"]').value = api.name;
+                document.querySelector('textarea[name="description"]').value = api.description || '';
+                document.querySelector('input[name="endpoint"]').value = api.endpoint_url || '';
+                document.querySelector('input[name="api_key"]').value = api.api_key || '';
+                document.querySelector('select[name="method"]').value = api.method || 'GET';
+                document.querySelector('textarea[name="headers"]').value = api.headers || '';
+                document.querySelector('input[name="active"]').checked = api.is_active == 1;
+                
+                document.querySelector('.modal-title').textContent = 'Editar API Externa';
+                new bootstrap.Modal(document.getElementById('addApiModal')).show();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión: ' + error);
+        });
+    }
+
+    function deleteExternalApi(id, name) {
+        if (confirm(`¿Estás seguro de que quieres eliminar la API "${name}"?`)) {
+            fetch(`api-external-apis.php?id=${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error de conexión: ' + error);
+            });
+        }
+    }
+
+    function testExternalApi(id) {
+        alert('Función de test en desarrollo para API ID: ' + id);
+    }
+
+    function viewApiLogs(id) {
+        alert('Función de logs en desarrollo para API ID: ' + id);
+    }
+
+    // Reset form when modal closes
+    $('#addApiModal').on('hidden.bs.modal', function () {
+        document.getElementById('addApiForm').reset();
+        editingId = null;
+        document.querySelector('.modal-title').textContent = 'Agregar Nueva API Externa';
     });
     </script>
 </body>

@@ -44,21 +44,21 @@ switch ($method) {
 
     case 'POST':
         try {
-            $required = ['name', 'type', 'api_key'];
+            $required = ['name', 'provider_type', 'api_key'];
             foreach ($required as $field) {
                 if (!isset($input[$field]) || empty($input[$field])) {
                     response(['error' => "Campo requerido: $field"], 400);
                 }
             }
 
-            $stmt = $pdo->prepare("INSERT INTO ai_providers (name, type, api_key, base_url, config, active, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+            $stmt = $pdo->prepare("INSERT INTO ai_providers (name, provider_type, api_key, api_url, config, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
             $result = $stmt->execute([
                 $input['name'],
-                $input['type'],
+                $input['provider_type'],
                 $input['api_key'],
-                $input['base_url'] ?? null,
-                isset($input['config']) ? json_encode($input['config']) : null,
-                isset($input['active']) ? ($input['active'] ? 1 : 0) : 1
+                $input['api_url'] ?? null,
+                isset($input['config']) ? $input['config'] : null,
+                isset($input['is_active']) ? ($input['is_active'] ? 1 : 0) : 1
             ]);
 
             if ($result) {
@@ -79,14 +79,14 @@ switch ($method) {
             }
 
             $id = $_GET['id'];
-            $stmt = $pdo->prepare("UPDATE ai_providers SET name = ?, type = ?, api_key = ?, base_url = ?, config = ?, active = ?, updated_at = NOW() WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE ai_providers SET name = ?, provider_type = ?, api_key = ?, api_url = ?, config = ?, is_active = ?, updated_at = NOW() WHERE id = ?");
             $result = $stmt->execute([
                 $input['name'],
-                $input['type'],
+                $input['provider_type'],
                 $input['api_key'],
-                $input['base_url'] ?? null,
-                isset($input['config']) ? json_encode($input['config']) : null,
-                isset($input['active']) ? ($input['active'] ? 1 : 0) : 1,
+                $input['api_url'] ?? null,
+                isset($input['config']) ? $input['config'] : null,
+                isset($input['is_active']) ? ($input['is_active'] ? 1 : 0) : 1,
                 $id
             ]);
 

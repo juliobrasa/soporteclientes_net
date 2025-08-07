@@ -51,7 +51,7 @@ switch ($method) {
                 }
             }
 
-            $stmt = $pdo->prepare("INSERT INTO prompts (name, category, description, content, variables, version, active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+            $stmt = $pdo->prepare("INSERT INTO prompts (name, category, description, content, variables, version, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
             $result = $stmt->execute([
                 $input['name'],
                 $input['category'] ?? 'general',
@@ -59,7 +59,7 @@ switch ($method) {
                 $input['content'],
                 $input['variables'] ?? null,
                 $input['version'] ?? '1.0',
-                isset($input['active']) ? ($input['active'] ? 1 : 0) : 1
+                isset($input['active']) && $input['active'] ? 'active' : 'draft'
             ]);
 
             if ($result) {
@@ -80,7 +80,7 @@ switch ($method) {
             }
 
             $id = $_GET['id'];
-            $stmt = $pdo->prepare("UPDATE prompts SET name = ?, category = ?, description = ?, content = ?, variables = ?, version = ?, active = ?, updated_at = NOW() WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE prompts SET name = ?, category = ?, description = ?, content = ?, variables = ?, version = ?, status = ?, updated_at = NOW() WHERE id = ?");
             $result = $stmt->execute([
                 $input['name'],
                 $input['category'] ?? 'general',
@@ -88,7 +88,7 @@ switch ($method) {
                 $input['content'],
                 $input['variables'] ?? null,
                 $input['version'] ?? '1.0',
-                isset($input['active']) ? ($input['active'] ? 1 : 0) : 1,
+                isset($input['active']) && $input['active'] ? 'active' : 'draft',
                 $id
             ]);
 
