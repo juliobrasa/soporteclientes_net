@@ -206,7 +206,7 @@ function handleStartExtraction($input, $pdo) {
             // También insertar en extraction_jobs para compatibilidad
             $stmt = $pdo->prepare("
                 INSERT INTO extraction_jobs (
-                    hotel_id, status, progress, extracted_count, 
+                    hotel_id, status, progress, reviews_extracted, 
                     created_at, updated_at
                 ) VALUES (?, 'pending', 0, 0, NOW(), NOW())
             ");
