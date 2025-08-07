@@ -726,58 +726,6 @@ try {
             sendResponse($test_result);
             break;
 
-        // PROMPTS
-        case 'getPrompts':
-            $pdo->exec("
-                CREATE TABLE IF NOT EXISTS ai_prompts (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    prompt_text TEXT NOT NULL,
-                    prompt_type ENUM('response','translation','summary') DEFAULT 'response',
-                    language VARCHAR(10) DEFAULT 'es',
-                    is_active TINYINT DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            ");
-            
-            $stmt = $pdo->query("SELECT * FROM ai_prompts ORDER BY created_at DESC");
-            $prompts = $stmt->fetchAll();
-            
-            if (empty($prompts)) {
-                $defaultPrompts = [
-                    [
-                        'Respuesta Estándar Español',
-                        'Eres un asistente virtual de {hotel_name}. Responde de manera cordial y profesional a esta reseña del huésped {guest_name} que nos calificó con {rating}/5. Si mencionó aspectos positivos: "{positive}", agradécelos específicamente. Si mencionó aspectos negativos: "{negative}", muestra empatía y menciona mejoras. La respuesta debe ser personalizada, de 80-120 palabras, cordial pero profesional.',
-                        'response',
-                        'es',
-                        1
-                    ],
-                    [
-                        'Traducción Automática',
-                        'Traduce el siguiente texto al español manteniendo el tono profesional y la información específica del hotel: {text}',
-                        'translation',
-                        'es',
-                        1
-                    ]
-                ];
-                
-                foreach ($defaultPrompts as $prompt) {
-                    $stmt = $pdo->prepare("
-                        INSERT INTO ai_prompts (name, prompt_text, prompt_type, language, is_active)
-                        VALUES (?, ?, ?, ?, ?)
-                    ");
-                    $stmt->execute($prompt);
-                }
-                
-                $stmt = $pdo->query("SELECT * FROM ai_prompts ORDER BY created_at DESC");
-                $prompts = $stmt->fetchAll();
-            }
-            
-            sendResponse([
-                'success' => true,
-                'prompts' => $prompts
-            ]);
-            break;
 
         case 'editPrompt':
             $data = json_decode(file_get_contents('php://input'), true);
