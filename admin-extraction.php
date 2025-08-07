@@ -356,13 +356,27 @@ $hotels = getActiveHotels();
                 <div class="modal-body">
                     <form id="newExtractionForm">
                         <div class="mb-3">
-                            <label class="form-label">Hotel *</label>
-                            <select class="form-select" name="hotel_id" required>
-                                <option value="">Seleccionar hotel...</option>
+                            <label class="form-label">Hoteles *</label>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="select_all_hotels" onclick="toggleAllHotels()">
+                                    <label class="form-check-label fw-bold" for="select_all_hotels">
+                                        Seleccionar todos
+                                    </label>
+                                </div>
+                                <hr class="my-2">
                                 <?php foreach ($hotels as $hotel): ?>
-                                    <option value="<?php echo $hotel['id']; ?>"><?php echo htmlspecialchars($hotel['nombre_hotel']); ?></option>
+                                    <div class="form-check">
+                                        <input class="form-check-input hotel-checkbox" type="checkbox" name="hotel_ids[]" value="<?php echo $hotel['id']; ?>" id="hotel_<?php echo $hotel['id']; ?>">
+                                        <label class="form-check-label" for="hotel_<?php echo $hotel['id']; ?>">
+                                            <?php echo htmlspecialchars($hotel['nombre_hotel']); ?>
+                                        </label>
+                                    </div>
                                 <?php endforeach; ?>
-                            </select>
+                            </div>
+                            <small class="form-text text-muted">
+                                Selecciona uno o más hoteles para extraer reseñas
+                            </small>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
@@ -426,13 +440,13 @@ $hotels = getActiveHotels();
                         </div>
                         <div class="mb-3">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="extract_images">
+                                <input class="form-check-input" type="checkbox" name="sentiment_analysis" checked>
                                 <label class="form-check-label">Análisis de sentimientos automático</label>
                             </div>
                         </div>
                         <div class="mb-3">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="translate_reviews">
+                                <input class="form-check-input" type="checkbox" name="generate_alerts">
                                 <label class="form-check-label">Generar alertas automáticas</label>
                             </div>
                         </div>
@@ -487,41 +501,58 @@ $hotels = getActiveHotels();
         const form = document.getElementById('newExtractionForm');
         const formData = new FormData(form);
         
-        if (!formData.get('hotel_id')) {
-            alert('Por favor selecciona un hotel');
+        // Obtener hoteles seleccionados
+        const selectedHotels = getSelectedHotels();
+        if (selectedHotels.length === 0) {
+            alert('Por favor selecciona al menos un hotel');
             return;
         }
         
-        const data = {
-            hotel_id: formData.get('hotel_id'),
-            max_reviews: formData.get('max_reviews') || 100,
-            platforms: getSelectedPlatforms(),
-            languages: ['en', 'es'],
-            extract_images: formData.get('extract_images') ? true : false,
-            translate_reviews: formData.get('translate_reviews') ? true : false
-        };
-
         // Mostrar loader
         showExtractionLoader('Iniciando extracción con Apify Hotel Review Aggregator...');
         
-        // Llamada real a la API de extracción
-        fetch('api-extraction.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
+        // Procesar cada hotel seleccionado
+        const extractions = selectedHotels.map(hotelId => {
+            const data = {
+                hotel_id: hotelId,
+                max_reviews: formData.get('max_reviews') || 100,
+                platforms: getSelectedPlatforms(),
+                languages: ['en', 'es'],
+                sentiment_analysis: formData.get('sentiment_analysis') ? true : false,
+                generate_alerts: formData.get('generate_alerts') ? true : false
+            };
+            
+            return fetch('api-extraction.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            }).then(response => response.json());
+        });
+        
+        // Ejecutar todas las extracciones
+        Promise.allSettled(extractions)
+        .then(results => {
             hideExtractionLoader();
             
-            if (data.success) {
-                alert(`✅ Extracción iniciada exitosamente\n\nRun ID: ${data.run_id}\nCosto estimado: $${data.cost_estimate}\n\nLa extracción puede tomar varios minutos. Actualiza la página para ver el progreso.`);
-                location.reload();
-            } else {
-                alert('❌ Error: ' + (data.error || 'Error desconocido'));
+            const successful = results.filter(r => r.status === 'fulfilled' && r.value.success);
+            const failed = results.filter(r => r.status === 'rejected' || !r.value.success);
+            
+            let message = `✅ Extracciones iniciadas: ${successful.length}/${selectedHotels.length}`;
+            
+            if (successful.length > 0) {
+                const totalCost = successful.reduce((sum, r) => sum + parseFloat(r.value.cost_estimate || 0), 0);
+                message += `\n\nCosto total estimado: $${totalCost.toFixed(2)}`;
+                message += '\n\nLas extracciones pueden tomar varios minutos. Actualiza la página para ver el progreso.';
             }
+            
+            if (failed.length > 0) {
+                message += `\n\n❌ Errores: ${failed.length}`;
+            }
+            
+            alert(message);
+            location.reload();
         })
         .catch(error => {
             hideExtractionLoader();
@@ -537,6 +568,22 @@ $hotels = getActiveHotels();
         const checkboxes = document.querySelectorAll('input[name="platforms"]:checked');
         checkboxes.forEach(cb => platforms.push(cb.value));
         return platforms.length > 0 ? platforms : ['tripadvisor', 'booking', 'google'];
+    }
+    
+    function getSelectedHotels() {
+        const hotels = [];
+        const checkboxes = document.querySelectorAll('input[name="hotel_ids[]"]:checked');
+        checkboxes.forEach(cb => hotels.push(parseInt(cb.value)));
+        return hotels;
+    }
+    
+    function toggleAllHotels() {
+        const selectAllCheckbox = document.getElementById('select_all_hotels');
+        const hotelCheckboxes = document.querySelectorAll('.hotel-checkbox');
+        
+        hotelCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
     }
     
     function showExtractionLoader(message) {
@@ -579,6 +626,9 @@ $hotels = getActiveHotels();
     // Reset form when modal closes
     $('#newExtractionModal').on('hidden.bs.modal', function () {
         document.getElementById('newExtractionForm').reset();
+        // Desmarcar todos los checkboxes de hoteles
+        document.querySelectorAll('.hotel-checkbox').forEach(cb => cb.checked = false);
+        document.getElementById('select_all_hotels').checked = false;
     });
     </script>
 </body>
