@@ -89,6 +89,8 @@ switch ($method) {
     case 'GET':
         if (isset($_GET['action']) && $_GET['action'] === 'get_recent') {
             handleGetRecentJobs($pdo);
+        } elseif (isset($_GET['job_id'])) {
+            handleGetJobDetails($_GET['job_id'], $pdo);
         } elseif (isset($_GET['run_id'])) {
             handleGetRunStatus($_GET['run_id'], $pdo);
         } elseif (isset($_GET['hotel_id'])) {
@@ -588,6 +590,88 @@ function handleGetAllRuns($pdo) {
         ]);
         
     } catch (Exception $e) {
+        response(['error' => $e->getMessage()], 500);
+    }
+}
+
+/**
+ * Obtener detalles específicos de un trabajo
+ */
+function handleGetJobDetails($jobId, $pdo) {
+    try {
+        DebugLogger::info("Obteniendo detalles del job", ['job_id' => $jobId]);
+        
+        // Obtener detalles del trabajo con información del hotel
+        $stmt = $pdo->prepare("
+            SELECT 
+                ej.*,
+                h.nombre_hotel,
+                aer.apify_run_id,
+                aer.cost_estimate,
+                aer.platforms_requested,
+                aer.max_reviews_per_platform,
+                aer.apify_response,
+                TIMESTAMPDIFF(MINUTE, ej.created_at, COALESCE(ej.updated_at, NOW())) as duration_minutes
+            FROM extraction_jobs ej
+            JOIN hoteles h ON ej.hotel_id = h.id
+            LEFT JOIN apify_extraction_runs aer ON aer.hotel_id = ej.hotel_id 
+                AND aer.started_at >= DATE_SUB(ej.created_at, INTERVAL 1 HOUR)
+            WHERE ej.id = ?
+            ORDER BY aer.started_at DESC
+            LIMIT 1
+        ");
+        
+        $stmt->execute([$jobId]);
+        $job = $stmt->fetch();
+        
+        if (!$job) {
+            response(['error' => 'Trabajo no encontrado'], 404);
+        }
+        
+        // Obtener estadísticas adicionales de reseñas si existen
+        $reviewsStmt = $pdo->prepare("
+            SELECT 
+                COUNT(*) as total_reviews,
+                COUNT(CASE WHEN source_platform = 'booking' THEN 1 END) as booking_reviews,
+                COUNT(CASE WHEN source_platform = 'tripadvisor' THEN 1 END) as tripadvisor_reviews,
+                COUNT(CASE WHEN source_platform = 'google' THEN 1 END) as google_reviews,
+                AVG(rating) as average_rating,
+                MAX(scraped_at) as latest_review_date
+            FROM reviews 
+            WHERE hotel_id = ? AND scraped_at >= ?
+        ");
+        
+        $reviewsStmt->execute([$job['hotel_id'], $job['created_at']]);
+        $reviewStats = $reviewsStmt->fetch();
+        
+        // Agregar estadísticas al resultado
+        $job['review_stats'] = $reviewStats;
+        
+        // Obtener logs recientes relacionados
+        $logsStmt = $pdo->prepare("
+            SELECT message, level, created_at, context
+            FROM debug_logs 
+            WHERE JSON_EXTRACT(context, '$.job_id') = ? 
+               OR JSON_EXTRACT(context, '$.hotel_id') = ?
+            ORDER BY created_at DESC 
+            LIMIT 10
+        ");
+        
+        $logsStmt->execute([$jobId, $job['hotel_id']]);
+        $logs = $logsStmt->fetchAll();
+        
+        $job['recent_logs'] = $logs;
+        
+        response([
+            'success' => true,
+            'data' => $job
+        ]);
+        
+    } catch (Exception $e) {
+        DebugLogger::error("Error obteniendo detalles del job", [
+            'job_id' => $jobId,
+            'error' => $e->getMessage()
+        ]);
         response(['error' => $e->getMessage()], 500);
     }
 }
