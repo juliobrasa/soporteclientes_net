@@ -9,7 +9,9 @@
 window.AdminConfig = {
     // Configuración de la API - MIGRADO A LARAVEL
     api: {
-        baseUrl: 'http://localhost:8000/api/legacy',  // URL base para Laravel API (legacy endpoints)
+        baseUrl: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+                    ? 'http://localhost:8000/api/legacy'  // Desarrollo local
+                    : '/kavia-laravel/public/api/legacy',  // Producción
         endpoints: {
             // === HOTELES (MIGRADO A LARAVEL) ===
             hotels: {

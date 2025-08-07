@@ -180,45 +180,50 @@ Route::middleware('auth:sanctum')->group(function () {
 // ================================================================
 
 // Rutas de compatibilidad para el sistema actual (sin autenticación para facilitar migración)
+// CORS habilitado para desarrollo
 
-// HOTELES - Legacy routes
-Route::get('/legacy/hotels', [HotelController::class, 'index']);
-Route::post('/legacy/hotels', [HotelController::class, 'store']);
-Route::get('/legacy/hotels/{hotel}', [HotelController::class, 'show']);
-Route::put('/legacy/hotels/{hotel}', [HotelController::class, 'update']);
-Route::delete('/legacy/hotels/{hotel}', [HotelController::class, 'destroy']);
-Route::post('/legacy/hotels/{hotel}/toggle-status', [HotelController::class, 'toggleStatus']);
+// Aplicar middleware CORS a todas las rutas legacy
+Route::middleware('cors')->group(function () {
+    
+    // HOTELES - Legacy routes
+    Route::get('/legacy/hotels', [HotelController::class, 'index']);
+    Route::post('/legacy/hotels', [HotelController::class, 'store']);
+    Route::get('/legacy/hotels/{hotel}', [HotelController::class, 'show']);
+    Route::put('/legacy/hotels/{hotel}', [HotelController::class, 'update']);
+    Route::delete('/legacy/hotels/{hotel}', [HotelController::class, 'destroy']);
+    Route::post('/legacy/hotels/{hotel}/toggle-status', [HotelController::class, 'toggleStatus']);
 
-// AI PROVIDERS - Legacy routes
-Route::get('/legacy/ai-providers', [AiProviderController::class, 'index']);
-Route::post('/legacy/ai-providers', [AiProviderController::class, 'store']);
-Route::get('/legacy/ai-providers/{aiProvider}', [AiProviderController::class, 'show']);
-Route::put('/legacy/ai-providers/{aiProvider}', [AiProviderController::class, 'update']);
-Route::delete('/legacy/ai-providers/{aiProvider}', [AiProviderController::class, 'destroy']);
-Route::post('/legacy/ai-providers/{aiProvider}/toggle', [AiProviderController::class, 'toggle']);
+    // AI PROVIDERS - Legacy routes
+    Route::get('/legacy/ai-providers', [AiProviderController::class, 'index']);
+    Route::post('/legacy/ai-providers', [AiProviderController::class, 'store']);
+    Route::get('/legacy/ai-providers/{aiProvider}', [AiProviderController::class, 'show']);
+    Route::put('/legacy/ai-providers/{aiProvider}', [AiProviderController::class, 'update']);
+    Route::delete('/legacy/ai-providers/{aiProvider}', [AiProviderController::class, 'destroy']);
+    Route::post('/legacy/ai-providers/{aiProvider}/toggle', [AiProviderController::class, 'toggle']);
 
-// PROMPTS - Legacy routes
-Route::get('/legacy/prompts', [PromptController::class, 'index']);
-Route::post('/legacy/prompts', [PromptController::class, 'store']);
-Route::get('/legacy/prompts/{prompt}', [PromptController::class, 'show']);
-Route::put('/legacy/prompts/{prompt}', [PromptController::class, 'update']);
-Route::delete('/legacy/prompts/{prompt}', [PromptController::class, 'destroy']);
+    // PROMPTS - Legacy routes
+    Route::get('/legacy/prompts', [PromptController::class, 'index']);
+    Route::post('/legacy/prompts', [PromptController::class, 'store']);
+    Route::get('/legacy/prompts/{prompt}', [PromptController::class, 'show']);
+    Route::put('/legacy/prompts/{prompt}', [PromptController::class, 'update']);
+    Route::delete('/legacy/prompts/{prompt}', [PromptController::class, 'destroy']);
 
-// EXTERNAL APIS - Legacy routes  
-Route::get('/legacy/external-apis', [ExternalApiController::class, 'index']);
-Route::post('/legacy/external-apis', [ExternalApiController::class, 'store']);
-Route::get('/legacy/external-apis/{externalApi}', [ExternalApiController::class, 'show']);
-Route::put('/legacy/external-apis/{externalApi}', [ExternalApiController::class, 'update']);
-Route::delete('/legacy/external-apis/{externalApi}', [ExternalApiController::class, 'destroy']);
+    // EXTERNAL APIS - Legacy routes  
+    Route::get('/legacy/external-apis', [ExternalApiController::class, 'index']);
+    Route::post('/legacy/external-apis', [ExternalApiController::class, 'store']);
+    Route::get('/legacy/external-apis/{externalApi}', [ExternalApiController::class, 'show']);
+    Route::put('/legacy/external-apis/{externalApi}', [ExternalApiController::class, 'update']);
+    Route::delete('/legacy/external-apis/{externalApi}', [ExternalApiController::class, 'destroy']);
 
-// SYSTEM LOGS - Legacy routes
-Route::get('/legacy/system-logs', [SystemLogController::class, 'index']);
-Route::post('/legacy/system-logs', [SystemLogController::class, 'store']);
+    // SYSTEM LOGS - Legacy routes
+    Route::get('/legacy/system-logs', [SystemLogController::class, 'index']);
+    Route::post('/legacy/system-logs', [SystemLogController::class, 'store']);
 
-// EXTRACTION JOBS - Legacy routes
-Route::get('/legacy/extraction-jobs', [ExtractionController::class, 'index']);
-Route::post('/legacy/extraction-jobs', [ExtractionController::class, 'store']);
-Route::get('/legacy/extraction-jobs/{extractionJob}', [ExtractionController::class, 'show']);
+    // EXTRACTION JOBS - Legacy routes
+    Route::get('/legacy/extraction-jobs', [ExtractionController::class, 'index']);
+    Route::post('/legacy/extraction-jobs', [ExtractionController::class, 'store']);
+    Route::get('/legacy/extraction-jobs/{extractionJob}', [ExtractionController::class, 'show']);
 
-// TOOLS - Legacy routes
-Route::get('/legacy/tools', [ToolsController::class, 'getStats']);
+    // TOOLS - Legacy routes
+    Route::get('/legacy/tools', [ToolsController::class, 'getStats']);
+});
