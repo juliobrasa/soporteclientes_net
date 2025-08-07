@@ -296,7 +296,8 @@
     <?php endif; ?>
     
     <?php if ($implementedModules['prompts']): ?>
-        <!-- <script src="assets/js/modules/prompts-module.js"></script> -->
+        <script src="assets/js/modules/prompts-module.js"></script>
+        <link rel="stylesheet" href="assets/css/prompts-templates.css">
     <?php endif; ?>
     
     <?php if ($implementedModules['logs']): ?>
@@ -495,7 +496,7 @@
     <?php endif; ?>
     
     <?php if ($implementedModules['prompts']): ?>
-        <!-- <?php include 'modules/prompts/prompt-modal.php'; ?> -->
+        <?php include 'modules/prompts/prompt-modal.php'; ?>
     <?php endif; ?>
     
     <!-- EMERGENCY HOTELS SYSTEM -->
