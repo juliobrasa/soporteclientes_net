@@ -340,7 +340,7 @@ $apis = getExternalApis();
         const data = {
             name: formData.get('name'),
             description: formData.get('description'),
-            endpoint_url: formData.get('endpoint'),
+            base_url: formData.get('endpoint'),
             api_key: formData.get('api_key'),
             method: formData.get('method'),
             headers: headers,
@@ -381,7 +381,7 @@ $apis = getExternalApis();
                 const api = data.data;
                 document.querySelector('input[name="name"]').value = api.name;
                 document.querySelector('textarea[name="description"]').value = api.description || '';
-                document.querySelector('input[name="endpoint"]').value = api.endpoint_url || '';
+                document.querySelector('input[name="endpoint"]').value = api.base_url || '';
                 document.querySelector('input[name="api_key"]').value = api.api_key || '';
                 document.querySelector('select[name="method"]').value = api.method || 'GET';
                 document.querySelector('textarea[name="headers"]').value = api.headers || '';
