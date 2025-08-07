@@ -1116,22 +1116,8 @@ class NavigationManagerV2 {
         this.updateNavigationState();
         this.updateBreadcrumbs(tabName);
         
-        // Notificar al tab manager
-        if (window.tabManager) {
-            window.tabManager.switchTab(tabName).then(() => {
-                this.hideTabLoading(tabName);
-                this.setTabIndicator(tabName, 'online');
-            }).catch(() => {
-                this.hideTabLoading(tabName);
-                this.setTabIndicator(tabName, 'error');
-            });
-        } else {
-            // Simular carga
-            setTimeout(() => {
-                this.hideTabLoading(tabName);
-                this.setTabIndicator(tabName, 'online');
-            }, 1000);
-        }
+        // Notificar al tab manager (con retry si no está disponible)
+        this.notifyTabManager(tabName);
         
         // Actualizar URL
         this.updateUrl(tabName);
@@ -1439,6 +1425,34 @@ class NavigationManagerV2 {
                 }
             });
         }, 30000);
+    }
+    
+    /**
+     * Notifica al tab manager con retry
+     */
+    notifyTabManager(tabName, retries = 3) {
+        if (window.tabManager) {
+            window.tabManager.switchTab(tabName).then(() => {
+                this.hideTabLoading(tabName);
+                this.setTabIndicator(tabName, 'online');
+            }).catch((error) => {
+                console.warn(`Error switching to tab ${tabName}:`, error);
+                this.hideTabLoading(tabName);
+                this.setTabIndicator(tabName, 'error');
+            });
+        } else if (retries > 0) {
+            // TabManager aún no está disponible, reintentamos
+            setTimeout(() => {
+                this.notifyTabManager(tabName, retries - 1);
+            }, 50);
+        } else {
+            // Fallback: simular carga
+            console.warn('TabManager no disponible, usando fallback');
+            setTimeout(() => {
+                this.hideTabLoading(tabName);
+                this.setTabIndicator(tabName, 'online');
+            }, 500);
+        }
     }
     
     /**
