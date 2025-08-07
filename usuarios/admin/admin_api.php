@@ -64,8 +64,19 @@ try {
     sendError('Error de conexión a la base de datos', $e->getMessage());
 }
 
-// Obtener acción
+// Obtener acción - manejar tanto requests normales como JSON
 $action = $_REQUEST['action'] ?? '';
+
+// Si no hay acción y es POST, intentar decodificar JSON
+if (empty($action) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $json_input = file_get_contents('php://input');
+    if (!empty($json_input)) {
+        $json_data = json_decode($json_input, true);
+        if ($json_data && isset($json_data['action'])) {
+            $action = $json_data['action'];
+        }
+    }
+}
 
 try {
     switch($action) {
@@ -715,58 +726,6 @@ try {
             sendResponse($test_result);
             break;
 
-        // PROMPTS
-        case 'getPrompts':
-            $pdo->exec("
-                CREATE TABLE IF NOT EXISTS ai_prompts (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    prompt_text TEXT NOT NULL,
-                    prompt_type ENUM('response','translation','summary') DEFAULT 'response',
-                    language VARCHAR(10) DEFAULT 'es',
-                    is_active TINYINT DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            ");
-            
-            $stmt = $pdo->query("SELECT * FROM ai_prompts ORDER BY created_at DESC");
-            $prompts = $stmt->fetchAll();
-            
-            if (empty($prompts)) {
-                $defaultPrompts = [
-                    [
-                        'Respuesta Estándar Español',
-                        'Eres un asistente virtual de {hotel_name}. Responde de manera cordial y profesional a esta reseña del huésped {guest_name} que nos calificó con {rating}/5. Si mencionó aspectos positivos: "{positive}", agradécelos específicamente. Si mencionó aspectos negativos: "{negative}", muestra empatía y menciona mejoras. La respuesta debe ser personalizada, de 80-120 palabras, cordial pero profesional.',
-                        'response',
-                        'es',
-                        1
-                    ],
-                    [
-                        'Traducción Automática',
-                        'Traduce el siguiente texto al español manteniendo el tono profesional y la información específica del hotel: {text}',
-                        'translation',
-                        'es',
-                        1
-                    ]
-                ];
-                
-                foreach ($defaultPrompts as $prompt) {
-                    $stmt = $pdo->prepare("
-                        INSERT INTO ai_prompts (name, prompt_text, prompt_type, language, is_active)
-                        VALUES (?, ?, ?, ?, ?)
-                    ");
-                    $stmt->execute($prompt);
-                }
-                
-                $stmt = $pdo->query("SELECT * FROM ai_prompts ORDER BY created_at DESC");
-                $prompts = $stmt->fetchAll();
-            }
-            
-            sendResponse([
-                'success' => true,
-                'prompts' => $prompts
-            ]);
-            break;
 
         case 'editPrompt':
             $data = json_decode(file_get_contents('php://input'), true);
@@ -2693,6 +2652,76 @@ try {
                 
             } catch (Exception $e) {
                 sendError('Error importando prompts: ' . $e->getMessage());
+            }
+            break;
+            
+        case 'getTemplatesLibrary':
+            try {
+                $templatesFile = __DIR__ . '/modules/prompts/templates-library.json';
+                
+                if (!file_exists($templatesFile)) {
+                    sendError('Archivo de templates no encontrado');
+                }
+                
+                $templatesData = json_decode(file_get_contents($templatesFile), true);
+                
+                if (!$templatesData) {
+                    sendError('Error al leer templates');
+                }
+                
+                sendResponse([
+                    'success' => true,
+                    'data' => $templatesData
+                ]);
+                
+            } catch (Exception $e) {
+                sendError('Error cargando biblioteca de templates: ' . $e->getMessage());
+            }
+            break;
+            
+        case 'importTemplate':
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (!$data) {
+                $data = $_POST;
+            }
+            
+            if (!isset($data['template'])) {
+                sendError('Template no proporcionado');
+            }
+            
+            try {
+                $template = $data['template'];
+                
+                $stmt = $pdo->prepare("
+                    INSERT INTO prompts (
+                        name, category, language, description, content, status, version,
+                        tags, custom_variables, config
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                
+                $stmt->execute([
+                    $template['name'],
+                    $template['category'],
+                    $template['language'] ?? 'es',
+                    $template['description'] ?? null,
+                    $template['content'],
+                    'draft', // Los templates importados empiezan como draft
+                    $template['version'] ?? '1.0',
+                    json_encode($template['tags'] ?? []),
+                    json_encode($template['variables'] ?? []),
+                    json_encode($template['config'] ?? [])
+                ]);
+                
+                $newId = $pdo->lastInsertId();
+                
+                sendResponse([
+                    'success' => true,
+                    'message' => 'Template importado correctamente',
+                    'data' => ['id' => $newId]
+                ]);
+                
+            } catch (Exception $e) {
+                sendError('Error importando template: ' . $e->getMessage());
             }
             break;
             

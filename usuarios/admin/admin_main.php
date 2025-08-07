@@ -296,7 +296,8 @@
     <?php endif; ?>
     
     <?php if ($implementedModules['prompts']): ?>
-        <!-- <script src="assets/js/modules/prompts-module.js"></script> -->
+        <script src="assets/js/modules/prompts-module.js"></script>
+        <link rel="stylesheet" href="assets/css/prompts-templates.css">
     <?php endif; ?>
     
     <?php if ($implementedModules['logs']): ?>
@@ -495,7 +496,7 @@
     <?php endif; ?>
     
     <?php if ($implementedModules['prompts']): ?>
-        <!-- <?php include 'modules/prompts/prompt-modal.php'; ?> -->
+        <?php include 'modules/prompts/prompt-modal.php'; ?>
     <?php endif; ?>
     
     <!-- EMERGENCY HOTELS SYSTEM -->
@@ -1062,6 +1063,16 @@ Creado: ${hotel.created_at || 'N/A'}
         }
         
         try {
+            // Primero obtener los datos actuales del hotel
+            const hotels = await getCurrentHotels();
+            const hotel = hotels.find(h => h.id == hotelId);
+            
+            if (!hotel) {
+                alert('Hotel no encontrado');
+                return;
+            }
+            
+            // Enviar todos los datos del hotel con el nuevo estado
             const response = await fetch('admin_api.php', {
                 method: 'POST',
                 headers: {
@@ -1070,6 +1081,10 @@ Creado: ${hotel.created_at || 'N/A'}
                 body: JSON.stringify({
                     action: 'saveHotel',
                     id: hotelId,
+                    name: hotel.nombre_hotel,
+                    description: hotel.hoja_destino || '',
+                    website: hotel.url_booking || '',
+                    total_rooms: hotel.max_reviews || 200,
                     status: newStatus ? 'active' : 'inactive'
                 })
             });
@@ -1081,10 +1096,11 @@ Creado: ${hotel.created_at || 'N/A'}
                 loadHotelsDirect(); // Recargar tabla
             } else {
                 alert('Error: ' + (result.error || 'Error desconocido'));
+                console.error('Error details:', result);
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error de conexión');
+            alert('Error de conexión: ' + error.message);
         }
     }
     
@@ -1130,29 +1146,47 @@ Creado: ${hotel.created_at || 'N/A'}
     async function saveHotelData(hotelData) {
         console.log('💾 Guardando hotel...', hotelData);
         
+        // Validar datos mínimos requeridos
+        if (!hotelData.name || hotelData.name.trim() === '') {
+            alert('Error: El nombre del hotel es obligatorio');
+            return;
+        }
+        
         try {
+            const requestData = {
+                action: 'saveHotel',
+                ...hotelData
+            };
+            
+            console.log('📤 Enviando datos:', requestData);
+            
             const response = await fetch('admin_api.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    action: 'saveHotel',
-                    ...hotelData
-                })
+                body: JSON.stringify(requestData)
             });
             
+            console.log('📥 Response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const result = await response.json();
+            console.log('📥 Response data:', result);
             
             if (result.success) {
                 alert(hotelData.id ? 'Hotel actualizado correctamente' : 'Hotel creado correctamente');
                 loadHotelsDirect(); // Recargar tabla
             } else {
                 alert('Error: ' + (result.error || 'Error desconocido'));
+                console.error('❌ Error details:', result);
             }
         } catch (error) {
-            console.error('Error:', error);
-            alert('Error de conexión');
+            console.error('❌ Error completo:', error);
+            alert('Error de conexión: ' + error.message);
         }
     }
     

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulate Tab Load</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { margin: 20px; font-family: Arial, sans-serif; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .log { 
+            background: #2d3748; color: #e2e8f0; padding: 15px; 
+            border-radius: 6px; font-family: monospace; height: 300px; 
+            overflow-y: auto; margin: 20px 0; 
+        }
+        .btn { 
+            background: #667eea; color: white; border: none; 
+            padding: 10px 20px; border-radius: 4px; cursor: pointer; 
+            margin: 5px; 
+        }
+        
+        /* Simular los estilos del módulo prompts */
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+        .loading-state i.fa-spinner {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+        #prompts-grid {
+            border: 1px solid #ddd;
+            padding: 20px;
+            min-height: 200px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Simulación de Carga de Tab Prompts</h1>
+        
+        <div>
+            <button class="btn" onclick="simulateTabLoad()">🚀 Simular Carga de Tab</button>
+            <button class="btn" onclick="testAPIConnection()">🔗 Test Conexión API</button>
+            <button class="btn" onclick="clearLog()">🧹 Limpiar Log</button>
+        </div>
+        
+        <!-- Simular estructura del tab prompts -->
+        <div id="prompts-loading" class="loading-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <h3>Cargando prompts</h3>
+            <p>Por favor espera mientras cargamos el contenido</p>
+        </div>
+        
+        <div id="prompts-grid">
+            <p>📋 Grid de prompts (esperando carga...)</p>
+        </div>
+        
+        <div id="log" class="log">
+            === Simulación Iniciada ===\n
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '=== Log Limpiado ===\n';
+        }
+        
+        // Simulación simple del apiClient
+        const apiClient = {
+            async call(action, params = {}) {
+                log(`📤 API Call: ${action} con params: ${JSON.stringify(params)}`);
+                
+                const formData = new FormData();
+                formData.append('action', action);
+                Object.entries(params).forEach(([key, value]) => {
+                    formData.append(key, value);
+                });
+                
+                try {
+                    const response = await fetch('admin_api.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    log(`📥 API Response: ${JSON.stringify(result, null, 2)}`);
+                    return result;
+                } catch (error) {
+                    log(`❌ API Error: ${error.message}`);
+                    throw error;
+                }
+            }
+        };
+        
+        // Simulación de la clase PromptsModule simplificada
+        class SimplePromptsModule {
+            constructor() {
+                this.currentPage = 1;
+                this.itemsPerPage = 20;
+                this.prompts = [];
+                this.totalPrompts = 0;
+                this.currentFilter = {
+                    search: '',
+                    category: '',
+                    status: '',
+                    language: ''
+                };
+                log('📝 SimplePromptsModule inicializado');
+            }
+            
+            async loadPrompts() {
+                log('📝 Iniciando loadPrompts...');
+                
+                try {
+                    const loadingElement = document.getElementById('prompts-loading');
+                    const container = document.getElementById('prompts-grid');
+                    
+                    log(`🔍 Elementos encontrados: loading=${!!loadingElement}, container=${!!container}`);
+                    
+                    if (loadingElement) {
+                        loadingElement.style.display = 'block';
+                    }
+                    
+                    const params = {
+                        page: this.currentPage,
+                        limit: this.itemsPerPage,
+                        search: this.currentFilter.search,
+                        category: this.currentFilter.category,
+                        status: this.currentFilter.status,
+                        language: this.currentFilter.language
+                    };
+                    
+                    log('📤 Parámetros de consulta: ' + JSON.stringify(params));
+                    
+                    const response = await apiClient.call('getPrompts', params);
+                    
+                    if (response && response.success) {
+                        this.prompts = response.data?.prompts || [];
+                        this.totalPrompts = response.data?.total || 0;
+                        
+                        log(`✅ Prompts cargados: ${this.prompts.length} de ${this.totalPrompts}`);
+                        
+                        this.renderPrompts();
+                    } else {
+                        throw new Error(response?.error || 'Error desconocido al cargar prompts');
+                    }
+                } catch (error) {
+                    log(`❌ Error al cargar prompts: ${error.message}`);
+                    
+                    const container = document.getElementById('prompts-grid');
+                    if (container) {
+                        container.innerHTML = `
+                            <div style="text-align: center; padding: 40px; color: #dc3545;">
+                                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                                <h3>Error al cargar prompts</h3>
+                                <p>${error.message}</p>
+                                <button onclick="simulateTabLoad()" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-top: 15px;">
+                                    <i class="fas fa-refresh"></i> Reintentar
+                                </button>
+                            </div>
+                        `;
+                    }
+                } finally {
+                    const loadingElement = document.getElementById('prompts-loading');
+                    if (loadingElement) {
+                        loadingElement.style.display = 'none';
+                        log('🔄 Elemento de carga ocultado');
+                    }
+                }
+            }
+            
+            renderPrompts() {
+                log('🎨 Renderizando prompts...');
+                
+                const container = document.getElementById('prompts-grid');
+                if (!container) return;
+                
+                if (this.prompts.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #6c757d;">
+                            <i class="fas fa-file-alt" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                            <h3>No hay prompts disponibles</h3>
+                            <p>Comienza creando tu primer prompt para gestionar respuestas de IA</p>
+                        </div>
+                    `;
+                } else {
+                    let html = '<div style="display: grid; gap: 20px;">';
+                    this.prompts.forEach(prompt => {
+                        html += `
+                            <div style="border: 1px solid #ddd; padding: 20px; border-radius: 6px;">
+                                <h4>${prompt.name}</h4>
+                                <p>Categoría: ${prompt.category}</p>
+                                <p>Estado: ${prompt.status}</p>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                }
+                
+                log(`✅ Prompts renderizados: ${this.prompts.length} elementos`);
+            }
+            
+            async loadStats() {
+                log('📊 Cargando estadísticas...');
+                try {
+                    const response = await apiClient.call('getPromptsStats');
+                    if (response && response.success) {
+                        log('📊 Estadísticas cargadas correctamente');
+                    }
+                } catch (error) {
+                    log(`❌ Error cargando stats: ${error.message}`);
+                }
+            }
+        }
+        
+        // Función global simulada para tab-manager
+        window.loadPromptsDirect = function() {
+            log('🔄 loadPromptsDirect llamado');
+            
+            if (!window.promptsModule) {
+                log('📝 Inicializando módulo de prompts...');
+                window.promptsModule = new SimplePromptsModule();
+            } else {
+                log('📝 Módulo ya existente, recargando...');
+            }
+            
+            // Llamar loadPrompts y loadStats
+            if (window.promptsModule.loadPrompts) {
+                window.promptsModule.loadPrompts();
+            }
+            if (window.promptsModule.loadStats) {
+                window.promptsModule.loadStats();
+            }
+            
+            return Promise.resolve();
+        };
+        
+        async function simulateTabLoad() {
+            log('🚀 Simulando carga de tab...');
+            
+            try {
+                await window.loadPromptsDirect();
+                log('✅ Carga de tab completada');
+            } catch (error) {
+                log(`❌ Error en carga de tab: ${error.message}`);
+            }
+        }
+        
+        async function testAPIConnection() {
+            log('🔗 Testeando conexión API...');
+            
+            try {
+                const result = await apiClient.call('getPromptsStats');
+                if (result && result.success) {
+                    log('✅ Conexión API exitosa');
+                } else {
+                    log('❌ API retornó error: ' + (result?.error || 'unknown'));
+                }
+            } catch (error) {
+                log('❌ Error de conexión: ' + error.message);
+            }
+        }
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 DOM cargado');
+            log('📋 Elementos encontrados:');
+            log('  - prompts-loading: ' + (document.getElementById('prompts-loading') ? '✅' : '❌'));
+            log('  - prompts-grid: ' + (document.getElementById('prompts-grid') ? '✅' : '❌'));
+            log('💡 Listo para simular carga de tab');
+        });
+    </script>
+</body>
+</html>
