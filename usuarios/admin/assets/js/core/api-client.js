@@ -248,11 +248,13 @@ class AdminAPIClient {
         if (endpoint.startsWith('prompts') && laravelModules.prompts) return true;
         if (endpoint.startsWith('external-apis') && laravelModules.externalApis) return true;
         if (endpoint.startsWith('system-logs') && laravelModules.systemLogs) return true;
+        if (endpoint.startsWith('extraction-jobs') && laravelModules.extractionJobs) return true;
+        if (endpoint.startsWith('tools') && laravelModules.tools) return true;
         
         // Endpoints específicos de Laravel
         const laravelEndpoints = [
-            'hotels/', 'ai-providers/', 'prompts/', 'external-apis/', 'system-logs/',
-            'hotels/stats', 'ai-providers/stats', 'prompts/stats', 'external-apis/stats', 'system-logs/stats'
+            'hotels/', 'ai-providers/', 'prompts/', 'external-apis/', 'system-logs/', 'extraction-jobs/', 'tools/',
+            'hotels/stats', 'ai-providers/stats', 'prompts/stats', 'external-apis/stats', 'system-logs/stats', 'extraction-jobs/stats', 'tools/stats'
         ];
         
         return laravelEndpoints.some(prefix => endpoint.startsWith(prefix));
@@ -450,6 +452,10 @@ class AdminAPIClient {
             this.clearCache('system-logs');
             this.clearCache('getLogs');
             this.clearCache('getSystemLogs');
+        } else if (endpoint.includes('extraction-jobs')) {
+            this.clearCache('extraction-jobs');
+            this.clearCache('getExtractionJobs');
+            this.clearCache('getExtractionHotels');
         }
     }
     
@@ -927,6 +933,187 @@ class AdminAPIClient {
         }
     }
     
+    // ================================================================
+    // MÉTODOS ESPECÍFICOS PARA EXTRACTION JOBS - HÍBRIDO Laravel/Legacy
+    // ================================================================
+    
+    async getExtractionJobs(filters = {}) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            return this.get('extraction-jobs', filters);
+        } else {
+            return this.call('getExtractionJobs', filters, { cache: true });
+        }
+    }
+    
+    async createExtractionJob(jobData) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.post('extraction-jobs', jobData);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('createExtractionJob', jobData);
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async updateExtractionJob(jobData) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.put(`extraction-jobs/${jobData.id}`, jobData);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('updateExtractionJob', jobData);
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async deleteExtractionJob(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.delete(`extraction-jobs/${jobId}`);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('deleteExtractionJob', { id: jobId });
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async startExtractionJob(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.post(`extraction-jobs/${jobId}/start`);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('startExtractionJob', { id: jobId });
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async pauseExtractionJob(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.post(`extraction-jobs/${jobId}/pause`);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('pauseExtractionJob', { id: jobId });
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async cancelExtractionJob(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.post(`extraction-jobs/${jobId}/cancel`);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('cancelExtractionJob', { id: jobId });
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async retryExtractionJob(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.post(`extraction-jobs/${jobId}/retry`);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('retryExtractionJob', { id: jobId });
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async cloneExtractionJob(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.post(`extraction-jobs/${jobId}/clone`);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            return { success: false, error: 'Clonación no disponible en versión legacy' };
+        }
+    }
+    
+    async getExtractionJobStats(period = '30d') {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            return this.get('extraction-jobs/stats', { period });
+        } else {
+            return { success: false, error: 'Estadísticas no disponibles en versión legacy' };
+        }
+    }
+    
+    async getExtractionHotels() {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            return this.get('extraction-jobs/hotels');
+        } else {
+            return this.call('getExtractionHotels', {}, { cache: true });
+        }
+    }
+    
+    async getExtractionJobRuns(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            return this.get(`extraction-jobs/${jobId}/runs`);
+        } else {
+            return { success: false, error: 'Runs no disponibles en versión legacy' };
+        }
+    }
+    
+    async getExtractionJobLogs(jobId, filters = {}) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            return this.get(`extraction-jobs/${jobId}/logs`, filters);
+        } else {
+            return { success: false, error: 'Logs no disponibles en versión legacy' };
+        }
+    }
+    
+    // Alias methods for backward compatibility
+    async startExtraction(extractionData) {
+        return this.createExtractionJob(extractionData);
+    }
+    
+    async getExtractionStatus() {
+        return this.getExtractionJobStats();
+    }
+    
+    async getApifyStatus() {
+        // Check if Apify providers are configured
+        return this.call('getApifyStatus', {}, { cache: true });
+    }
     
     // Herramientas
     async getDbStats() {

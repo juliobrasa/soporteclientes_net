@@ -79,6 +79,24 @@ window.AdminConfig = {
                 cleanup: 'system-logs/cleanup'              // POST /api/system-logs/cleanup
             },
             
+            // === EXTRACTION JOBS (MIGRADO A LARAVEL) ===
+            extractionJobs: {
+                list: 'extraction-jobs',                   // GET /api/extraction-jobs
+                create: 'extraction-jobs',                 // POST /api/extraction-jobs
+                show: 'extraction-jobs/{id}',              // GET /api/extraction-jobs/{id}
+                update: 'extraction-jobs/{id}',            // PUT /api/extraction-jobs/{id}
+                delete: 'extraction-jobs/{id}',            // DELETE /api/extraction-jobs/{id}
+                start: 'extraction-jobs/{id}/start',       // POST /api/extraction-jobs/{id}/start
+                pause: 'extraction-jobs/{id}/pause',       // POST /api/extraction-jobs/{id}/pause
+                cancel: 'extraction-jobs/{id}/cancel',     // POST /api/extraction-jobs/{id}/cancel
+                retry: 'extraction-jobs/{id}/retry',       // POST /api/extraction-jobs/{id}/retry
+                clone: 'extraction-jobs/{id}/clone',       // POST /api/extraction-jobs/{id}/clone
+                runs: 'extraction-jobs/{id}/runs',         // GET /api/extraction-jobs/{id}/runs
+                logs: 'extraction-jobs/{id}/logs',         // GET /api/extraction-jobs/{id}/logs
+                stats: 'extraction-jobs/stats',            // GET /api/extraction-jobs/stats
+                hotels: 'extraction-jobs/hotels'           // GET /api/extraction-jobs/hotels
+            },
+            
             // === PENDIENTES DE MIGRAR (USAR admin_api.php TEMPORAL) ===
             
             // Extracción
@@ -88,12 +106,15 @@ window.AdminConfig = {
             getApifyStatus: 'getApifyStatus',
             
             
-            // Herramientas
-            getDbStats: 'getDbStats',
-            scanDuplicates: 'scanDuplicates',
-            deleteDuplicates: 'deleteDuplicates',
-            optimizeTables: 'optimizeTables',
-            checkIntegrity: 'checkIntegrity'
+            // === TOOLS (MIGRADO A LARAVEL) ===
+            tools: {
+                stats: 'tools/stats',                      // GET /api/tools/stats
+                scanDuplicates: 'tools/duplicates',        // GET /api/tools/duplicates
+                deleteDuplicates: 'tools/duplicates',      // DELETE /api/tools/duplicates
+                optimizeTables: 'tools/optimize',          // POST /api/tools/optimize
+                checkIntegrity: 'tools/integrity',         // GET /api/tools/integrity
+                systemInfo: 'tools/system-info'            // GET /api/tools/system-info
+            }
         },
         timeout: 30000, // 30 segundos
         retries: 3,
@@ -107,8 +128,9 @@ window.AdminConfig = {
                 prompts: true,
                 externalApis: true,     // ✅ MIGRADO 
                 systemLogs: true,       // ✅ MIGRADO
-                extraction: false,      // Pendiente
-                tools: false           // Pendiente
+                extractionJobs: true,   // ✅ MIGRADO
+                extraction: true,       // ✅ MIGRADO (alias for extractionJobs)
+                tools: true             // ✅ MIGRADO
             },
             
             // Headers para requests a Laravel
