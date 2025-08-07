@@ -1,0 +1,183 @@
+{
+  "templates": [
+    {
+      "name": "Análisis de Sentimiento - Reseñas de Hotel",
+      "category": "sentiment",
+      "language": "es",
+      "description": "Analiza el sentimiento de reseñas de hoteles y extrae información clave",
+      "tags": ["análisis", "sentimiento", "reseñas", "hoteles"],
+      "content": "Analiza el siguiente texto de reseña de hotel y proporciona un análisis detallado:\n\nReseña: {review_text}\nHotel: {hotel_name}\nCalificación: {rating}/5\n\nPor favor, proporciona:\n1. **Sentimiento general**: (Positivo/Negativo/Neutral/Mixto)\n2. **Puntuación de sentimiento**: (1-10)\n3. **Aspectos positivos mencionados**:\n4. **Aspectos negativos mencionados**:\n5. **Temas principales**: (máximo 5)\n6. **Sugerencias para el hotel**:\n7. **Resumen ejecutivo** (2-3 líneas):\n\nFormato de respuesta en JSON estructurado.",
+      "variables": [
+        {"name": "review_text", "type": "text", "description": "Texto completo de la reseña", "required": true},
+        {"name": "hotel_name", "type": "text", "description": "Nombre del hotel", "required": true},
+        {"name": "rating", "type": "number", "description": "Calificación numérica", "required": false}
+      ],
+      "config": {
+        "temperature": 0.3,
+        "max_tokens": 1500,
+        "track_usage": true
+      }
+    },
+    {
+      "name": "Extracción de Datos - Información Estructurada",
+      "category": "extraction",
+      "language": "es",
+      "description": "Extrae información estructurada de reseñas de hoteles",
+      "tags": ["extracción", "datos", "estructurado", "JSON"],
+      "content": "Extrae la siguiente información de la reseña de hotel y devuélvela en formato JSON:\n\nTexto de la reseña: {review_text}\nHotel: {hotel_name}\nFecha de estadía: {stay_date}\n\nExtrae y estructura la siguiente información:\n\n```json\n{\n  \"hotel_info\": {\n    \"name\": \"{hotel_name}\",\n    \"mentioned_features\": [],\n    \"room_type\": \"\",\n    \"location_comments\": \"\"\n  },\n  \"guest_experience\": {\n    \"check_in\": \"\",\n    \"check_out\": \"\",\n    \"staff_interaction\": \"\",\n    \"room_condition\": \"\",\n    \"amenities_used\": []\n  },\n  \"ratings\": {\n    \"overall\": null,\n    \"cleanliness\": null,\n    \"service\": null,\n    \"value\": null,\n    \"location\": null\n  },\n  \"specific_mentions\": {\n    \"food_beverage\": [],\n    \"facilities\": [],\n    \"issues\": [],\n    \"recommendations\": []\n  },\n  \"metadata\": {\n    \"stay_duration\": \"\",\n    \"travel_type\": \"\",\n    \"would_return\": null,\n    \"would_recommend\": null\n  }\n}\n```\n\nAsegúrate de que todos los campos estén completados basándose únicamente en la información disponible en la reseña.",
+      "variables": [
+        {"name": "review_text", "type": "text", "description": "Texto completo de la reseña", "required": true},
+        {"name": "hotel_name", "type": "text", "description": "Nombre del hotel", "required": true},
+        {"name": "stay_date", "type": "date", "description": "Fecha de estadía", "required": false}
+      ],
+      "config": {
+        "temperature": 0.1,
+        "max_tokens": 2000,
+        "track_usage": true
+      }
+    },
+    {
+      "name": "Traducción Profesional - Reseñas Multiidioma",
+      "category": "translation",
+      "language": "es",
+      "description": "Traduce reseñas de hoteles manteniendo el tono y contexto",
+      "tags": ["traducción", "multiidioma", "profesional"],
+      "content": "Traduce la siguiente reseña de hotel del {source_language} al {target_language}, manteniendo:\n- El tono emocional original\n- Los aspectos específicos mencionados\n- Las expresiones culturales apropiadas\n- La estructura del mensaje\n\nReseña original ({source_language}):\n{review_text}\n\nHotel: {hotel_name}\nCalificación: {rating}/5\n\nInstrucciones específicas:\n1. Traduce de manera natural y fluida\n2. Mantén los nombres propios del hotel\n3. Adapta expresiones idiomáticas al idioma destino\n4. Conserva el nivel de formalidad\n5. Si hay términos técnicos hoteleros, usa la terminología correcta\n\nTraducción ({target_language}):",
+      "variables": [
+        {"name": "review_text", "type": "text", "description": "Texto de la reseña a traducir", "required": true},
+        {"name": "source_language", "type": "text", "description": "Idioma origen", "required": true},
+        {"name": "target_language", "type": "text", "description": "Idioma destino", "required": true},
+        {"name": "hotel_name", "type": "text", "description": "Nombre del hotel", "required": true},
+        {"name": "rating", "type": "number", "description": "Calificación", "required": false}
+      ],
+      "config": {
+        "temperature": 0.5,
+        "max_tokens": 1200,
+        "track_usage": true
+      }
+    },
+    {
+      "name": "Clasificación de Reseñas - Categorías de Feedback",
+      "category": "classification",
+      "language": "es",
+      "description": "Clasifica reseñas por tipo de experiencia y área de mejora",
+      "tags": ["clasificación", "categorías", "feedback"],
+      "content": "Clasifica la siguiente reseña de hotel en las categorías apropiadas:\n\nReseña: {review_text}\nHotel: {hotel_name}\nCalificación: {rating}/5\n\n**CATEGORÍAS DE CLASIFICACIÓN:**\n\n1. **Tipo de Experiencia:**\n   - [ ] Excelente\n   - [ ] Satisfactoria\n   - [ ] Regular\n   - [ ] Insatisfactoria\n   - [ ] Muy Negativa\n\n2. **Áreas Mencionadas:**\n   - [ ] Habitaciones\n   - [ ] Servicio al Cliente\n   - [ ] Limpieza\n   - [ ] Ubicación\n   - [ ] Desayuno/Restaurante\n   - [ ] Instalaciones/Amenidades\n   - [ ] Relación Calidad-Precio\n   - [ ] Wi-Fi/Tecnología\n   - [ ] Estacionamiento\n   - [ ] Ruido/Tranquilidad\n\n3. **Urgencia de Atención:**\n   - [ ] Alta (requiere acción inmediata)\n   - [ ] Media (revisar en 1-2 semanas)\n   - [ ] Baja (feedback general)\n\n4. **Tipo de Huésped (inferido):**\n   - [ ] Negocios\n   - [ ] Familia con niños\n   - [ ] Pareja\n   - [ ] Solo/Sola\n   - [ ] Grupo\n\n5. **Recomendaciones de Seguimiento:**\n   - [ ] Respuesta personalizada necesaria\n   - [ ] Seguimiento de gerencia\n   - [ ] Mejora operacional\n   - [ ] Capacitación de staff\n   - [ ] Sin acción requerida\n\nProporciona también:\n- **Justificación de clasificación** (2-3 líneas)\n- **Acciones recomendadas** (específicas)\n- **Prioridad de respuesta** (1-5, siendo 5 más urgente)",
+      "variables": [
+        {"name": "review_text", "type": "text", "description": "Texto completo de la reseña", "required": true},
+        {"name": "hotel_name", "type": "text", "description": "Nombre del hotel", "required": true},
+        {"name": "rating", "type": "number", "description": "Calificación numérica", "required": false}
+      ],
+      "config": {
+        "temperature": 0.2,
+        "max_tokens": 1800,
+        "track_usage": true
+      }
+    },
+    {
+      "name": "Resumen Ejecutivo - Dashboard de Reseñas",
+      "category": "summary",
+      "language": "es",
+      "description": "Genera resúmenes ejecutivos de múltiples reseñas para dashboard",
+      "tags": ["resumen", "ejecutivo", "dashboard", "múltiples reseñas"],
+      "content": "Analiza las siguientes reseñas de {hotel_name} y genera un resumen ejecutivo para el dashboard gerencial:\n\n**RESEÑAS A ANALIZAR:**\n{reviews_batch}\n\n**PERÍODO:** {date_range}\n**TOTAL DE RESEÑAS:** {review_count}\n\nGenera un resumen ejecutivo que incluya:\n\n## 📊 RESUMEN EJECUTIVO - {hotel_name}\n\n### Métricas Principales\n- **Calificación promedio:** [X.X]/5\n- **Distribución de sentimientos:** X% Positivo, Y% Neutral, Z% Negativo\n- **Tasa de recomendación:** X%\n\n### Fortalezas Identificadas\n1. [Aspecto más mencionado positivamente]\n2. [Segunda fortaleza]\n3. [Tercera fortaleza]\n\n### Áreas de Oportunidad\n1. [Problema más frecuente]\n2. [Segunda área de mejora]\n3. [Tercera área de mejora]\n\n### Insights Clave\n- [Tendencia o patrón importante #1]\n- [Tendencia o patrón importante #2]\n- [Tendencia o patrón importante #3]\n\n### Recomendaciones Inmediatas\n1. **[Acción prioritaria]** - Impacto: Alto/Medio/Bajo\n2. **[Segunda acción]** - Impacto: Alto/Medio/Bajo\n3. **[Tercera acción]** - Impacto: Alto/Medio/Bajo\n\n### Seguimiento Requerido\n- [ ] [Acción específica con responsable]\n- [ ] [Segunda acción con timeframe]\n- [ ] [Tercera acción con métricas]\n\n---\n*Resumen generado automáticamente • {current_date}*",
+      "variables": [
+        {"name": "hotel_name", "type": "text", "description": "Nombre del hotel", "required": true},
+        {"name": "reviews_batch", "type": "text", "description": "Conjunto de reseñas separadas", "required": true},
+        {"name": "date_range", "type": "text", "description": "Período de las reseñas", "required": true},
+        {"name": "review_count", "type": "number", "description": "Cantidad de reseñas", "required": true},
+        {"name": "current_date", "type": "date", "description": "Fecha actual", "required": false}
+      ],
+      "config": {
+        "temperature": 0.4,
+        "max_tokens": 2500,
+        "track_usage": true
+      }
+    },
+    {
+      "name": "Respuesta Automática - Reseña Positiva",
+      "category": "custom",
+      "language": "es",
+      "description": "Genera respuestas personalizadas para reseñas positivas",
+      "tags": ["respuesta", "automática", "positiva", "personalizada"],
+      "content": "Genera una respuesta profesional y personalizada para la siguiente reseña positiva de {hotel_name}:\n\n**RESEÑA:**\nAutor: {guest_name}\nCalificación: {rating}/5\nTexto: {review_text}\n\n**INSTRUCCIONES PARA LA RESPUESTA:**\n\n1. **Tono:** Cálido, profesional y genuinamente agradecido\n2. **Longitud:** 3-4 líneas (50-80 palabras)\n3. **Incluir:**\n   - Agradecimiento personalizado\n   - Mención específica de aspectos positivos mencionados\n   - Invitación a regresar\n   - Firma profesional\n\n4. **Evitar:**\n   - Respuestas genéricas\n   - Exceso de emojis\n   - Información promocional\n   - Repetir exactamente las palabras del huésped\n\n**PLANTILLA DE ESTRUCTURA:**\n\nEstimado/a {guest_name},\n\n[Agradecimiento personalizado que mencione aspectos específicos de su reseña]\n[Comentario sobre el compromiso del equipo]\n[Invitación cálida a regresar]\n\nSaludos cordiales,\n[Nombre del Manager]\n{hotel_name}\n\n**GENERA LA RESPUESTA:**",
+      "variables": [
+        {"name": "guest_name", "type": "text", "description": "Nombre del huésped", "required": true},
+        {"name": "hotel_name", "type": "text", "description": "Nombre del hotel", "required": true},
+        {"name": "rating", "type": "number", "description": "Calificación dada", "required": true},
+        {"name": "review_text", "type": "text", "description": "Texto de la reseña", "required": true}
+      ],
+      "config": {
+        "temperature": 0.7,
+        "max_tokens": 800,
+        "track_usage": true
+      }
+    },
+    {
+      "name": "Respuesta Automática - Reseña Negativa",
+      "category": "custom",
+      "language": "es",
+      "description": "Genera respuestas empáticas y solucionadoras para reseñas negativas",
+      "tags": ["respuesta", "automática", "negativa", "resolución"],
+      "content": "Genera una respuesta empática y profesional para la siguiente reseña negativa de {hotel_name}:\n\n**RESEÑA:**\nAutor: {guest_name}\nCalificación: {rating}/5\nTexto: {review_text}\nFecha de estadía: {stay_date}\n\n**INSTRUCCIONES PARA LA RESPUESTA:**\n\n1. **Tono:** Empático, profesional, orientado a la solución\n2. **Estructura obligatoria:**\n   - Disculpa sincera y personalizada\n   - Reconocimiento específico de los problemas mencionados\n   - Explicación breve (sin excusas) si es apropiado\n   - Acciones correctivas tomadas o por tomar\n   - Invitación a contacto directo\n   - Compromiso de mejora\n\n3. **Evitar absolutamente:**\n   - Justificaciones defensivas\n   - Culpar al huésped\n   - Respuestas genéricas\n   - Minimizar los problemas\n   - Promociones como \"compensación\"\n\n4. **Incluir:**\n   - Datos de contacto directo\n   - Referencia específica a su experiencia\n   - Compromiso de seguimiento\n\n**PLANTILLA DE ESTRUCTURA:**\n\nEstimado/a {guest_name},\n\nLamento profundamente [problema específico mencionado] durante su estadía del [fecha]. \n\n[Reconocimiento específico de cada problema]\n[Acciones correctivas implementadas]\n[Invitación al contacto directo]\n[Compromiso de mejora futura]\n\nSaludos cordiales,\n[Manager General]\n{hotel_name}\n[email] | [teléfono directo]\n\n**GENERA LA RESPUESTA:**",
+      "variables": [
+        {"name": "guest_name", "type": "text", "description": "Nombre del huésped", "required": true},
+        {"name": "hotel_name", "type": "text", "description": "Nombre del hotel", "required": true},
+        {"name": "rating", "type": "number", "description": "Calificación dada", "required": true},
+        {"name": "review_text", "type": "text", "description": "Texto de la reseña", "required": true},
+        {"name": "stay_date", "type": "date", "description": "Fecha de estadía", "required": false}
+      ],
+      "config": {
+        "temperature": 0.5,
+        "max_tokens": 1000,
+        "track_usage": true
+      }
+    },
+    {
+      "name": "Análisis Competitivo - Comparación de Reseñas",
+      "category": "custom",
+      "language": "es",
+      "description": "Compara reseñas de tu hotel con la competencia",
+      "tags": ["competencia", "comparación", "benchmarking"],
+      "content": "Realiza un análisis comparativo entre las reseñas de {hotel_name} y {competitor_name}:\n\n**RESEÑAS DE {hotel_name}:**\n{own_reviews}\n\n**RESEÑAS DE {competitor_name}:**\n{competitor_reviews}\n\n**ANÁLISIS COMPARATIVO REQUERIDO:**\n\n## 🏨 ANÁLISIS COMPETITIVO\n\n### 1. Comparación de Fortalezas\n| Aspecto | {hotel_name} | {competitor_name} | Ventaja |\n|---------|--------------|-------------------|----------|\n| Servicio | | | |\n| Habitaciones | | | |\n| Ubicación | | | |\n| Limpieza | | | |\n| Desayuno | | | |\n| Valor por dinero | | | |\n\n### 2. Análisis de Debilidades\n**{hotel_name}:**\n- [Debilidad más mencionada]\n- [Segunda debilidad]\n- [Tercera debilidad]\n\n**{competitor_name}:**\n- [Debilidad más mencionada]\n- [Segunda debilidad]\n- [Tercera debilidad]\n\n### 3. Oportunidades Identificadas\n1. **[Área donde podemos destacar]**\n   - Situación actual: [descripción]\n   - Oportunidad: [cómo superarlos]\n   \n2. **[Segunda oportunidad]**\n   - Situación actual: [descripción]\n   - Oportunidad: [cómo superarlos]\n\n### 4. Amenazas Detectadas\n- **[Ventaja del competidor]:** [cómo nos afecta]\n- **[Segunda amenaza]:** [cómo nos afecta]\n\n### 5. Recomendaciones Estratégicas\n1. **Inmediatas (1 mes):**\n2. **Mediano plazo (3 meses):**\n3. **Largo plazo (6+ meses):**\n\n### 6. KPIs de Seguimiento\n- [Métrica 1] - Objetivo: [valor]\n- [Métrica 2] - Objetivo: [valor]\n- [Métrica 3] - Objetivo: [valor]",
+      "variables": [
+        {"name": "hotel_name", "type": "text", "description": "Nombre de nuestro hotel", "required": true},
+        {"name": "competitor_name", "type": "text", "description": "Nombre del hotel competidor", "required": true},
+        {"name": "own_reviews", "type": "text", "description": "Reseñas de nuestro hotel", "required": true},
+        {"name": "competitor_reviews", "type": "text", "description": "Reseñas del competidor", "required": true}
+      ],
+      "config": {
+        "temperature": 0.3,
+        "max_tokens": 3000,
+        "track_usage": true
+      }
+    },
+    {
+      "name": "Generación de Insights - Tendencias Mensuales",
+      "category": "summary",
+      "language": "es",
+      "description": "Identifica tendencias y patrones en reseñas mensuales",
+      "tags": ["insights", "tendencias", "mensual", "patrones"],
+      "content": "Analiza las reseñas de {hotel_name} del mes de {month_year} e identifica tendencias y patrones:\n\n**DATOS DEL ANÁLISIS:**\n- Hotel: {hotel_name}\n- Período: {month_year}\n- Total reseñas: {total_reviews}\n- Calificación promedio: {avg_rating}\n\n**RESEÑAS DEL MES:**\n{monthly_reviews}\n\n**GENERAR ANÁLISIS DE TENDENCIAS:**\n\n# 📈 INFORME MENSUAL DE TENDENCIAS\n## {hotel_name} - {month_year}\n\n### Resumen Ejecutivo\n- **Total reseñas:** {total_reviews}\n- **Calificación promedio:** {avg_rating}/5\n- **Tendencia vs mes anterior:** [↗️ Mejora/↘️ Decline/➡️ Estable]\n\n### 🔍 Tendencias Identificadas\n\n#### 1. Temas Emergentes\n- **[Tema nuevo #1]:** [frecuencia] menciones\n  - Impacto: [Positivo/Negativo/Neutro]\n  - Ejemplos: \"[cita representativa]\"\n  \n- **[Tema nuevo #2]:** [frecuencia] menciones\n  - Impacto: [Positivo/Negativo/Neutro]\n  - Ejemplos: \"[cita representativa]\"\n\n#### 2. Patrones Recurrentes\n- **[Patrón consistente #1]:** [descripción y frecuencia]\n- **[Patrón consistente #2]:** [descripción y frecuencia]\n- **[Patrón consistente #3]:** [descripción y frecuencia]\n\n#### 3. Cambios Significativos\n- **Mejoras notables:** [áreas que han mejorado]\n- **Nuevos problemas:** [problemas que aparecieron]\n- **Problemas resueltos:** [áreas que mejoraron]\n\n### 📊 Análisis por Dimensiones\n\n#### Satisfacción del Cliente\n- **Alta satisfacción (4-5 ⭐):** X% - [principales drivers]\n- **Satisfacción media (3 ⭐):** Y% - [características comunes]\n- **Baja satisfacción (1-2 ⭐):** Z% - [principales quejas]\n\n#### Aspectos Operacionales\n- **Check-in/Check-out:** [tendencia y comentarios]\n- **Limpieza:** [tendencia y comentarios]\n- **Staff:** [tendencia y comentarios]\n- **Amenidades:** [tendencia y comentarios]\n\n### 🎯 Recomendaciones Basadas en Tendencias\n\n#### Acciones Inmediatas\n1. **[Recomendación #1]**\n   - Justificación: [basada en qué tendencia]\n   - Impacto esperado: [alto/medio/bajo]\n   \n2. **[Recomendación #2]**\n   - Justificación: [basada en qué tendencia]\n   - Impacto esperado: [alto/medio/bajo]\n\n#### Seguimiento a Largo Plazo\n- **[Área para monitorear #1]:** [por qué es importante]\n- **[Área para monitorear #2]:** [por qué es importante]\n\n### 📅 Plan de Seguimiento\n- **Revisión semanal:** [métricas específicas]\n- **Revisión mensual:** [tendencias a monitorear]\n- **KPIs clave:** [indicadores de éxito]\n\n---\n*Análisis generado para el período {month_year} • Próxima revisión: [fecha]*",
+      "variables": [
+        {"name": "hotel_name", "type": "text", "description": "Nombre del hotel", "required": true},
+        {"name": "month_year", "type": "text", "description": "Mes y año (ej: Enero 2024)", "required": true},
+        {"name": "total_reviews", "type": "number", "description": "Número total de reseñas", "required": true},
+        {"name": "avg_rating", "type": "number", "description": "Calificación promedio", "required": true},
+        {"name": "monthly_reviews", "type": "text", "description": "Conjunto de reseñas del mes", "required": true}
+      ],
+      "config": {
+        "temperature": 0.4,
+        "max_tokens": 3500,
+        "track_usage": true
+      }
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "created_at": "2024-01-20",
+    "total_templates": 9,
+    "languages": ["es"],
+    "categories": ["sentiment", "extraction", "translation", "classification", "summary", "custom"]
+  }
+}

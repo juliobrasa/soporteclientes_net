@@ -203,8 +203,17 @@ class PromptsModule {
      * Carga la lista de prompts
      */
     async loadPrompts() {
+        console.log('📝 Iniciando carga de prompts...');
+        
         try {
             const loadingElement = document.getElementById('prompts-loading');
+            const container = document.getElementById('prompts-grid');
+            
+            console.log('🔍 Elementos encontrados:', {
+                loading: !!loadingElement,
+                container: !!container
+            });
+            
             if (loadingElement) {
                 loadingElement.style.display = 'flex';
             }
@@ -218,11 +227,17 @@ class PromptsModule {
                 language: this.currentFilter.language
             };
             
-            const response = await AdminAPI.request('getPrompts', params);
+            console.log('📤 Parámetros de consulta:', params);
             
-            if (response.success) {
-                this.prompts = response.data.prompts;
-                this.totalPrompts = response.data.total;
+            const response = await apiClient.call('getPrompts', params);
+            
+            console.log('📥 Respuesta recibida:', response);
+            
+            if (response && response.success) {
+                this.prompts = response.data?.prompts || [];
+                this.totalPrompts = response.data?.total || 0;
+                
+                console.log(`✅ Prompts cargados: ${this.prompts.length} de ${this.totalPrompts}`);
                 
                 this.renderPrompts();
                 this.updatePagination();
@@ -233,15 +248,34 @@ class PromptsModule {
                     totalCountElement.textContent = this.totalPrompts;
                 }
             } else {
-                throw new Error(response.message || 'Error al cargar prompts');
+                throw new Error(response?.error || response?.message || 'Error desconocido al cargar prompts');
             }
         } catch (error) {
-            console.error('Error al cargar prompts:', error);
-            showError('Error al cargar prompts: ' + error.message);
+            console.error('❌ Error al cargar prompts:', error);
+            
+            // Mostrar error en el contenedor
+            const container = document.getElementById('prompts-grid');
+            if (container) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #dc3545;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                        <h3>Error al cargar prompts</h3>
+                        <p>${error.message}</p>
+                        <button class="btn btn-primary" onclick="promptsModule.loadPrompts()" style="margin-top: 15px;">
+                            <i class="fas fa-refresh"></i> Reintentar
+                        </button>
+                    </div>
+                `;
+            }
+            
+            if (window.showError) {
+                showError('Error al cargar prompts: ' + error.message);
+            }
         } finally {
             const loadingElement = document.getElementById('prompts-loading');
             if (loadingElement) {
                 loadingElement.style.display = 'none';
+                console.log('🔄 Elemento de carga ocultado');
             }
         }
     }
@@ -251,7 +285,7 @@ class PromptsModule {
      */
     async loadStats() {
         try {
-            const response = await AdminAPI.request('getPromptsStats');
+            const response = await apiClient.call('getPromptsStats');
             
             if (response.success) {
                 const stats = response.data;
@@ -644,7 +678,7 @@ class PromptsModule {
      */
     async editPrompt(id) {
         try {
-            const response = await AdminAPI.request('getPrompt', { id });
+            const response = await apiClient.call('getPrompt', { id });
             
             if (response.success) {
                 this.currentPrompt = response.data;
@@ -1083,7 +1117,7 @@ class PromptsModule {
      */
     async loadTestProviders() {
         try {
-            const response = await AdminAPI.request('getAIProviders', { status: 'active' });
+            const response = await apiClient.call('getAIProviders', { status: 'active' });
             
             if (response.success) {
                 const select = document.getElementById('test-provider');
@@ -1226,7 +1260,7 @@ class PromptsModule {
             
             const startTime = Date.now();
             
-            const response = await AdminAPI.request('testPrompt', {
+            const response = await apiClient.call('testPrompt', {
                 provider_id: providerSelect.value,
                 content: contentElement.value,
                 variables: variables,
@@ -1465,7 +1499,7 @@ class PromptsModule {
                 showInfo(isCreating ? 'Creando prompt...' : 'Actualizando prompt...');
             }
             
-            const response = await AdminAPI.request(endpoint, formData);
+            const response = await apiClient.call(endpoint, formData);
             
             if (response.success) {
                 this.currentPrompt = response.data;
@@ -1665,7 +1699,7 @@ class PromptsModule {
      */
     async duplicatePrompt(id) {
         try {
-            const response = await AdminAPI.request('duplicatePrompt', { id });
+            const response = await apiClient.call('duplicatePrompt', { id });
             
             if (response.success) {
                 showSuccess('Prompt duplicado correctamente');
@@ -1688,7 +1722,7 @@ class PromptsModule {
         }
         
         try {
-            const response = await AdminAPI.request('updatePrompt', {
+            const response = await apiClient.call('updatePrompt', {
                 id: id,
                 status: 'archived'
             });
@@ -1714,7 +1748,7 @@ class PromptsModule {
         }
         
         try {
-            const response = await AdminAPI.request('deletePrompt', { id });
+            const response = await apiClient.call('deletePrompt', { id });
             
             if (response.success) {
                 showSuccess('Prompt eliminado correctamente');
@@ -1733,7 +1767,7 @@ class PromptsModule {
      */
     async exportPrompts() {
         try {
-            const response = await AdminAPI.request('exportPrompts', {
+            const response = await apiClient.call('exportPrompts', {
                 format: 'json',
                 filters: this.currentFilter
             });
@@ -1778,7 +1812,7 @@ class PromptsModule {
                 const text = await file.text();
                 const data = JSON.parse(text);
                 
-                const response = await AdminAPI.request('importPrompts', { data });
+                const response = await apiClient.call('importPrompts', { data });
                 
                 if (response.success) {
                     showSuccess(`${response.data.imported} prompts importados correctamente`);
@@ -1798,8 +1832,290 @@ class PromptsModule {
     /**
      * Muestra la librería de plantillas
      */
-    showTemplatesLibrary() {
-        showInfo('Funcionalidad de librería de plantillas en desarrollo');
+    async showTemplatesLibrary() {
+        try {
+            const response = await apiClient.call('getTemplatesLibrary');
+            
+            if (response.success) {
+                this.renderTemplatesLibrary(response.data);
+            } else {
+                throw new Error(response.message || 'Error al cargar biblioteca de templates');
+            }
+        } catch (error) {
+            console.error('Error al cargar biblioteca:', error);
+            showError('Error al cargar biblioteca de templates: ' + error.message);
+        }
+    }
+    
+    /**
+     * Renderiza la biblioteca de templates
+     */
+    renderTemplatesLibrary(libraryData) {
+        const modalHtml = `
+            <div class="modal-overlay" id="templates-library-modal">
+                <div class="modal modal-lg">
+                    <div class="modal-header">
+                        <h3 class="modal-title">
+                            <i class="fas fa-book"></i>
+                            Biblioteca de Templates
+                        </h3>
+                        <button class="modal-close" type="button" onclick="promptsModule.closeTemplatesLibrary()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <div class="templates-library-content">
+                            <div class="library-header">
+                                <p class="library-description">
+                                    Selecciona un template predefinido para comenzar rápidamente. 
+                                    Los templates incluyen prompts optimizados para diferentes casos de uso.
+                                </p>
+                                <div class="library-stats">
+                                    <span class="stat-item">
+                                        <i class="fas fa-file-alt"></i>
+                                        ${libraryData.metadata.total_templates} templates
+                                    </span>
+                                    <span class="stat-item">
+                                        <i class="fas fa-layer-group"></i>
+                                        ${libraryData.metadata.categories.length} categorías
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="templates-grid">
+                                ${this.renderTemplateCards(libraryData.templates)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    
+    /**
+     * Renderiza las tarjetas de templates
+     */
+    renderTemplateCards(templates) {
+        return templates.map(template => {
+            const categoryConfig = this.categoryConfig[template.category] || this.categoryConfig.custom;
+            
+            return `
+                <div class="template-card" data-template-id="${template.name.replace(/\s+/g, '-').toLowerCase()}">
+                    <div class="template-header">
+                        <div class="template-category">
+                            <i class="${categoryConfig.icon}" style="color: ${categoryConfig.color}"></i>
+                            <span>${categoryConfig.name}</span>
+                        </div>
+                        <div class="template-language">
+                            ${this.languageConfig[template.language]?.flag || '🌐'} ${template.language.toUpperCase()}
+                        </div>
+                    </div>
+                    
+                    <div class="template-content">
+                        <h4 class="template-title">${this.escapeHtml(template.name)}</h4>
+                        <p class="template-description">${this.escapeHtml(template.description)}</p>
+                        
+                        <div class="template-features">
+                            <div class="feature-item">
+                                <i class="fas fa-code"></i>
+                                <span>${template.variables?.length || 0} variables</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-tags"></i>
+                                <span>${template.tags?.length || 0} tags</span>
+                            </div>
+                        </div>
+                        
+                        <div class="template-tags">
+                            ${(template.tags || []).slice(0, 3).map(tag => 
+                                `<span class="template-tag">${this.escapeHtml(tag)}</span>`
+                            ).join('')}
+                            ${template.tags?.length > 3 ? `<span class="template-tag-more">+${template.tags.length - 3} más</span>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="template-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="promptsModule.previewTemplate('${template.name.replace(/'/g, '\\\\\\\\\\'')}')">
+                            <i class="fas fa-eye"></i>
+                            Vista previa
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="promptsModule.importTemplate('${template.name.replace(/'/g, '\\\\\\\\\\'')}')">
+                            <i class="fas fa-download"></i>
+                            Usar Template
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    /**
+     * Vista previa de un template
+     */
+    async previewTemplate(templateName) {
+        try {
+            const response = await apiClient.call('getTemplatesLibrary');
+            if (response.success) {
+                const template = response.data.templates.find(t => t.name === templateName);
+                if (template) {
+                    this.showTemplatePreview(template);
+                } else {
+                    showError('Template no encontrado');
+                }
+            }
+        } catch (error) {
+            console.error('Error al cargar template:', error);
+            showError('Error al cargar template');
+        }
+    }
+    
+    /**
+     * Muestra la vista previa de un template
+     */
+    showTemplatePreview(template) {
+        const previewHtml = `
+            <div class="modal-overlay" id="template-preview-modal">
+                <div class="modal modal-lg">
+                    <div class="modal-header">
+                        <h3 class="modal-title">
+                            <i class="fas fa-eye"></i>
+                            Vista Previa: ${this.escapeHtml(template.name)}
+                        </h3>
+                        <button class="modal-close" type="button" onclick="promptsModule.closeTemplatePreview()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <div class="template-preview-content">
+                            <div class="preview-section">
+                                <h4><i class="fas fa-info-circle"></i> Información</h4>
+                                <div class="preview-info">
+                                    <div class="info-row">
+                                        <label>Categoría:</label>
+                                        <span>${this.categoryConfig[template.category]?.name || template.category}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <label>Idioma:</label>
+                                        <span>${this.languageConfig[template.language]?.name || template.language}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <label>Tags:</label>
+                                        <span>${(template.tags || []).join(', ')}</span>
+                                    </div>
+                                </div>
+                                <p><strong>Descripción:</strong> ${this.escapeHtml(template.description)}</p>
+                            </div>
+                            
+                            ${template.variables && template.variables.length > 0 ? `
+                            <div class="preview-section">
+                                <h4><i class="fas fa-code"></i> Variables (${template.variables.length})</h4>
+                                <div class="variables-list">
+                                    ${template.variables.map(variable => `
+                                        <div class="variable-preview-item">
+                                            <code>{${variable.name}}</code>
+                                            <span class="variable-type">${variable.type}</span>
+                                            ${variable.required ? '<span class="variable-required">Requerida</span>' : ''}
+                                            <p>${variable.description}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+                            
+                            <div class="preview-section">
+                                <h4><i class="fas fa-file-alt"></i> Contenido del Prompt</h4>
+                                <div class="template-content-preview">
+                                    <pre><code>${this.escapeHtml(template.content)}</code></pre>
+                                </div>
+                            </div>
+                            
+                            ${template.config && Object.keys(template.config).length > 0 ? `
+                            <div class="preview-section">
+                                <h4><i class="fas fa-cogs"></i> Configuración</h4>
+                                <div class="config-preview">
+                                    ${Object.entries(template.config).map(([key, value]) => `
+                                        <div class="config-item">
+                                            <label>${key}:</label>
+                                            <span>${typeof value === 'boolean' ? (value ? 'Sí' : 'No') : value}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="promptsModule.closeTemplatePreview()">
+                            Cerrar
+                        </button>
+                        <button class="btn btn-primary" onclick="promptsModule.importTemplate('${template.name.replace(/'/g, '\\\\\\\\\\'')}'); promptsModule.closeTemplatePreview();">
+                            <i class="fas fa-download"></i>
+                            Usar Template
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', previewHtml);
+    }
+    
+    /**
+     * Importa un template
+     */
+    async importTemplate(templateName) {
+        try {
+            const response = await apiClient.call('getTemplatesLibrary');
+            if (response.success) {
+                const template = response.data.templates.find(t => t.name === templateName);
+                if (template) {
+                    const importResponse = await apiClient.call('importTemplate', { template });
+                    
+                    if (importResponse.success) {
+                        showSuccess('Template importado correctamente');
+                        this.closeTemplatesLibrary();
+                        this.refreshPrompts();
+                        
+                        // Abrir el template importado para edición
+                        setTimeout(() => {
+                            this.editPrompt(importResponse.data.id);
+                        }, 500);
+                    } else {
+                        throw new Error(importResponse.message || 'Error al importar template');
+                    }
+                } else {
+                    showError('Template no encontrado');
+                }
+            }
+        } catch (error) {
+            console.error('Error al importar template:', error);
+            showError('Error al importar template: ' + error.message);
+        }
+    }
+    
+    /**
+     * Cierra la biblioteca de templates
+     */
+    closeTemplatesLibrary() {
+        const modal = document.getElementById('templates-library-modal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    
+    /**
+     * Cierra la vista previa del template
+     */
+    closeTemplatePreview() {
+        const modal = document.getElementById('template-preview-modal');
+        if (modal) {
+            modal.remove();
+        }
     }
     
     /**
@@ -1864,3 +2180,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Exportar para uso global
 window.promptsModule = promptsModule;
+
+// Función para el tab-manager
+window.loadPromptsDirect = function() {
+    console.log('🔄 loadPromptsDirect llamado desde tab-manager');
+    
+    if (!window.promptsModule) {
+        console.log('📝 Inicializando módulo de prompts...');
+        window.promptsModule = new PromptsModule();
+    } else {
+        console.log('📝 Módulo ya existente, recargando prompts...');
+        window.promptsModule.loadPrompts();
+        window.promptsModule.loadStats();
+    }
+    
+    return Promise.resolve();
+};

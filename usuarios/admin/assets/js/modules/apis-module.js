@@ -1,28 +1,39 @@
 /**
  * ==========================================================================
- * MÓDULO APIS EXTERNAS
- * Kavia Hoteles Panel de Administración
- * Gestión de APIs externas y proveedores
+ * APIS MODULE - Kavia Hoteles Panel de Administración
+ * Módulo JavaScript para la gestión completa de APIs Externas
  * ==========================================================================
  */
 
 class ApisModule {
     constructor() {
-        // Estado del módulo
-        this.apis = [];
-        this.filteredApis = [];
-        this.currentPage = 1;
-        this.pageSize = 25;
-        this.totalPages = 1;
-        this.currentFilter = {
-            search: '',
-            type: '',
-            status: ''
+        // Configuración del módulo
+        this.config = {
+            pageSize: 25,
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: 0,
+            sortField: 'created_at',
+            sortDirection: 'desc',
+            searchTerm: '',
+            typeFilter: '',
+            isLoading: false
         };
-        this.sortField = 'id';
-        this.sortDirection = 'desc';
-        this.selectedApi = null;
-        this.isLoading = false;
+        
+        // Referencias a elementos DOM
+        this.elements = {};
+        
+        // Datos cacheados
+        this.apisData = [];
+        this.filteredData = [];
+        
+        // Estado del modal
+        this.modalState = {
+            isOpen: false,
+            isEditing: false,
+            currentApiId: null,
+            currentTab: 'basic'
+        };
         
         // Configuración de proveedores
         this.providerConfig = {
