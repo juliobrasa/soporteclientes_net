@@ -195,34 +195,35 @@ function handleSyncExtraction($input, $pdo) {
         $savedCount = 0;
         foreach ($reviews as $review) {
             try {
-                // Guardar reseña en base de datos usando la estructura correcta
+                // Guardar reseña usando la misma estructura que apify-data-processor
                 $stmt = $pdo->prepare("
                     INSERT INTO reviews (
-                        unique_id, review_id_booking, hotel_name, hotel_destination,
-                        user_name, `Fecha`, puntuacion, `Titulo`, `Reseña buena`
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        hotel_id, platform, platform_review_id, reviewer_name, rating, 
+                        original_rating, normalized_rating, review_text, review_date,
+                        helpful_votes, response_from_owner, reviewer_info, review_language,
+                        extraction_run_id, scraped_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                     ON DUPLICATE KEY UPDATE
-                        puntuacion = VALUES(puntuacion),
-                        `Titulo` = VALUES(`Titulo`),
-                        `Reseña buena` = VALUES(`Reseña buena`)
+                        rating = VALUES(rating),
+                        review_text = VALUES(review_text),
+                        review_date = VALUES(review_date)
                 ");
                 
-                // Obtener nombre del hotel para la inserción
-                $hotelNameStmt = $pdo->prepare("SELECT nombre_hotel FROM hoteles WHERE id = ?");
-                $hotelNameStmt->execute([$hotelId]);
-                $hotelData = $hotelNameStmt->fetch();
-                $hotelName = $hotelData['nombre_hotel'] ?? 'Hotel Desconocido';
-                
                 $stmt->execute([
-                    $review['reviewId'] . '_' . $hotelId, // unique_id
-                    $review['reviewId'], // review_id_booking
-                    $hotelName, // hotel_name
-                    'Cancún, México', // hotel_destination
-                    $review['reviewerName'] ?? 'Anónimo', // user_name
-                    $review['reviewDate'] ?? date('Y-m-d'), // Fecha
-                    $review['rating'] ?? 0, // puntuacion
-                    'Reseña de ' . ($review['platform'] ?? 'plataforma'), // Titulo
-                    $review['reviewText'] ?? '' // Reseña buena
+                    $hotelId, // hotel_id
+                    $review['platform'] ?? 'apify', // platform
+                    $review['reviewId'], // platform_review_id
+                    $review['reviewerName'] ?? 'Anónimo', // reviewer_name
+                    $review['rating'] ?? 0, // rating
+                    $review['rating'] ?? 0, // original_rating
+                    $review['rating'] ?? 0, // normalized_rating
+                    $review['reviewText'] ?? '', // review_text
+                    $review['reviewDate'] ?? date('Y-m-d'), // review_date
+                    $review['helpful'] ?? 0, // helpful_votes
+                    null, // response_from_owner
+                    json_encode(['source' => 'sync_extraction']), // reviewer_info
+                    'auto', // review_language
+                    'sync_' . time() // extraction_run_id
                 ]);
                 
                 $savedCount++;
