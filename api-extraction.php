@@ -101,7 +101,9 @@ switch ($method) {
         break;
         
     case 'DELETE':
-        if (isset($_GET['run_id'])) {
+        if (isset($_GET['job_id'])) {
+            handleDeleteJob($_GET['job_id'], $pdo);
+        } elseif (isset($_GET['run_id'])) {
             handleCancelRun($_GET['run_id'], $pdo);
         }
         break;
@@ -407,6 +409,51 @@ function handleGetAllRuns($pdo) {
         ]);
         
     } catch (Exception $e) {
+        response(['error' => $e->getMessage()], 500);
+    }
+}
+
+/**
+ * Eliminar un trabajo de extracción
+ */
+function handleDeleteJob($jobId, $pdo) {
+    try {
+        DebugLogger::info("Eliminando job", ['job_id' => $jobId]);
+        
+        // Verificar que el job existe
+        $stmt = $pdo->prepare("SELECT id, hotel_id, status FROM extraction_jobs WHERE id = ?");
+        $stmt->execute([$jobId]);
+        $job = $stmt->fetch();
+        
+        if (!$job) {
+            response(['error' => 'Trabajo no encontrado'], 404);
+        }
+        
+        // Si está corriendo, avisar al usuario
+        if ($job['status'] === 'running') {
+            response(['error' => 'No se puede eliminar un trabajo en ejecución. Pausalo primero.'], 400);
+        }
+        
+        // Eliminar de extraction_jobs
+        $stmt = $pdo->prepare("DELETE FROM extraction_jobs WHERE id = ?");
+        $stmt->execute([$jobId]);
+        
+        // También eliminar los runs relacionados de Apify si existen
+        $stmt = $pdo->prepare("DELETE FROM apify_extraction_runs WHERE hotel_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)");
+        $stmt->execute([$job['hotel_id']]);
+        
+        DebugLogger::info("Job eliminado exitosamente", ['job_id' => $jobId]);
+        
+        response([
+            'success' => true,
+            'message' => 'Trabajo de extracción eliminado correctamente'
+        ]);
+        
+    } catch (Exception $e) {
+        DebugLogger::error("Error eliminando job", [
+            'job_id' => $jobId,
+            'error' => $e->getMessage()
+        ]);
         response(['error' => $e->getMessage()], 500);
     }
 }
