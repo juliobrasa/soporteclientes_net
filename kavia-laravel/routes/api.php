@@ -7,6 +7,7 @@ use App\Http\Controllers\API\AiProviderController;
 use App\Http\Controllers\API\PromptController;
 use App\Http\Controllers\API\ExternalApiController;
 use App\Http\Controllers\API\SystemLogController;
+use App\Http\Controllers\API\ExtractionController;
 
 // ================================================================
 // RUTAS PÚBLICAS (SIN AUTENTICACIÓN)
@@ -137,6 +138,35 @@ Route::prefix('system-logs')->group(function () {
 });
 
 // ================================================================
+// RUTAS DE EXTRACTION JOBS (PÚBLICAS TEMPORALMENTE PARA TESTING)
+// ================================================================
+
+// Grupo de rutas para trabajos de extracción
+Route::prefix('extraction-jobs')->group(function () {
+    // Rutas especiales primero (antes del resource)
+    Route::get('/stats', [ExtractionController::class, 'stats']);              // GET /api/extraction-jobs/stats
+    Route::get('/hotels', [ExtractionController::class, 'hotels']);            // GET /api/extraction-jobs/hotels
+    
+    // CRUD básico
+    Route::get('/', [ExtractionController::class, 'index']);                   // GET /api/extraction-jobs
+    Route::post('/', [ExtractionController::class, 'store']);                  // POST /api/extraction-jobs
+    Route::get('/{extractionJob}', [ExtractionController::class, 'show']);     // GET /api/extraction-jobs/{id}
+    Route::put('/{extractionJob}', [ExtractionController::class, 'update']);   // PUT /api/extraction-jobs/{id}
+    Route::delete('/{extractionJob}', [ExtractionController::class, 'destroy']); // DELETE /api/extraction-jobs/{id}
+    
+    // Rutas de control de trabajo
+    Route::post('/{extractionJob}/start', [ExtractionController::class, 'start']);   // POST /api/extraction-jobs/{id}/start
+    Route::post('/{extractionJob}/pause', [ExtractionController::class, 'pause']);   // POST /api/extraction-jobs/{id}/pause
+    Route::post('/{extractionJob}/cancel', [ExtractionController::class, 'cancel']); // POST /api/extraction-jobs/{id}/cancel
+    Route::post('/{extractionJob}/retry', [ExtractionController::class, 'retry']);   // POST /api/extraction-jobs/{id}/retry
+    Route::post('/{extractionJob}/clone', [ExtractionController::class, 'clone']);   // POST /api/extraction-jobs/{id}/clone
+    
+    // Rutas de información detallada
+    Route::get('/{extractionJob}/runs', [ExtractionController::class, 'runs']);     // GET /api/extraction-jobs/{id}/runs
+    Route::get('/{extractionJob}/logs', [ExtractionController::class, 'logs']);     // GET /api/extraction-jobs/{id}/logs
+});
+
+// ================================================================
 // RUTAS DE COMPATIBILIDAD CON SISTEMA ACTUAL
 // ================================================================
 
@@ -146,6 +176,7 @@ Route::get('/legacy/ai-providers', [AiProviderController::class, 'index']);
 Route::get('/legacy/prompts', [PromptController::class, 'index']);
 Route::get('/legacy/external-apis', [ExternalApiController::class, 'index']);
 Route::get('/legacy/system-logs', [SystemLogController::class, 'index']);
+Route::get('/legacy/extraction-jobs', [ExtractionController::class, 'index']);
 
 // ================================================================
 // RUTAS PROTEGIDAS (COMENTADAS TEMPORALMENTE)
