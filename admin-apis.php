@@ -391,6 +391,7 @@ $apis = getExternalApis();
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'same-origin',
             body: JSON.stringify(data)
         })
         .then(response => response.json())
@@ -411,7 +412,9 @@ $apis = getExternalApis();
     function editExternalApi(id) {
         editingId = id;
         
-        fetch(`api-external-apis.php?id=${id}`)
+        fetch(`api-external-apis.php?id=${id}`, {
+            credentials: 'same-origin'
+        })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -454,7 +457,8 @@ $apis = getExternalApis();
     function deleteExternalApi(id, name) {
         if (confirm(`¿Estás seguro de que quieres eliminar la API "${name}"?`)) {
             fetch(`api-external-apis.php?id=${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                credentials: 'same-origin'
             })
             .then(response => response.json())
             .then(data => {
@@ -479,7 +483,9 @@ $apis = getExternalApis();
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         button.disabled = true;
         
-        fetch(`api-external-apis.php?id=${id}&test=1`)
+        fetch(`api-external-apis.php?id=${id}&test=1`, {
+            credentials: 'same-origin'
+        })
         .then(response => response.json())
         .then(data => {
             button.innerHTML = originalContent;
@@ -500,7 +506,9 @@ $apis = getExternalApis();
 
     function viewApiLogs(id) {
         // Obtener información de la API
-        fetch(`api-external-apis.php?id=${id}`)
+        fetch(`api-external-apis.php?id=${id}`, {
+            credentials: 'same-origin'
+        })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
