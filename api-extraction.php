@@ -195,29 +195,34 @@ function handleSyncExtraction($input, $pdo) {
         $savedCount = 0;
         foreach ($reviews as $review) {
             try {
-                // Guardar reseña en base de datos
+                // Guardar reseña en base de datos usando la estructura correcta
                 $stmt = $pdo->prepare("
                     INSERT INTO reviews (
-                        hotel_id, review_id, reviewer_name, rating, review_text, 
-                        review_date, platform, sentiment, helpful_count, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                        unique_id, review_id_booking, hotel_name, hotel_destination,
+                        user_name, `Fecha`, puntuacion, `Titulo`, `Reseña buena`
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON DUPLICATE KEY UPDATE
-                        rating = VALUES(rating),
-                        review_text = VALUES(review_text),
-                        sentiment = VALUES(sentiment),
-                        helpful_count = VALUES(helpful_count)
+                        puntuacion = VALUES(puntuacion),
+                        `Titulo` = VALUES(`Titulo`),
+                        `Reseña buena` = VALUES(`Reseña buena`)
                 ");
                 
+                // Obtener nombre del hotel para la inserción
+                $hotelNameStmt = $pdo->prepare("SELECT nombre_hotel FROM hoteles WHERE id = ?");
+                $hotelNameStmt->execute([$hotelId]);
+                $hotelData = $hotelNameStmt->fetch();
+                $hotelName = $hotelData['nombre_hotel'] ?? 'Hotel Desconocido';
+                
                 $stmt->execute([
-                    $hotelId,
-                    $review['reviewId'],
-                    $review['reviewerName'] ?? 'Anónimo',
-                    $review['rating'] ?? 0,
-                    $review['reviewText'] ?? '',
-                    $review['reviewDate'] ?? date('Y-m-d'),
-                    $review['platform'] ?? 'unknown',
-                    $review['sentiment'] ?? 'neutral',
-                    $review['helpful'] ?? 0
+                    $review['reviewId'] . '_' . $hotelId, // unique_id
+                    $review['reviewId'], // review_id_booking
+                    $hotelName, // hotel_name
+                    'Cancún, México', // hotel_destination
+                    $review['reviewerName'] ?? 'Anónimo', // user_name
+                    $review['reviewDate'] ?? date('Y-m-d'), // Fecha
+                    $review['rating'] ?? 0, // puntuacion
+                    'Reseña de ' . ($review['platform'] ?? 'plataforma'), // Titulo
+                    $review['reviewText'] ?? '' // Reseña buena
                 ]);
                 
                 $savedCount++;
