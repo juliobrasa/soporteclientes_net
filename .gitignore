@@ -1,0 +1,86 @@
+# ============================================================================
+# GITIGNORE - Kavia Hoteles Project
+# ============================================================================
+
+# ================================
+# Laravel Framework Files
+# ================================
+kavia-laravel/vendor/
+kavia-laravel/node_modules/
+kavia-laravel/public/hot
+kavia-laravel/public/storage
+kavia-laravel/storage/*.key
+kavia-laravel/.env
+kavia-laravel/.env.backup
+kavia-laravel/.env.production
+kavia-laravel/.phpunit.result.cache
+kavia-laravel/Homestead.json
+kavia-laravel/Homestead.yaml
+kavia-laravel/auth.json
+kavia-laravel/npm-debug.log
+kavia-laravel/yarn-error.log
+
+# Laravel Storage (keep structure but ignore content)
+kavia-laravel/storage/framework/cache/data/*
+kavia-laravel/storage/framework/sessions/*
+kavia-laravel/storage/framework/testing/*
+kavia-laravel/storage/framework/views/*.php
+kavia-laravel/storage/logs/*.log
+kavia-laravel/storage/app/private/*
+!kavia-laravel/storage/framework/cache/data/.gitkeep
+!kavia-laravel/storage/framework/sessions/.gitkeep  
+!kavia-laravel/storage/framework/testing/.gitkeep
+!kavia-laravel/storage/framework/views/.gitkeep
+!kavia-laravel/storage/logs/.gitkeep
+!kavia-laravel/storage/app/private/.gitkeep
+
+# ================================
+# Admin Panel - Mantener Todo
+# ================================
+# (El panel admin se sincroniza completo)
+
+# ================================  
+# Development & System Files
+# ================================
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs generales
+error_log
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# ================================
+# Project Specific
+# ================================
+# Archivos de respaldo
+*.backup
+*.bak
+
+# Archivos de testing que no son necesarios en producción
+test-*.html
+debug-*.html
+stress-test.html
+
+# ================================
+# IMPORTANT: Files to INCLUDE
+# ================================
+# Estos archivos SÍ se sincronizan:
+# - kavia-laravel/app/
+# - kavia-laravel/config/  
+# - kavia-laravel/database/
+# - kavia-laravel/routes/
+# - kavia-laravel/resources/
+# - kavia-laravel/public/
+# - kavia-laravel/composer.json
+# - kavia-laravel/artisan
+# - kavia-laravel/bootstrap/
+# - usuarios/admin/ (completo)
