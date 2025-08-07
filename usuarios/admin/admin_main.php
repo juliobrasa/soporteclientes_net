@@ -820,7 +820,7 @@
     
     // Crear tabManager compatible que reemplaza el existente
     window.tabManager = {
-        currentTab: 'hotels', // Tab por defecto
+        currentTab: new URLSearchParams(window.location.search).get('tab') || 'hotels', // Tab desde URL o defecto
         
         // Función principal para cambiar tabs
         switchTab: function(tabName, updateHistory = true) {
@@ -928,8 +928,14 @@
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🧭 Inicializando sistema de navegación...');
         
-        // Mostrar módulo inicial (Hotels por defecto)
-        window.tabManager.switchTab('hotels');
+        // Obtener tab desde URL o usar hotels por defecto
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialTab = urlParams.get('tab') || 'hotels';
+        
+        console.log(`🎯 Tab inicial detectado: ${initialTab}`);
+        
+        // Mostrar módulo inicial
+        window.tabManager.switchTab(initialTab);
         
         // Interceptar clicks en navegación si existe
         document.addEventListener('click', function(e) {
