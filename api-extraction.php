@@ -176,40 +176,65 @@ function handleStartExtraction($input, $pdo) {
         
         $runId = $apifyResponse['data']['id'];
         
-        // Guardar en base de datos
-        $stmt = $pdo->prepare("
-            INSERT INTO apify_extraction_runs (
-                hotel_id, apify_run_id, status, platforms_requested, 
-                max_reviews_per_platform, cost_estimate, apify_response
-            ) VALUES (?, ?, 'pending', ?, ?, ?, ?)
-        ");
-        
-        $stmt->execute([
-            $hotelId,
-            $runId,
-            json_encode($platforms),
-            $maxReviews,
-            $costEstimate,
-            json_encode($apifyResponse)
+        DebugLogger::info("Guardando en base de datos", [
+            'hotel_id' => $hotelId,
+            'run_id' => $runId,
+            'platforms' => $platforms,
+            'cost_estimate' => $costEstimate
         ]);
         
-        // También insertar en extraction_jobs para compatibilidad
-        $stmt = $pdo->prepare("
-            INSERT INTO extraction_jobs (
-                hotel_id, status, progress, extracted_count, 
-                created_at, updated_at
-            ) VALUES (?, 'pending', 0, 0, NOW(), NOW())
-        ");
-        $stmt->execute([$hotelId]);
+        // Guardar en base de datos
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO apify_extraction_runs (
+                    hotel_id, apify_run_id, status, platforms_requested, 
+                    max_reviews_per_platform, cost_estimate, apify_response
+                ) VALUES (?, ?, 'pending', ?, ?, ?, ?)
+            ");
+            
+            $stmt->execute([
+                $hotelId,
+                $runId,
+                json_encode($platforms),
+                $maxReviews,
+                $costEstimate,
+                json_encode($apifyResponse)
+            ]);
+            
+            DebugLogger::info("apify_extraction_runs insertado", ['run_id' => $runId]);
+            
+            // También insertar en extraction_jobs para compatibilidad
+            $stmt = $pdo->prepare("
+                INSERT INTO extraction_jobs (
+                    hotel_id, status, progress, extracted_count, 
+                    created_at, updated_at
+                ) VALUES (?, 'pending', 0, 0, NOW(), NOW())
+            ");
+            $stmt->execute([$hotelId]);
+            
+            DebugLogger::info("extraction_jobs insertado", ['hotel_id' => $hotelId]);
+            
+        } catch (PDOException $e) {
+            DebugLogger::error("Error insertando en BD", [
+                'error' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'hotel_id' => $hotelId,
+                'run_id' => $runId
+            ]);
+            throw $e;
+        }
         
-        response([
+        $successResponse = [
             'success' => true,
             'run_id' => $runId,
             'cost_estimate' => number_format($costEstimate, 2),
             'platforms' => $platforms,
             'max_reviews' => $maxReviews,
             'message' => 'Extracción iniciada exitosamente'
-        ]);
+        ];
+        
+        DebugLogger::info("Enviando respuesta exitosa", $successResponse);
+        response($successResponse);
         
     } catch (Exception $e) {
         $errorDetails = [
