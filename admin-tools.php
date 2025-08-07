@@ -321,6 +321,9 @@ $backups = getBackupFiles();
                             </div>
                             <div class="card-body">
                                 <div class="d-grid gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="window.location.href='setup-google-places.php'">
+                                        <i class="fas fa-map-marker-alt"></i> Configurar Place IDs
+                                    </button>
                                     <button class="btn btn-sm btn-outline-info" onclick="exportReviews()">
                                         <i class="fas fa-file-export"></i> Exportar Reseñas
                                     </button>

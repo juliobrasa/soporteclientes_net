@@ -1,0 +1,334 @@
+<?php
+/**
+ * API para manejo de extracciones con Apify Hotel Review Aggregator
+ */
+
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit(0);
+}
+
+require_once 'admin-config.php';
+require_once 'apify-config.php';
+require_once 'apify-data-processor.php';
+
+function response($data, $status = 200) {
+    http_response_code($status);
+    echo json_encode($data);
+    exit;
+}
+
+// Obtener input
+$input = json_decode(file_get_contents('php://input'), true);
+$method = $_SERVER['REQUEST_METHOD'];
+
+// Verificar autenticación
+session_start();
+if (!isset($_SESSION['admin_logged'])) {
+    response(['error' => 'No autorizado'], 401);
+}
+
+// Conectar a base de datos
+$pdo = getDBConnection();
+if (!$pdo) {
+    response(['error' => 'Error de conexión a la base de datos'], 500);
+}
+
+switch ($method) {
+    case 'POST':
+        handleStartExtraction($input, $pdo);
+        break;
+        
+    case 'GET':
+        if (isset($_GET['run_id'])) {
+            handleGetRunStatus($_GET['run_id'], $pdo);
+        } elseif (isset($_GET['hotel_id'])) {
+            handleGetHotelExtractions($_GET['hotel_id'], $pdo);
+        } else {
+            handleGetAllRuns($pdo);
+        }
+        break;
+        
+    case 'PUT':
+        if (isset($_GET['run_id'])) {
+            handleUpdateRun($_GET['run_id'], $input, $pdo);
+        }
+        break;
+        
+    case 'DELETE':
+        if (isset($_GET['run_id'])) {
+            handleCancelRun($_GET['run_id'], $pdo);
+        }
+        break;
+        
+    default:
+        response(['error' => 'Método no permitido'], 405);
+}
+
+/**
+ * Iniciar nueva extracción
+ */
+function handleStartExtraction($input, $pdo) {
+    try {
+        // Validar input
+        if (!isset($input['hotel_id']) || empty($input['hotel_id'])) {
+            response(['error' => 'hotel_id es requerido'], 400);
+        }
+        
+        $hotelId = $input['hotel_id'];
+        $maxReviews = $input['max_reviews'] ?? 100;
+        $platforms = $input['platforms'] ?? ['tripadvisor', 'booking', 'google'];
+        $languages = $input['languages'] ?? ['en', 'es'];
+        
+        // Verificar que el hotel existe y obtener su Place ID
+        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id FROM hoteles WHERE id = ?");
+        $stmt->execute([$hotelId]);
+        $hotel = $stmt->fetch();
+        
+        if (!$hotel) {
+            response(['error' => 'Hotel no encontrado'], 404);
+        }
+        
+        // Si no tiene Place ID, necesitamos configurarlo
+        if (!$hotel['google_place_id']) {
+            response([
+                'error' => 'Hotel no tiene Google Place ID configurado',
+                'action_required' => 'configure_place_id',
+                'hotel_name' => $hotel['nombre_hotel']
+            ], 400);
+        }
+        
+        // Estimar costo
+        $totalReviews = $maxReviews * count($platforms);
+        $apifyClient = new ApifyClient();
+        $costEstimate = $apifyClient->estimateCost($totalReviews);
+        
+        // Configurar extracción
+        $extractionConfig = [
+            'startIds' => [$hotel['google_place_id']],
+            'maxReviews' => $maxReviews,
+            'reviewPlatforms' => $platforms,
+            'reviewLanguages' => $languages,
+            'reviewDates' => [
+                'from' => date('Y-01-01'),
+                'to' => date('Y-12-31')
+            ]
+        ];
+        
+        // Iniciar extracción en Apify
+        $apifyResponse = $apifyClient->startHotelExtraction($extractionConfig);
+        
+        if (!isset($apifyResponse['data']['id'])) {
+            response([
+                'error' => 'Error iniciando extracción en Apify',
+                'details' => $apifyResponse
+            ], 500);
+        }
+        
+        $runId = $apifyResponse['data']['id'];
+        
+        // Guardar en base de datos
+        $stmt = $pdo->prepare("
+            INSERT INTO apify_extraction_runs (
+                hotel_id, apify_run_id, status, platforms_requested, 
+                max_reviews_per_platform, cost_estimate, apify_response
+            ) VALUES (?, ?, 'pending', ?, ?, ?, ?)
+        ");
+        
+        $stmt->execute([
+            $hotelId,
+            $runId,
+            json_encode($platforms),
+            $maxReviews,
+            $costEstimate,
+            json_encode($apifyResponse)
+        ]);
+        
+        // También insertar en extraction_jobs para compatibilidad
+        $stmt = $pdo->prepare("
+            INSERT INTO extraction_jobs (
+                hotel_id, status, progress, extracted_count, 
+                created_at, updated_at
+            ) VALUES (?, 'pending', 0, 0, NOW(), NOW())
+        ");
+        $stmt->execute([$hotelId]);
+        
+        response([
+            'success' => true,
+            'run_id' => $runId,
+            'cost_estimate' => number_format($costEstimate, 2),
+            'platforms' => $platforms,
+            'max_reviews' => $maxReviews,
+            'message' => 'Extracción iniciada exitosamente'
+        ]);
+        
+    } catch (Exception $e) {
+        error_log("Error en startExtraction: " . $e->getMessage());
+        response(['error' => $e->getMessage()], 500);
+    }
+}
+
+/**
+ * Obtener estado de una ejecución
+ */
+function handleGetRunStatus($runId, $pdo) {
+    try {
+        $apifyClient = new ApifyClient();
+        $apifyStatus = $apifyClient->getRunStatus($runId);
+        
+        // Actualizar estado en base de datos
+        $status = mapApifyStatus($apifyStatus['data']['status']);
+        
+        $stmt = $pdo->prepare("
+            UPDATE apify_extraction_runs 
+            SET status = ?, apify_response = ?
+            WHERE apify_run_id = ?
+        ");
+        $stmt->execute([$status, json_encode($apifyStatus), $runId]);
+        
+        // Si está completado, procesar resultados
+        if ($status === 'succeeded' && $apifyStatus['data']['status'] === 'SUCCEEDED') {
+            $processor = new ApifyDataProcessor();
+            
+            // Obtener hotel_id
+            $stmt = $pdo->prepare("SELECT hotel_id FROM apify_extraction_runs WHERE apify_run_id = ?");
+            $stmt->execute([$runId]);
+            $run = $stmt->fetch();
+            
+            if ($run) {
+                try {
+                    $result = $processor->processApifyResults($runId, $run['hotel_id']);
+                    response([
+                        'success' => true,
+                        'status' => $status,
+                        'apify_status' => $apifyStatus['data']['status'],
+                        'processed' => $result
+                    ]);
+                } catch (Exception $e) {
+                    response([
+                        'success' => false,
+                        'status' => 'failed',
+                        'error' => 'Error procesando resultados: ' . $e->getMessage()
+                    ]);
+                }
+            }
+        }
+        
+        response([
+            'success' => true,
+            'status' => $status,
+            'apify_status' => $apifyStatus['data']['status'],
+            'started_at' => $apifyStatus['data']['startedAt'] ?? null,
+            'finished_at' => $apifyStatus['data']['finishedAt'] ?? null
+        ]);
+        
+    } catch (Exception $e) {
+        response(['error' => $e->getMessage()], 500);
+    }
+}
+
+/**
+ * Obtener extracciones de un hotel
+ */
+function handleGetHotelExtractions($hotelId, $pdo) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT 
+                aer.*,
+                h.nombre_hotel,
+                TIMESTAMPDIFF(MINUTE, aer.started_at, COALESCE(aer.finished_at, NOW())) as duration_minutes
+            FROM apify_extraction_runs aer
+            JOIN hoteles h ON aer.hotel_id = h.id
+            WHERE aer.hotel_id = ?
+            ORDER BY aer.started_at DESC
+            LIMIT 50
+        ");
+        
+        $stmt->execute([$hotelId]);
+        $runs = $stmt->fetchAll();
+        
+        response([
+            'success' => true,
+            'data' => $runs
+        ]);
+        
+    } catch (Exception $e) {
+        response(['error' => $e->getMessage()], 500);
+    }
+}
+
+/**
+ * Obtener todas las ejecuciones
+ */
+function handleGetAllRuns($pdo) {
+    try {
+        $stmt = $pdo->query("
+            SELECT 
+                aer.*,
+                h.nombre_hotel,
+                TIMESTAMPDIFF(MINUTE, aer.started_at, COALESCE(aer.finished_at, NOW())) as duration_minutes
+            FROM apify_extraction_runs aer
+            JOIN hoteles h ON aer.hotel_id = h.id
+            ORDER BY aer.started_at DESC
+            LIMIT 100
+        ");
+        
+        $runs = $stmt->fetchAll();
+        
+        response([
+            'success' => true,
+            'data' => $runs
+        ]);
+        
+    } catch (Exception $e) {
+        response(['error' => $e->getMessage()], 500);
+    }
+}
+
+/**
+ * Cancelar una ejecución
+ */
+function handleCancelRun($runId, $pdo) {
+    try {
+        // Aquí deberías implementar la cancelación en Apify si la API lo permite
+        // Por ahora solo actualizamos el estado local
+        
+        $stmt = $pdo->prepare("
+            UPDATE apify_extraction_runs 
+            SET status = 'cancelled', finished_at = NOW()
+            WHERE apify_run_id = ?
+        ");
+        $stmt->execute([$runId]);
+        
+        response([
+            'success' => true,
+            'message' => 'Extracción cancelada'
+        ]);
+        
+    } catch (Exception $e) {
+        response(['error' => $e->getMessage()], 500);
+    }
+}
+
+/**
+ * Mapear estados de Apify a nuestros estados
+ */
+function mapApifyStatus($apifyStatus) {
+    $mapping = [
+        'READY' => 'pending',
+        'RUNNING' => 'running', 
+        'SUCCEEDED' => 'succeeded',
+        'FAILED' => 'failed',
+        'TIMING-OUT' => 'timeout',
+        'TIMED-OUT' => 'timeout',
+        'ABORTING' => 'failed',
+        'ABORTED' => 'failed'
+    ];
+    
+    return $mapping[$apifyStatus] ?? 'pending';
+}
+?>

@@ -383,15 +383,57 @@ $hotels = getActiveHotels();
                             </div>
                         </div>
                         <div class="mb-3">
+                            <label class="form-label">Plataformas de Reseñas</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="platforms" value="tripadvisor" checked>
+                                        <label class="form-check-label">TripAdvisor</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="platforms" value="booking" checked>
+                                        <label class="form-check-label">Booking.com</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="platforms" value="google" checked>
+                                        <label class="form-check-label">Google Maps</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="platforms" value="expedia">
+                                        <label class="form-check-label">Expedia</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="platforms" value="hotels">
+                                        <label class="form-check-label">Hotels.com</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="platforms" value="airbnb">
+                                        <label class="form-check-label">Airbnb</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="platforms" value="yelp">
+                                        <label class="form-check-label">Yelp</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">
+                                💰 Costo: $1.50 por cada 1,000 reseñas extraídas
+                            </small>
+                        </div>
+                        <div class="mb-3">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="extract_images" checked>
-                                <label class="form-check-label">Extraer imágenes de reseñas</label>
+                                <input class="form-check-input" type="checkbox" name="extract_images">
+                                <label class="form-check-label">Análisis de sentimientos automático</label>
                             </div>
                         </div>
                         <div class="mb-3">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="translate_reviews" checked>
-                                <label class="form-check-label">Traducir reseñas automáticamente</label>
+                                <input class="form-check-input" type="checkbox" name="translate_reviews">
+                                <label class="form-check-label">Generar alertas automáticas</label>
                             </div>
                         </div>
                     </form>
@@ -399,6 +441,25 @@ $hotels = getActiveHotels();
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-success" onclick="startExtraction()">Iniciar Extracción</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extraction Loader Modal -->
+    <div class="modal fade" id="extractionLoader" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4">
+                    <div class="spinner-border text-success mb-3" style="width: 3rem; height: 3rem;" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <h5>Extracción en Progreso</h5>
+                    <p id="extractionMessage" class="text-muted">Iniciando extracción...</p>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                             role="progressbar" style="width: 100%"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -426,19 +487,67 @@ $hotels = getActiveHotels();
         const form = document.getElementById('newExtractionForm');
         const formData = new FormData(form);
         
+        if (!formData.get('hotel_id')) {
+            alert('Por favor selecciona un hotel');
+            return;
+        }
+        
         const data = {
             hotel_id: formData.get('hotel_id'),
-            max_reviews: formData.get('max_reviews'),
-            priority: formData.get('priority'),
+            max_reviews: formData.get('max_reviews') || 100,
+            platforms: getSelectedPlatforms(),
+            languages: ['en', 'es'],
             extract_images: formData.get('extract_images') ? true : false,
             translate_reviews: formData.get('translate_reviews') ? true : false
         };
 
-        // Aquí iría la llamada a la API de extracción
-        alert('Función en desarrollo. Extracción configurada para: ' + data.max_reviews + ' reseñas');
+        // Mostrar loader
+        showExtractionLoader('Iniciando extracción con Apify Hotel Review Aggregator...');
         
-        // Por ahora solo cerramos el modal
+        // Llamada real a la API de extracción
+        fetch('api-extraction.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideExtractionLoader();
+            
+            if (data.success) {
+                alert(`✅ Extracción iniciada exitosamente\n\nRun ID: ${data.run_id}\nCosto estimado: $${data.cost_estimate}\n\nLa extracción puede tomar varios minutos. Actualiza la página para ver el progreso.`);
+                location.reload();
+            } else {
+                alert('❌ Error: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            hideExtractionLoader();
+            alert('❌ Error de conexión: ' + error.message);
+            console.error('Error:', error);
+        });
+        
         bootstrap.Modal.getInstance(document.getElementById('newExtractionModal')).hide();
+    }
+    
+    function getSelectedPlatforms() {
+        const platforms = [];
+        const checkboxes = document.querySelectorAll('input[name="platforms"]:checked');
+        checkboxes.forEach(cb => platforms.push(cb.value));
+        return platforms.length > 0 ? platforms : ['tripadvisor', 'booking', 'google'];
+    }
+    
+    function showExtractionLoader(message) {
+        const modal = document.getElementById('extractionLoader');
+        document.getElementById('extractionMessage').textContent = message;
+        new bootstrap.Modal(modal).show();
+    }
+    
+    function hideExtractionLoader() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('extractionLoader'));
+        if (modal) modal.hide();
     }
 
     function viewJobDetails(id) {
