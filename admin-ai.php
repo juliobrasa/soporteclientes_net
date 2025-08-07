@@ -187,13 +187,13 @@ $providers = getAIProviders();
                                         <td><?php echo date('Y-m-d', strtotime($provider['created_at'] ?? 'now')); ?></td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-primary" title="Editar">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" title="Editar" onclick="editProvider(<?php echo $provider['id']; ?>)">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-success" title="Test">
+                                                <button type="button" class="btn btn-sm btn-outline-success" title="Test" onclick="testProvider(<?php echo $provider['id']; ?>)">
                                                     <i class="fas fa-play"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="deleteProvider(<?php echo $provider['id']; ?>, '<?php echo addslashes($provider['name']); ?>')">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -261,7 +261,7 @@ $providers = getAIProviders();
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary">Guardar Provider</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProvider()">Guardar Provider</button>
                 </div>
             </div>
         </div>
@@ -273,14 +273,111 @@ $providers = getAIProviders();
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     
     <script>
+    let table;
+    let editingId = null;
+
     $(document).ready(function() {
-        $('#providersTable').DataTable({
+        table = $('#providersTable').DataTable({
             language: {
                 url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
             },
             pageLength: 25,
             order: [[1, 'asc']]
         });
+    });
+
+    function saveProvider() {
+        const form = document.getElementById('addProviderForm');
+        const formData = new FormData(form);
+        
+        const data = {
+            name: formData.get('name'),
+            type: formData.get('type'),
+            api_key: formData.get('api_key'),
+            base_url: formData.get('base_url'),
+            config: formData.get('config'),
+            active: formData.get('active') ? true : false
+        };
+
+        const url = editingId ? `api-ai-providers.php?id=${editingId}` : 'api-ai-providers.php';
+        const method = editingId ? 'PUT' : 'POST';
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión: ' + error);
+        });
+    }
+
+    function editProvider(id) {
+        editingId = id;
+        
+        fetch(`api-ai-providers.php?id=${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const provider = data.data;
+                document.querySelector('input[name="name"]').value = provider.name;
+                document.querySelector('select[name="type"]').value = provider.type || '';
+                document.querySelector('input[name="api_key"]').value = provider.api_key || '';
+                document.querySelector('input[name="base_url"]').value = provider.base_url || '';
+                document.querySelector('textarea[name="config"]').value = provider.config || '';
+                document.querySelector('input[name="active"]').checked = provider.active == 1;
+                
+                document.querySelector('.modal-title').textContent = 'Editar AI Provider';
+                new bootstrap.Modal(document.getElementById('addProviderModal')).show();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión: ' + error);
+        });
+    }
+
+    function deleteProvider(id, name) {
+        if (confirm(`¿Estás seguro de que quieres eliminar el provider "${name}"?`)) {
+            fetch(`api-ai-providers.php?id=${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error de conexión: ' + error);
+            });
+        }
+    }
+
+    function testProvider(id) {
+        alert('Función de test en desarrollo para provider ID: ' + id);
+    }
+
+    // Reset form when modal closes
+    $('#addProviderModal').on('hidden.bs.modal', function () {
+        document.getElementById('addProviderForm').reset();
+        editingId = null;
+        document.querySelector('.modal-title').textContent = 'Agregar Nuevo AI Provider';
     });
     </script>
 </body>

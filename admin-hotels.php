@@ -189,10 +189,10 @@ $hotels = getHotels();
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-primary" title="Editar">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" title="Editar" onclick="editHotel(<?php echo $hotel['id']; ?>)">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="deleteHotel(<?php echo $hotel['id']; ?>, '<?php echo addslashes($hotel['nombre_hotel']); ?>')">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
@@ -244,7 +244,7 @@ $hotels = getHotels();
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary">Guardar Hotel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveHotel()">Guardar Hotel</button>
                 </div>
             </div>
         </div>
@@ -256,14 +256,105 @@ $hotels = getHotels();
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     
     <script>
+    let table;
+    let editingId = null;
+
     $(document).ready(function() {
-        $('#hotelsTable').DataTable({
+        table = $('#hotelsTable').DataTable({
             language: {
                 url: 'https://cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json'
             },
             pageLength: 25,
             order: [[1, 'asc']]
         });
+    });
+
+    function saveHotel() {
+        const form = document.getElementById('addHotelForm');
+        const formData = new FormData(form);
+        
+        const data = {
+            nombre_hotel: formData.get('nombre_hotel'),
+            url_booking: formData.get('url_booking'),
+            hoja_destino: formData.get('hoja_destino'),
+            max_reviews: formData.get('max_reviews'),
+            activo: formData.get('activo') ? true : false
+        };
+
+        const url = editingId ? `api-hotels.php?id=${editingId}` : 'api-hotels.php';
+        const method = editingId ? 'PUT' : 'POST';
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión: ' + error);
+        });
+    }
+
+    function editHotel(id) {
+        editingId = id;
+        
+        fetch(`api-hotels.php?id=${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const hotel = data.data;
+                document.querySelector('input[name="nombre_hotel"]').value = hotel.nombre_hotel;
+                document.querySelector('input[name="url_booking"]').value = hotel.url_booking || '';
+                document.querySelector('input[name="hoja_destino"]').value = hotel.hoja_destino || '';
+                document.querySelector('input[name="max_reviews"]').value = hotel.max_reviews || 200;
+                document.querySelector('input[name="activo"]').checked = hotel.activo == 1;
+                
+                document.querySelector('.modal-title').textContent = 'Editar Hotel';
+                new bootstrap.Modal(document.getElementById('addHotelModal')).show();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error de conexión: ' + error);
+        });
+    }
+
+    function deleteHotel(id, name) {
+        if (confirm(`¿Estás seguro de que quieres eliminar el hotel "${name}"?`)) {
+            fetch(`api-hotels.php?id=${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error de conexión: ' + error);
+            });
+        }
+    }
+
+    // Reset form when modal closes
+    $('#addHotelModal').on('hidden.bs.modal', function () {
+        document.getElementById('addHotelForm').reset();
+        editingId = null;
+        document.querySelector('.modal-title').textContent = 'Agregar Nuevo Hotel';
     });
     </script>
 </body>
