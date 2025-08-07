@@ -1,42 +1,37 @@
 <?php
-echo "<h1>🔍 Verificar Estructura de Tablas</h1>";
+echo "<h1>🔍 Verificar Estructura de Todas las Tablas</h1>";
 
 include 'admin-config.php';
 
 $pdo = getDBConnection();
 if ($pdo) {
-    echo "<h2>Columnas de la tabla 'ai_providers':</h2>";
-    try {
-        $stmt = $pdo->query("DESCRIBE ai_providers");
-        $columns = $stmt->fetchAll();
-        foreach ($columns as $col) {
-            echo "- " . $col['Field'] . " (" . $col['Type'] . ")<br>";
-        }
-        
-        echo "<h3>Datos reales en ai_providers:</h3>";
-        $stmt = $pdo->query("SELECT * FROM ai_providers LIMIT 3");
-        $providers = $stmt->fetchAll();
-        echo "<pre>" . print_r($providers, true) . "</pre>";
-        
-    } catch (PDOException $e) {
-        echo "Error: " . $e->getMessage() . "<br>";
-    }
+    $tables = ['ai_providers', 'hoteles', 'prompts', 'external_apis', 'system_logs'];
     
-    echo "<h2>Columnas de la tabla 'hoteles':</h2>";
-    try {
-        $stmt = $pdo->query("DESCRIBE hoteles");
-        $columns = $stmt->fetchAll();
-        foreach ($columns as $col) {
-            echo "- " . $col['Field'] . " (" . $col['Type'] . ")<br>";
+    foreach ($tables as $table) {
+        echo "<h2>Tabla '$table':</h2>";
+        try {
+            // Mostrar estructura
+            $stmt = $pdo->query("DESCRIBE $table");
+            $columns = $stmt->fetchAll();
+            echo "<h4>Columnas:</h4>";
+            foreach ($columns as $col) {
+                echo "- " . $col['Field'] . " (" . $col['Type'] . ")<br>";
+            }
+            
+            // Mostrar datos
+            $stmt = $pdo->query("SELECT * FROM $table LIMIT 5");
+            $data = $stmt->fetchAll();
+            echo "<h4>Datos (primeros 5 registros):</h4>";
+            if (empty($data)) {
+                echo "<p><em>No hay datos en esta tabla</em></p>";
+            } else {
+                echo "<pre>" . print_r($data, true) . "</pre>";
+            }
+            
+        } catch (PDOException $e) {
+            echo "Error en tabla $table: " . $e->getMessage() . "<br>";
         }
-        
-        echo "<h3>Datos reales en hoteles:</h3>";
-        $stmt = $pdo->query("SELECT * FROM hoteles LIMIT 3");
-        $hotels = $stmt->fetchAll();
-        echo "<pre>" . print_r($hotels, true) . "</pre>";
-        
-    } catch (PDOException $e) {
-        echo "Error: " . $e->getMessage() . "<br>";
+        echo "<hr>";
     }
 }
 ?>
