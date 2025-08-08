@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Client\DashboardController;
+use App\Http\Controllers\Client\AuthController;
 
 // Ruta principal - redireccionar al admin
 Route::get('/', function () {
@@ -12,10 +13,21 @@ Route::get('/', function () {
 // Rutas de autenticación (Laravel Breeze/UI)
 Auth::routes();
 
-// Rutas del panel de clientes (sin middleware auth para ahora)
+// Rutas públicas del panel de clientes (autenticación)
 Route::prefix('client')->name('client.')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/', [DashboardController::class, 'index']); // Alias
+    // Rutas de autenticación (sin middleware)
+    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'showRegistrationForm'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::get('/subscription-expired', [AuthController::class, 'subscriptionExpired'])->name('subscription.expired');
+    
+    // Rutas protegidas con autenticación de cliente
+    Route::middleware(['client.auth'])->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/', [DashboardController::class, 'index']); // Alias
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    });
 });
 
 // Grupo de rutas admin con middleware de autenticación y admin
