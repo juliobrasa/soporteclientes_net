@@ -11,6 +11,7 @@ use App\Http\Controllers\API\ExtractionController;
 use App\Http\Controllers\API\ToolsController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\Client\DashboardController;
+use App\Http\Controllers\Client\AuthController as ClientAuthController;
 
 // ================================================================
 // RUTAS PÚBLICAS (SIN AUTENTICACIÓN)
@@ -32,11 +33,18 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 // RUTAS PÚBLICAS DEL PANEL DE CLIENTES
 // ================================================================
 
-// API del dashboard de clientes (sin autenticación por ahora)
-Route::prefix('client')->group(function () {
+// API de autenticación de clientes (pública)
+Route::prefix('client/auth')->group(function () {
+    Route::post('/login', [ClientAuthController::class, 'apiLogin']);
+    Route::get('/me', [ClientAuthController::class, 'me'])->middleware('client.auth');
+    Route::post('/logout', [ClientAuthController::class, 'apiLogout'])->middleware('client.auth');
+});
+
+// API del dashboard de clientes (protegida)
+Route::middleware('client.auth')->prefix('client')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'getDashboardData']);
-    Route::get('/otas', [DashboardController::class, 'getOTAsData']);
-    Route::get('/reviews', [DashboardController::class, 'getReviewsData']);
+    Route::get('/otas', [DashboardController::class, 'getOTAsData'])->middleware('client.permissions:module_otas');
+    Route::get('/reviews', [DashboardController::class, 'getReviewsData'])->middleware('client.permissions:view_reviews,module_reseñas');
     Route::get('/stats', [DashboardController::class, 'getStatsData']);
 });
 
