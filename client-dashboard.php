@@ -166,7 +166,8 @@ function hasModule($module, $modules) {
                     </div>
                     
                     <select id="dateRange" class="border border-gray-300 rounded-lg px-3 py-1 text-sm">
-                        <option value="30">Últimos 30 días</option>
+                        <option value="7">Últimos 7 días</option>
+                        <option value="30" selected>Últimos 30 días</option>
                         <option value="60">Últimos 60 días</option>
                         <option value="90">Últimos 90 días</option>
                     </select>
@@ -622,6 +623,7 @@ function hasModule($module, $modules) {
                 
                 this.bindEvents();
                 this.setInitialHotel();
+                this.syncDateRangeSelector();
                 this.loadDashboardData();
             }
             
@@ -653,6 +655,7 @@ function hasModule($module, $modules) {
                 const dateRange = document.getElementById('dateRange');
                 if (dateRange) {
                     dateRange.addEventListener('change', (e) => {
+                        console.log('Date range changed from', this.dateRange, 'to', e.target.value);
                         this.dateRange = e.target.value;
                         this.loadDashboardData();
                         if (document.getElementById('reseñas-section').style.display !== 'none') {
@@ -696,6 +699,15 @@ function hasModule($module, $modules) {
                 const hotelSelector = document.getElementById('hotelSelector');
                 if (hotelSelector && hotelSelector.options.length > 0) {
                     this.selectedHotel = hotelSelector.value;
+                }
+            }
+            
+            syncDateRangeSelector() {
+                // Sincronizar el selector de fechas con la variable de la clase
+                const dateRange = document.getElementById('dateRange');
+                if (dateRange) {
+                    dateRange.value = this.dateRange;
+                    console.log('Date range selector synced to:', this.dateRange);
                 }
             }
             
@@ -1002,6 +1014,8 @@ function hasModule($module, $modules) {
                 
                 const tbody = document.getElementById('otas-table-body');
                 if (!tbody) return;
+                
+                console.log('Loading OTAs data for hotel:', this.selectedHotel, 'dateRange:', this.dateRange);
                 
                 try {
                     // Mostrar loading

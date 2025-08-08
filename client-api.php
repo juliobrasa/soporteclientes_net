@@ -351,6 +351,8 @@ function getOTAsData($pdo, $user) {
     $hotelId = $_GET['hotel_id'] ?? null;
     $dateRange = $_GET['date_range'] ?? 30;
     
+    error_log("OTAs API called with hotel_id: $hotelId, date_range: $dateRange");
+    
     if (!$hotelId) {
         response(['error' => 'hotel_id es requerido'], 400);
     }
@@ -362,6 +364,8 @@ function getOTAsData($pdo, $user) {
     try {
         $startDate = date('Y-m-d', strtotime("-{$dateRange} days"));
         $endDate = date('Y-m-d');
+        
+        error_log("OTAs date range: $startDate to $endDate (dateRange: $dateRange days)");
         
         // Obtener estadísticas por plataforma para el período actual
         $otasStmt = $pdo->prepare("
