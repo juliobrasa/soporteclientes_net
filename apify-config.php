@@ -66,21 +66,24 @@ class ApifyClient {
      */
     private function buildExtractionInput($config) {
         $defaultConfig = [
-            'maxReviews' => 100,
+            'maxReviews' => 1000, // Aumentar límite por defecto
             'reviewPlatforms' => [
-                'tripadvisor',
-                'booking', 
-                'expedia',
-                'hotels',
-                'airbnb',
-                'yelp',
-                'google'
+                'booking',      // Prioridad alta
+                'google',       // Prioridad alta  
+                'tripadvisor',  // Prioridad alta
+                'expedia',      // Prioridad media
+                'hotels',       // Prioridad media
+                'despegar',     // Prioridad media (agregar Despegar)
+                'airbnb',       // Prioridad baja
+                'yelp'          // Prioridad baja
             ],
-            'reviewLanguages' => ['en', 'es'],
+            'reviewLanguages' => ['es', 'en'], // Español primero
             'reviewDates' => [
                 'from' => date('Y-01-01'),
                 'to' => date('Y-12-31')
-            ]
+            ],
+            'extractionMode' => 'comprehensive', // Modo comprehensivo
+            'qualityThreshold' => 3 // Mínima calidad de reseña
         ];
         
         return array_merge($defaultConfig, $config);
@@ -284,7 +287,7 @@ class ApifyClient {
         $maxReviews = $config['maxReviews'] ?? 10;
         $reviews = [];
         
-        for ($i = 0; $i < min($maxReviews, 500); $i++) { // Aumentar límite de simulación
+        for ($i = 0; $i < min($maxReviews, 1000); $i++) { // Aumentar límite de simulación
             $template = $sampleReviews[$i % count($sampleReviews)];
             $template['reviewId'] = 'demo_review_' . uniqid();
             $template['reviewDate'] = date('Y-m-d', strtotime('-' . rand(1, 365) . ' days'));
