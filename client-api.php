@@ -103,6 +103,10 @@ function getReviews($pdo, $user) {
         $startDate = date('Y-m-d', strtotime("-{$dateRange} days"));
         $endDate = date('Y-m-d');
         
+        // Validar y convertir límites a enteros
+        $limit = (int)$limit;
+        $offset = (int)$offset;
+        
         // Obtener reseñas
         $reviewsStmt = $pdo->prepare("
             SELECT 
@@ -123,10 +127,10 @@ function getReviews($pdo, $user) {
             WHERE hotel_id = ? 
             AND scraped_at BETWEEN ? AND ?
             ORDER BY scraped_at DESC
-            LIMIT ? OFFSET ?
+            LIMIT $limit OFFSET $offset
         ");
         
-        $reviewsStmt->execute([$hotelId, $startDate, $endDate, $limit, $offset]);
+        $reviewsStmt->execute([$hotelId, $startDate, $endDate]);
         $reviews = $reviewsStmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Procesar reseñas
