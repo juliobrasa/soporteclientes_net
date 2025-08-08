@@ -10,6 +10,7 @@ use App\Http\Controllers\API\SystemLogController;
 use App\Http\Controllers\API\ExtractionController;
 use App\Http\Controllers\API\ToolsController;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\Client\DashboardController;
 
 // ================================================================
 // RUTAS PÚBLICAS (SIN AUTENTICACIÓN)
@@ -26,6 +27,18 @@ Route::get('/test', function () {
 
 // Rutas de autenticación
 Route::post('/auth/login', [AuthController::class, 'login']);
+
+// ================================================================
+// RUTAS PÚBLICAS DEL PANEL DE CLIENTES
+// ================================================================
+
+// API del dashboard de clientes (sin autenticación por ahora)
+Route::prefix('client')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'getDashboardData']);
+    Route::get('/otas', [DashboardController::class, 'getOTAsData']);
+    Route::get('/reviews', [DashboardController::class, 'getReviewsData']);
+    Route::get('/stats', [DashboardController::class, 'getStatsData']);
+});
 
 // Rutas protegidas por autenticación
 Route::middleware('auth:sanctum')->group(function () {
