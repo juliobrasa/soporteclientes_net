@@ -1,0 +1,302 @@
+/* Estilos personalizados para el panel de clientes */
+
+/* Loading spinner */
+.spinner {
+    border-width: 2px;
+    border-style: solid;
+    border-color: #e5e7eb;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Animaciones de sección */
+.content-section {
+    animation: slideInUp 0.4s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estados del menú */
+.menu-button.active {
+    background-color: #06b6d4 !important;
+    color: white !important;
+}
+
+.menu-button:not(.active) {
+    color: #d1d5db;
+}
+
+/* Badges de plataforma */
+.platform-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+    text-transform: uppercase;
+}
+
+.platform-badge.booking {
+    background-color: #1e40af;
+}
+
+.platform-badge.google {
+    background-color: #dc2626;
+}
+
+.platform-badge.tripadvisor {
+    background-color: #059669;
+}
+
+.platform-badge.expedia {
+    background-color: #2563eb;
+}
+
+.platform-badge.despegar {
+    background-color: #7c3aed;
+}
+
+/* Tarjetas de reseñas */
+.review-card {
+    transition: all 0.2s ease;
+}
+
+.review-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Estrellas de rating */
+.star-rating .lucide-star {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Barras de progreso circulares */
+.circular-progress {
+    transform-origin: center;
+    transform: rotate(-90deg);
+    transition: stroke-dashoffset 0.6s ease;
+}
+
+/* Notificaciones */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 350px;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Loading states */
+.loading {
+    cursor: wait;
+}
+
+.loading * {
+    pointer-events: none;
+}
+
+/* Loading spinner para reseñas */
+.reviews-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    color: #6b7280;
+}
+
+/* OTA logos en tabla */
+.ota-logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 0.75rem;
+    margin-right: 8px;
+}
+
+/* Indicadores de tendencia */
+.trend-up {
+    color: #059669;
+}
+
+.trend-down {
+    color: #dc2626;
+}
+
+.trend-neutral {
+    color: #6b7280;
+}
+
+/* Métricas del dashboard */
+.metric-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.metric-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Barras de progreso pequeñas */
+.progress-bar {
+    background-color: #e5e7eb;
+    border-radius: 9999px;
+    height: 8px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.6s ease;
+}
+
+/* Alertas semánticas */
+.semantic-alert {
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid;
+    margin-bottom: 1rem;
+}
+
+.semantic-alert.good {
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #166534;
+}
+
+.semantic-alert.regular {
+    background-color: #fffbeb;
+    border-color: #fcd34d;
+    color: #92400e;
+}
+
+.semantic-alert.bad {
+    background-color: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+
+/* Responsive para móvil */
+@media (max-width: 768px) {
+    .notification {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    .metric-card {
+        padding: 1rem;
+    }
+    
+    .review-card {
+        padding: 1rem;
+    }
+    
+    .review-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .review-actions button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Estados del selector de hotel */
+#hotelSelector {
+    background-image: none;
+}
+
+#dateRange {
+    min-width: 140px;
+}
+
+/* Animación para cambios de valor */
+.value-change {
+    transition: all 0.3s ease;
+}
+
+.value-updated {
+    animation: highlightValue 0.6s ease;
+}
+
+@keyframes highlightValue {
+    0% { background-color: transparent; }
+    50% { background-color: #dbeafe; }
+    100% { background-color: transparent; }
+}
+
+/* Tabla responsive */
+.table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-container table {
+    min-width: 600px;
+}
+
+/* Botones de acción */
+.action-button {
+    transition: all 0.2s ease;
+}
+
+.action-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Loader para datos específicos */
+.section-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+    flex-direction: column;
+    color: #6b7280;
+}
+
+.section-loading .spinner {
+    margin-bottom: 12px;
+}

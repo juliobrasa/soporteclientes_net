@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Client\DashboardController;
 
 // Ruta principal - redireccionar al admin
 Route::get('/', function () {
@@ -10,6 +11,12 @@ Route::get('/', function () {
 
 // Rutas de autenticación (Laravel Breeze/UI)
 Auth::routes();
+
+// Rutas del panel de clientes (sin middleware auth para ahora)
+Route::prefix('client')->name('client.')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index']); // Alias
+});
 
 // Grupo de rutas admin con middleware de autenticación y admin
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
