@@ -10,6 +10,7 @@ class ApifyClient {
     private $apiToken;
     private $baseUrl = 'https://api.apify.com/v2';
     private $actorId = 'tri_angle~hotel-review-aggregator';
+    private $bookingActorId = 'PbMHke3jW25J6hSOA'; // voyager/booking-reviews-scraper
     private $demoMode = false;
     
     public function __construct($apiToken = null) {
@@ -45,6 +46,13 @@ class ApifyClient {
     public function runHotelExtractionSync($config, $timeout = 300) {
         if ($this->demoMode) {
             return $this->simulateExtractionSync($config);
+        }
+        
+        // Determinar si es solo Booking o múltiples plataformas
+        $isBookingOnly = isset($config['platforms']) && $config['platforms'] === ['booking'];
+        
+        if ($isBookingOnly) {
+            return $this->runBookingExtractionSync($config, $timeout);
         }
         
         $input = $this->buildExtractionInput($config);
@@ -222,6 +230,71 @@ class ApifyClient {
         }
         
         return json_decode($response, true);
+    }
+    
+    /**
+     * Ejecutar extracción específica de Booking.com
+     */
+    private function runBookingExtractionSync($config, $timeout = 300) {
+        // Obtener URL de Booking del hotel
+        $bookingUrl = $this->getBookingUrlForHotel($config['hotel_id'] ?? null);
+        
+        if (!$bookingUrl) {
+            throw new Exception("No se encontró URL de Booking para el hotel");
+        }
+        
+        // Configuración específica para el actor de Booking
+        $input = [
+            'startUrls' => [
+                ['url' => $bookingUrl]
+            ],
+            'maxItems' => $config['maxReviews'] ?? 50,
+            'includeReviewText' => true,
+            'includeReviewerInfo' => true,
+            'proxyConfiguration' => [
+                'useApifyProxy' => true,
+                'apifyProxyGroups' => ['RESIDENTIAL']
+            ]
+        ];
+        
+        $queryParams = http_build_query([
+            'timeout' => $timeout,
+            'memory' => 2048,
+            'format' => 'json'
+        ]);
+        
+        $response = $this->makeRequest('POST', "/acts/{$this->bookingActorId}/run-sync-get-dataset-items?{$queryParams}", $input);
+        
+        return [
+            'success' => true,
+            'data' => $response ?? [],
+            'execution_time' => 0,
+            'reviews_count' => is_array($response) ? count($response) : 0
+        ];
+    }
+    
+    /**
+     * Obtener URL de Booking para un hotel
+     */
+    private function getBookingUrlForHotel($hotelId) {
+        if (!$hotelId) return null;
+        
+        try {
+            require_once __DIR__ . '/admin-config.php';
+            $pdo = getDBConnection();
+            
+            if ($pdo) {
+                $stmt = $pdo->prepare("SELECT url_booking FROM hoteles WHERE id = ?");
+                $stmt->execute([$hotelId]);
+                $result = $stmt->fetch();
+                
+                return $result ? $result['url_booking'] : null;
+            }
+        } catch (Exception $e) {
+            error_log("Error obteniendo URL de Booking: " . $e->getMessage());
+        }
+        
+        return null;
     }
     
     /**
