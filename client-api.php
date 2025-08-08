@@ -122,17 +122,17 @@ function getReviews($pdo, $user) {
         $orderClause = "ORDER BY ";
         switch ($sort) {
             case 'date_asc':
-                $orderClause .= "scraped_at ASC";
+                $orderClause .= "review_date ASC, scraped_at ASC";
                 break;
             case 'rating_desc':
-                $orderClause .= "rating DESC, scraped_at DESC";
+                $orderClause .= "rating DESC, review_date DESC";
                 break;
             case 'rating_asc':
-                $orderClause .= "rating ASC, scraped_at DESC";
+                $orderClause .= "rating ASC, review_date DESC";
                 break;
             case 'date_desc':
             default:
-                $orderClause .= "scraped_at DESC";
+                $orderClause .= "review_date DESC, scraped_at DESC";
                 break;
         }
         
