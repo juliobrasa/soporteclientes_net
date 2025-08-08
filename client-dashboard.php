@@ -951,7 +951,7 @@ function hasModule($module, $modules) {
                     
                     if (result.success) {
                         // Mostrar modal con la respuesta generada
-                        this.showResponseModal(result.data.response);
+                        this.showResponseModal(result.data.response, reviewId);
                     } else {
                         this.showNotification(result.error, 'error');
                     }
@@ -979,26 +979,162 @@ function hasModule($module, $modules) {
                 }
             }
             
-            showResponseModal(response) {
+            showResponseModal(response, reviewId) {
                 const modal = document.createElement('div');
                 modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
                 modal.innerHTML = `
-                    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                        <h3 class="text-lg font-semibold mb-4">Respuesta Generada</h3>
-                        <div class="bg-gray-50 p-4 rounded-lg mb-4">
-                            <p class="text-sm">${response}</p>
-                        </div>
-                        <div class="flex gap-2 justify-end">
-                            <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">
-                                Cerrar
+                    <div class="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold">Respuesta Generada por IA</h3>
+                            <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                                <i data-lucide="x" class="w-5 h-5"></i>
                             </button>
-                            <button onclick="navigator.clipboard.writeText('${response}'); this.textContent='Copiado!'" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                Copiar
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Puedes editar la respuesta según necesites:
+                            </label>
+                            <textarea 
+                                id="response-textarea" 
+                                class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" 
+                                rows="6"
+                                placeholder="La respuesta aparecerá aquí..."
+                            >${response}</textarea>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-xs text-gray-500">
+                                    <span id="char-count">${response.length}</span>/500 caracteres
+                                </span>
+                                <div class="flex gap-2">
+                                    <button 
+                                        id="regenerate-btn"
+                                        class="text-xs px-3 py-1 border border-orange-300 text-orange-600 rounded hover:bg-orange-50 flex items-center gap-1"
+                                    >
+                                        <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                                        Regenerar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                            <div class="flex gap-2">
+                                <i data-lucide="lightbulb" class="text-yellow-600 flex-shrink-0 mt-0.5 w-4 h-4"></i>
+                                <div class="text-sm text-yellow-800">
+                                    <strong>Tip:</strong> Una buena respuesta debe ser cordial, agradecer los comentarios y, si hay críticas, mostrar compromiso de mejora.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2 justify-end">
+                            <button 
+                                onclick="this.closest('.fixed').remove()" 
+                                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                id="copy-btn"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-1"
+                            >
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                                Copiar respuesta
                             </button>
                         </div>
                     </div>
                 `;
+                
                 document.body.appendChild(modal);
+                
+                // Inicializar iconos
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+                
+                // Referencias a elementos
+                const textarea = modal.querySelector('#response-textarea');
+                const charCount = modal.querySelector('#char-count');
+                const regenerateBtn = modal.querySelector('#regenerate-btn');
+                const copyBtn = modal.querySelector('#copy-btn');
+                
+                // Contador de caracteres
+                textarea.addEventListener('input', () => {
+                    const count = textarea.value.length;
+                    charCount.textContent = count;
+                    charCount.className = count > 500 ? 'text-red-500' : 'text-gray-500';
+                });
+                
+                // Botón regenerar
+                regenerateBtn.addEventListener('click', async () => {
+                    regenerateBtn.disabled = true;
+                    regenerateBtn.innerHTML = '<i data-lucide="loader" class="w-3 h-3 animate-spin"></i> Regenerando...';
+                    
+                    try {
+                        const response = await this.regenerateResponse(reviewId);
+                        if (response) {
+                            textarea.value = response;
+                            charCount.textContent = response.length;
+                            this.showNotification('Nueva respuesta generada', 'success');
+                        }
+                    } catch (error) {
+                        this.showNotification('Error regenerando respuesta', 'error');
+                    } finally {
+                        regenerateBtn.disabled = false;
+                        regenerateBtn.innerHTML = '<i data-lucide="refresh-cw" class="w-3 h-3"></i> Regenerar';
+                        if (typeof lucide !== 'undefined') {
+                            lucide.createIcons();
+                        }
+                    }
+                });
+                
+                // Botón copiar
+                copyBtn.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(textarea.value);
+                        copyBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> ¡Copiado!';
+                        copyBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        copyBtn.classList.add('bg-green-600');
+                        
+                        setTimeout(() => {
+                            copyBtn.innerHTML = '<i data-lucide="copy" class="w-4 h-4"></i> Copiar respuesta';
+                            copyBtn.classList.remove('bg-green-600');
+                            copyBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                            if (typeof lucide !== 'undefined') {
+                                lucide.createIcons();
+                            }
+                        }, 2000);
+                        
+                        if (typeof lucide !== 'undefined') {
+                            lucide.createIcons();
+                        }
+                    } catch (error) {
+                        this.showNotification('Error copiando al portapapeles', 'error');
+                    }
+                });
+                
+                // Focus en el textarea
+                textarea.focus();
+                textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+            }
+            
+            async regenerateResponse(reviewId) {
+                try {
+                    const response = await fetch('client-api.php?action=generate_response', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        body: `review_id=${reviewId}&regenerate=true`
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        return result.data.response;
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    console.error('Error regenerating response:', error);
+                    throw error;
+                }
             }
             
             showNotification(message, type = 'info') {
