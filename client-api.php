@@ -88,6 +88,7 @@ switch ($action) {
 function getReviews($pdo, $user) {
     $hotelId = $_GET['hotel_id'] ?? null;
     $dateRange = $_GET['date_range'] ?? 30;
+    $platform = $_GET['platform'] ?? null;
     $limit = $_GET['limit'] ?? 20;
     $offset = $_GET['offset'] ?? 0;
     
@@ -107,6 +108,15 @@ function getReviews($pdo, $user) {
         $limit = (int)$limit;
         $offset = (int)$offset;
         
+        // Construir consulta con filtro opcional de plataforma
+        $whereClause = "WHERE hotel_id = ? AND DATE(scraped_at) BETWEEN ? AND ?";
+        $params = [$hotelId, $startDate, $endDate];
+        
+        if (!empty($platform)) {
+            $whereClause .= " AND source_platform = ?";
+            $params[] = $platform;
+        }
+        
         // Obtener reseñas
         $reviewsStmt = $pdo->prepare("
             SELECT 
@@ -124,13 +134,12 @@ function getReviews($pdo, $user) {
                 property_response,
                 scraped_at
             FROM reviews 
-            WHERE hotel_id = ? 
-            AND DATE(scraped_at) BETWEEN ? AND ?
+            $whereClause
             ORDER BY scraped_at DESC
             LIMIT $limit OFFSET $offset
         ");
         
-        $reviewsStmt->execute([$hotelId, $startDate, $endDate]);
+        $reviewsStmt->execute($params);
         $reviews = $reviewsStmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Procesar reseñas
@@ -151,10 +160,9 @@ function getReviews($pdo, $user) {
         $countStmt = $pdo->prepare("
             SELECT COUNT(*) as total 
             FROM reviews 
-            WHERE hotel_id = ? 
-            AND DATE(scraped_at) BETWEEN ? AND ?
+            $whereClause
         ");
-        $countStmt->execute([$hotelId, $startDate, $endDate]);
+        $countStmt->execute($params);
         $total = $countStmt->fetchColumn();
         
         response([
@@ -179,6 +187,7 @@ function getReviews($pdo, $user) {
 function getStats($pdo, $user) {
     $hotelId = $_GET['hotel_id'] ?? null;
     $dateRange = $_GET['date_range'] ?? 30;
+    $platform = $_GET['platform'] ?? null;
     
     if (!$hotelId) {
         response(['error' => 'hotel_id es requerido'], 400);
@@ -192,6 +201,15 @@ function getStats($pdo, $user) {
         $startDate = date('Y-m-d', strtotime("-{$dateRange} days"));
         $endDate = date('Y-m-d');
         
+        // Construir consulta con filtro opcional de plataforma
+        $whereClause = "WHERE hotel_id = ? AND DATE(scraped_at) BETWEEN ? AND ?";
+        $params = [$hotelId, $startDate, $endDate];
+        
+        if (!empty($platform)) {
+            $whereClause .= " AND source_platform = ?";
+            $params[] = $platform;
+        }
+        
         $statsStmt = $pdo->prepare("
             SELECT 
                 COUNT(*) as total_reviews,
@@ -200,11 +218,10 @@ function getStats($pdo, $user) {
                 COUNT(CASE WHEN rating = 3 THEN 1 END) as neutral_count,
                 COUNT(CASE WHEN rating <= 2 THEN 1 END) as negative_count
             FROM reviews 
-            WHERE hotel_id = ? 
-            AND DATE(scraped_at) BETWEEN ? AND ?
+            $whereClause
         ");
         
-        $statsStmt->execute([$hotelId, $startDate, $endDate]);
+        $statsStmt->execute($params);
         $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
         
         $totalReviews = (int)$stats['total_reviews'];
