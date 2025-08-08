@@ -83,4 +83,16 @@ stress-test.html
 # - kavia-laravel/composer.json
 # - kavia-laravel/artisan
 # - kavia-laravel/bootstrap/
-# - usuarios/admin/ (completo).env
+# - usuarios/admin/ (completo)
+
+# ================================
+# Security & Environment Files
+# ================================
+# Archivos de entorno con secretos reales
+.env.local
+.env.production.local
+.env.secrets
+
+# API Keys y tokens (protección extra)
+**/apify_token
+**/api_keys.php

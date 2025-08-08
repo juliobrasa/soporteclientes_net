@@ -13,6 +13,18 @@ function loadEnvFile($filepath = null) {
         $filepath = __DIR__ . '/.env';
     }
     
+    // Primero cargar .env base
+    loadEnvFromFile($filepath);
+    
+    // Luego cargar .env.local si existe (sobrescribe valores)
+    $localPath = __DIR__ . '/.env.local';
+    if (file_exists($localPath)) {
+        loadEnvFromFile($localPath);
+    }
+}
+
+function loadEnvFromFile($filepath) {
+    
     // Si no existe el archivo .env, intentar crear uno desde .env.example
     if (!file_exists($filepath)) {
         $examplePath = __DIR__ . '/.env.example';
