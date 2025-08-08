@@ -105,7 +105,7 @@ class ReviewsSchemaAdapter
         $errors = [];
         
         // Campos requeridos para Apify
-        $required = ['platform', 'reviewer_name', 'rating'];
+        $required = ['platform', 'reviewer_name'];
         
         foreach ($required as $field) {
             if (empty($data[$field])) {
