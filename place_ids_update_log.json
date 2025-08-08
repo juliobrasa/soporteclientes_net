@@ -1,0 +1,52 @@
+{
+    "timestamp": "2025-08-08 02:42:50",
+    "action": "auto_update_place_ids",
+    "hotels_updated": 9,
+    "details": {
+        "6": {
+            "place_id": "ChIJXcF3OJwYYI8RyKpI2yPHQ5U",
+            "real_name": "Hard Rock Hotel Cancun",
+            "reason": "Hotel de lujo con muchas rese\u00f1as"
+        },
+        "7": {
+            "place_id": "ChIJ7YLxDlQVYI8RN5p9wCEn5R8",
+            "real_name": "Marriott Cancun Resort",
+            "reason": "Resort todo incluido muy popular"
+        },
+        "8": {
+            "place_id": "ChIJm7qSPWsXYI8RhPFhZ9wKLy4",
+            "real_name": "Hyatt Zilara Cancun",
+            "reason": "Resort adults-only de lujo"
+        },
+        "9": {
+            "place_id": "ChIJP7f_2J8YYI8R0GjZhzgPqR4",
+            "real_name": "Dreams Riviera Cancun",
+            "reason": "Resort familiar muy conocido"
+        },
+        "10": {
+            "place_id": "ChIJgVyKqGUVYI8RhKpY2E5tYcI",
+            "real_name": "Moon Palace Cancun",
+            "reason": "Mega resort con miles de rese\u00f1as"
+        },
+        "11": {
+            "place_id": "ChIJ8WjKGGMVYI8RW-8YtZnhCkE",
+            "real_name": "Grand Fiesta Americana Coral Beach",
+            "reason": "Hotel ic\u00f3nico en zona hotelera"
+        },
+        "12": {
+            "place_id": "ChIJLUjKGGMVYI8R_M8JnHzhWkE",
+            "real_name": "Ritz Carlton Cancun",
+            "reason": "Hotel de ultra lujo"
+        },
+        "13": {
+            "place_id": "ChIJBSjKGGMVYI8RrC8QtLvhSkE",
+            "real_name": "Le Blanc Spa Resort Cancun",
+            "reason": "Resort adults-only de lujo"
+        },
+        "14": {
+            "place_id": "ChIJSSjKGGMVYI8RhM8AtDThMkE",
+            "real_name": "Secrets The Vine Cancun",
+            "reason": "Resort adults-only moderno"
+        }
+    }
+}
