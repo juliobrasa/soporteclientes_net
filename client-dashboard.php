@@ -430,6 +430,22 @@ function hasModule($module, $modules) {
             <!-- Reseñas Section -->
             <div id="reseñas-section" class="content-section space-y-6" style="display: none;">
                 <?php if (hasModule('reseñas', $modules)): ?>
+                <!-- Filtros -->
+                <div class="bg-white rounded-lg p-4 shadow-sm mb-6">
+                    <div class="flex items-center gap-4">
+                        <label class="text-sm font-medium text-gray-700">Filtrar por plataforma:</label>
+                        <select id="platformFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Todas las plataformas</option>
+                            <option value="booking">Booking.com</option>
+                            <option value="google">Google</option>
+                            <option value="tripadvisor">TripAdvisor</option>
+                            <option value="expedia">Expedia</option>
+                            <option value="despegar">Despegar</option>
+                        </select>
+                        <span id="platform-results" class="text-sm text-gray-500 ml-auto"></span>
+                    </div>
+                </div>
+
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div class="bg-white rounded-lg p-4 shadow-sm">
@@ -500,6 +516,7 @@ function hasModule($module, $modules) {
             constructor() {
                 this.selectedHotel = null;
                 this.dateRange = '30';
+                this.selectedPlatform = '';
                 this.reviewsOffset = 0;
                 this.reviewsLimit = 20;
                 this.loadingReviews = false;
@@ -556,6 +573,16 @@ function hasModule($module, $modules) {
                 if (loadMoreBtn) {
                     loadMoreBtn.addEventListener('click', () => {
                         this.loadReviews(false);
+                    });
+                }
+                
+                // Filtro de plataforma
+                const platformFilter = document.getElementById('platformFilter');
+                if (platformFilter) {
+                    platformFilter.addEventListener('change', (e) => {
+                        this.selectedPlatform = e.target.value;
+                        this.loadReviews(true);
+                        this.loadStats();
                     });
                 }
             }
@@ -645,7 +672,12 @@ function hasModule($module, $modules) {
                 if (!this.selectedHotel) return;
                 
                 try {
-                    const response = await fetch(`client-api.php?action=stats&hotel_id=${this.selectedHotel}&date_range=${this.dateRange}`);
+                    let url = `client-api.php?action=stats&hotel_id=${this.selectedHotel}&date_range=${this.dateRange}`;
+                    if (this.selectedPlatform) {
+                        url += `&platform=${this.selectedPlatform}`;
+                    }
+                    
+                    const response = await fetch(url);
                     const result = await response.json();
                     
                     if (result.success) {
@@ -670,6 +702,23 @@ function hasModule($module, $modules) {
                     spans[1].textContent = data.coverage_nps.neutrals + '%';  
                     spans[2].textContent = data.coverage_nps.detractors + '%';
                 }
+                
+                // Actualizar contador de resultados del filtro
+                this.updateFilterResults(data.total_reviews);
+            }
+            
+            updateFilterResults(totalReviews) {
+                const resultsSpan = document.getElementById('platform-results');
+                const platformFilter = document.getElementById('platformFilter');
+                
+                if (resultsSpan && platformFilter) {
+                    const selectedPlatform = platformFilter.options[platformFilter.selectedIndex].text;
+                    if (this.selectedPlatform) {
+                        resultsSpan.textContent = `${totalReviews} reseñas de ${selectedPlatform}`;
+                    } else {
+                        resultsSpan.textContent = `${totalReviews} reseñas en total`;
+                    }
+                }
             }
             
             async loadReviews(reset = false) {
@@ -691,7 +740,12 @@ function hasModule($module, $modules) {
                 }
                 
                 try {
-                    const response = await fetch(`client-api.php?action=reviews&hotel_id=${this.selectedHotel}&date_range=${this.dateRange}&limit=${this.reviewsLimit}&offset=${this.reviewsOffset}`);
+                    let url = `client-api.php?action=reviews&hotel_id=${this.selectedHotel}&date_range=${this.dateRange}&limit=${this.reviewsLimit}&offset=${this.reviewsOffset}`;
+                    if (this.selectedPlatform) {
+                        url += `&platform=${this.selectedPlatform}`;
+                    }
+                    
+                    const response = await fetch(url);
                     const result = await response.json();
                     
                     if (result.success) {
