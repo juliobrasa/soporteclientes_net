@@ -10,7 +10,7 @@ class ApifyClient {
     private $apiToken;
     private $baseUrl = 'https://api.apify.com/v2';
     private $actorId = 'tri_angle~hotel-review-aggregator';
-    private $bookingActorId = 'PbMHke3jW25J6hSOA'; // voyager/booking-reviews-scraper
+    private $bookingActorId = 'voyager/booking-scraper'; // Hotel scraper principal que incluye reviews
     private $demoMode = false;
     
     public function __construct($apiToken = null) {
@@ -246,17 +246,24 @@ class ApifyClient {
             throw new Exception("No se encontró URL de Booking para el hotel");
         }
         
-        // Configuración específica para el actor de Booking
+        // Configuración para el actor booking-scraper (más estable)
         $input = [
             'startUrls' => [
-                ['url' => $bookingUrl]
+                $bookingUrl
             ],
             'maxItems' => $config['maxReviews'] ?? 50,
-            'includeReviewText' => true,
-            'includeReviewerInfo' => true,
+            'includeReviews' => true,
+            'maxReviews' => $config['maxReviews'] ?? 50,
+            'reviewsStartDate' => date('Y-01-01'), // Reviews desde este año
             'proxyConfiguration' => [
                 'useApifyProxy' => true,
-                'apifyProxyGroups' => ['RESIDENTIAL']
+                'apifyProxyGroups' => ['RESIDENTIAL'],
+                'countryCode' => 'US'  // Usar proxies desde US para mayor estabilidad
+            ],
+            'maxRequestRetries' => 3,
+            'requestIntervalMillis' => 2000, // 2 segundos entre requests
+            'sessionPoolOptions' => [
+                'maxPoolSize' => 1
             ]
         ];
         
