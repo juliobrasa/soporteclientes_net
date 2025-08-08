@@ -49,39 +49,100 @@ class ApifyClient {
         
         $input = $this->buildExtractionInput($config);
         
-        // Usar la API síncrona para obtener resultados directamente
-        $queryParams = http_build_query([
-            'timeout' => $timeout,
-            'memory' => 4096, // 4GB de memoria
-            'format' => 'json'
-        ]);
-        
-        $response = $this->makeRequest('POST', "/acts/{$this->actorId}/run-sync-get-dataset-items?{$queryParams}", $input);
-        
-        return $response;
+        try {
+            // Método 1: Intentar run síncrono con dataset
+            $queryParams = http_build_query([
+                'timeout' => $timeout,
+                'memory' => 4096,
+                'format' => 'json'
+            ]);
+            
+            $response = $this->makeRequest('POST', "/acts/{$this->actorId}/run-sync-get-dataset-items?{$queryParams}", $input);
+            
+            if ($response && isset($response['success']) && $response['success']) {
+                return $response;
+            }
+            
+            // Método 2: Run asíncrono y esperar resultados
+            error_log("Método síncrono falló, intentando asíncrono...");
+            
+            $runResponse = $this->startHotelExtraction($config);
+            if (!$runResponse || !isset($runResponse['data']['id'])) {
+                throw new Exception("No se pudo iniciar el run");
+            }
+            
+            $runId = $runResponse['data']['id'];
+            error_log("Run iniciado: {$runId}");
+            
+            // Esperar a que termine (máximo timeout)
+            $startTime = time();
+            while (time() - $startTime < $timeout) {
+                sleep(5); // Esperar 5 segundos
+                
+                $status = $this->getRunStatus($runId);
+                if (!$status || !isset($status['data']['status'])) {
+                    continue;
+                }
+                
+                $runStatus = $status['data']['status'];
+                error_log("Run status: {$runStatus}");
+                
+                if ($runStatus === 'SUCCEEDED') {
+                    // Obtener resultados
+                    $results = $this->getRunResults($runId);
+                    return [
+                        'success' => true,
+                        'data' => $results,
+                        'run_id' => $runId,
+                        'execution_time' => time() - $startTime
+                    ];
+                } elseif ($runStatus === 'FAILED') {
+                    throw new Exception("El run falló");
+                } elseif ($runStatus === 'ABORTED') {
+                    throw new Exception("El run fue abortado");
+                }
+            }
+            
+            throw new Exception("Timeout esperando resultados del run");
+            
+        } catch (Exception $e) {
+            error_log("Error en runHotelExtractionSync: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
     }
     
     /**
-     * Construir input para el actor
+     * Construir input para el actor usando esquema correcto
      */
     private function buildExtractionInput($config) {
+        // Esquema correcto basado en documentación oficial
         $defaultConfig = [
-            'maxReviews' => 100,
-            'reviewPlatforms' => [
-                'tripadvisor',
-                'booking', 
-                'expedia',
-                'hotels',
-                'airbnb',
-                'yelp',
-                'google'
-            ],
-            'reviewLanguages' => ['en', 'es'],
-            'reviewDates' => [
-                'from' => date('Y-01-01'),
-                'to' => date('Y-12-31')
-            ]
+            'maxReviews' => 1000,
+            'reviewsFromDate' => date('Y-01-01'), // Fecha desde cuando extraer
+            'scrapeReviewPictures' => false, // Para reducir costo
+            'scrapeReviewResponses' => true,  // Incluir respuestas del hotel
+            // Habilitar plataformas específicas
+            'enableGoogleMaps' => true,
+            'enableTripadvisor' => true, 
+            'enableBooking' => true,
+            'enableExpedia' => true,
+            'enableHotelsCom' => true,
+            'enableYelp' => true,
+            'enableAirbnb' => false // Deshabilitar Airbnb por defecto
         ];
+        
+        // Configurar startIds con Place IDs
+        if (isset($config['hotelId'])) {
+            $defaultConfig['startIds'] = [$config['hotelId']];
+        }
+        
+        // Configurar URLs si se proporcionan
+        if (isset($config['startUrls'])) {
+            $defaultConfig['startUrls'] = $config['startUrls'];
+        }
         
         return array_merge($defaultConfig, $config);
     }
@@ -101,7 +162,22 @@ class ApifyClient {
      * Obtener resultados de una ejecución
      */
     public function getRunResults($runId) {
-        return $this->makeRequest('GET', "/datasets/{$runId}/items");
+        if ($this->demoMode) {
+            return [];
+        }
+        
+        // Primero obtener información del run para encontrar el dataset
+        $runInfo = $this->makeRequest('GET', "/actor-runs/{$runId}");
+        
+        if ($runInfo && isset($runInfo['data']['defaultDatasetId'])) {
+            $datasetId = $runInfo['data']['defaultDatasetId'];
+            $items = $this->makeRequest('GET', "/datasets/{$datasetId}/items");
+            return $items ?: [];
+        }
+        
+        // Método alternativo: usar directamente el runId como dataset
+        $items = $this->makeRequest('GET', "/datasets/{$runId}/items");
+        return $items ?: [];
     }
     
     /**
@@ -117,7 +193,12 @@ class ApifyClient {
                 'Authorization: Bearer ' . $this->apiToken,
                 'Content-Type: application/json'
             ],
-            CURLOPT_CUSTOMREQUEST => $method
+            CURLOPT_CUSTOMREQUEST => $method,
+            CURLOPT_TIMEOUT => 300, // 5 minutos timeout
+            CURLOPT_CONNECTTIMEOUT => 30, // 30 segundos para conectar
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_USERAGENT => 'Hotel Review System/1.0'
         ];
         
         if ($data && ($method === 'POST' || $method === 'PUT')) {
@@ -284,7 +365,7 @@ class ApifyClient {
         $maxReviews = $config['maxReviews'] ?? 10;
         $reviews = [];
         
-        for ($i = 0; $i < min($maxReviews, 500); $i++) { // Aumentar límite de simulación
+        for ($i = 0; $i < min($maxReviews, 1000); $i++) { // Aumentar límite de simulación
             $template = $sampleReviews[$i % count($sampleReviews)];
             $template['reviewId'] = 'demo_review_' . uniqid();
             $template['reviewDate'] = date('Y-m-d', strtotime('-' . rand(1, 365) . ' days'));
