@@ -1,13 +1,11 @@
 <?php
 session_start();
 
-// Configuración de base de datos
-require_once 'env-loader.php';
-
-$host = $_ENV['DB_HOST'] ?? 'localhost';
-$dbname = $_ENV['DB_NAME'] ?? 'soporteia_bookingkavia';
-$username = $_ENV['DB_USER'] ?? 'root';
-$password = $_ENV['DB_PASS'] ?? '';
+// Configuración de base de datos (usando credenciales que funcionan)
+$host = "soporteclientes.net";
+$dbname = "soporteia_bookingkavia";
+$username = "soporteia_admin";
+$password = "QCF8RhS*}.Oj0u(v";
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
