@@ -6,7 +6,7 @@
  * 1. Variables de entorno del sistema
  * 2. Archivo .env en raíz del proyecto
  * 3. Archivo .env.local (si existe)
- * 4. Valores por defecto
+ * 4. Valores por defecto seguros
  */
 
 class EnvLoader 
@@ -74,22 +74,41 @@ class EnvLoader
     private static function setDefaults() 
     {
         $defaults = [
-            'DB_HOST' => 'soporteclientes.net',
-            'DB_NAME' => 'soporteia_bookingkavia',
-            'DB_USER' => 'soporteia_admin',
-            'DB_PASS' => 'QCF8RhS*}.Oj0u(v',
+            // Base de datos - usar valores de .env o .env.local
+            'DB_HOST' => 'localhost',
+            'DB_NAME' => 'reviews_database',
+            'DB_USER' => 'reviews_user',
+            'DB_PASS' => '',
             'DB_PORT' => '3306',
             'DB_CHARSET' => 'utf8mb4',
             
+            // Aplicación
             'APP_ENV' => 'production',
             'APP_DEBUG' => 'false',
-            'APP_URL' => 'https://soporteclientes.net',
+            'APP_URL' => 'https://localhost',
             
+            // Logging
             'LOG_LEVEL' => 'info',
             'LOG_FILE' => __DIR__ . '/storage/logs/app.log',
             
+            // Paths
             'BACKUP_PATH' => __DIR__ . '/backups',
-            'TEMP_PATH' => '/tmp'
+            'TEMP_PATH' => '/tmp',
+            
+            // API Externa - configurar en .env.local
+            'APIFY_API_TOKEN' => '',
+            'EXTERNAL_API_KEY' => '',
+            
+            // Cache
+            'CACHE_DRIVER' => 'file',
+            'CACHE_PATH' => __DIR__ . '/storage/cache',
+            
+            // Sessions  
+            'SESSION_DRIVER' => 'file',
+            'SESSION_PATH' => __DIR__ . '/storage/sessions',
+            
+            // Timezone
+            'APP_TIMEZONE' => 'UTC'
         ];
         
         foreach ($defaults as $key => $defaultValue) {
@@ -123,13 +142,57 @@ class EnvLoader
     public static function isDebug() 
     {
         self::load();
-        return $_ENV['APP_DEBUG'] === 'true';
+        return strtolower($_ENV['APP_DEBUG']) === 'true';
     }
     
     public static function isProduction() 
     {
         self::load();
-        return $_ENV['APP_ENV'] === 'production';
+        return strtolower($_ENV['APP_ENV']) === 'production';
+    }
+    
+    /**
+     * Validar que las variables requeridas estén configuradas
+     */
+    public static function validateRequired($requiredKeys = []) 
+    {
+        self::load();
+        
+        $defaultRequired = ['DB_HOST', 'DB_NAME', 'DB_USER'];
+        $keys = empty($requiredKeys) ? $defaultRequired : $requiredKeys;
+        
+        $missing = [];
+        
+        foreach ($keys as $key) {
+            if (empty($_ENV[$key])) {
+                $missing[] = $key;
+            }
+        }
+        
+        if (!empty($missing)) {
+            throw new Exception('Missing required environment variables: ' . implode(', ', $missing));
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Crear directorios necesarios
+     */
+    public static function ensureDirectories() 
+    {
+        $directories = [
+            dirname(self::get('LOG_FILE')),
+            self::get('BACKUP_PATH'),
+            self::get('CACHE_PATH'),
+            self::get('SESSION_PATH')
+        ];
+        
+        foreach ($directories as $dir) {
+            if ($dir && !is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+        }
     }
 }
 
@@ -156,15 +219,28 @@ function getDatabaseConfig()
  */
 function createDatabaseConnection() 
 {
+    // Validar configuración requerida
+    EnvLoader::validateRequired(['DB_HOST', 'DB_NAME', 'DB_USER']);
+    
     $config = EnvLoader::getDbConfig();
     
     $dsn = "mysql:host={$config['host']};dbname={$config['dbname']};port={$config['port']};charset={$config['charset']}";
     
-    return new PDO($dsn, $config['username'], $config['password'], [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false
-    ]);
+    try {
+        return new PDO($dsn, $config['username'], $config['password'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES {$config['charset']}"
+        ]);
+    } catch (PDOException $e) {
+        if (EnvLoader::isDebug()) {
+            throw new Exception("Database connection failed: " . $e->getMessage());
+        } else {
+            error_log("Database connection failed: " . $e->getMessage());
+            throw new Exception("Database connection failed. Please check configuration.");
+        }
+    }
 }
 
 // Mostrar información de carga si se ejecuta directamente
@@ -172,18 +248,27 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_NAME'])) {
     echo "🔧 ENV LOADER - Configuración Cargada\n";
     echo str_repeat("-", 40) . "\n";
     
-    $config = EnvLoader::getDbConfig();
-    echo "Base de datos:\n";
-    echo "  Host: {$config['host']}\n";
-    echo "  DB: {$config['dbname']}\n";
-    echo "  Usuario: {$config['username']}\n";
-    echo "  Puerto: {$config['port']}\n";
-    
-    echo "\nEntorno:\n";
-    echo "  APP_ENV: " . EnvLoader::get('APP_ENV') . "\n";
-    echo "  APP_DEBUG: " . (EnvLoader::isDebug() ? 'true' : 'false') . "\n";
-    echo "  APP_URL: " . EnvLoader::get('APP_URL') . "\n";
-    
-    echo "\n✅ Configuración cargada correctamente\n";
+    try {
+        $config = EnvLoader::getDbConfig();
+        echo "Base de datos:\n";
+        echo "  Host: {$config['host']}\n";
+        echo "  DB: {$config['dbname']}\n";
+        echo "  Usuario: " . substr($config['username'], 0, 3) . "***\n";
+        echo "  Puerto: {$config['port']}\n";
+        
+        echo "\nEntorno:\n";
+        echo "  APP_ENV: " . EnvLoader::get('APP_ENV') . "\n";
+        echo "  APP_DEBUG: " . (EnvLoader::isDebug() ? 'true' : 'false') . "\n";
+        echo "  APP_URL: " . EnvLoader::get('APP_URL') . "\n";
+        
+        // Crear directorios si no existen
+        EnvLoader::ensureDirectories();
+        
+        echo "\n✅ Configuración cargada correctamente\n";
+        
+    } catch (Exception $e) {
+        echo "❌ Error: " . $e->getMessage() . "\n";
+        echo "💡 Crear archivo .env.local con las credenciales correctas\n";
+    }
 }
 ?>
