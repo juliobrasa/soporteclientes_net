@@ -432,16 +432,29 @@ function hasModule($module, $modules) {
                 <?php if (hasModule('reseñas', $modules)): ?>
                 <!-- Filtros -->
                 <div class="bg-white rounded-lg p-4 shadow-sm mb-6">
-                    <div class="flex items-center gap-4">
-                        <label class="text-sm font-medium text-gray-700">Filtrar por plataforma:</label>
-                        <select id="platformFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Todas las plataformas</option>
-                            <option value="booking">Booking.com</option>
-                            <option value="google">Google</option>
-                            <option value="tripadvisor">TripAdvisor</option>
-                            <option value="expedia">Expedia</option>
-                            <option value="despegar">Despegar</option>
-                        </select>
+                    <div class="flex items-center gap-4 flex-wrap">
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm font-medium text-gray-700">Plataforma:</label>
+                            <select id="platformFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Todas las plataformas</option>
+                                <option value="booking">Booking.com</option>
+                                <option value="google">Google</option>
+                                <option value="tripadvisor">TripAdvisor</option>
+                                <option value="expedia">Expedia</option>
+                                <option value="despegar">Despegar</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm font-medium text-gray-700">Ordenar por:</label>
+                            <select id="sortOrder" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="date_desc">Más nuevas primero</option>
+                                <option value="date_asc">Más antiguas primero</option>
+                                <option value="rating_desc">Mayor rating primero</option>
+                                <option value="rating_asc">Menor rating primero</option>
+                            </select>
+                        </div>
+                        
                         <span id="platform-results" class="text-sm text-gray-500 ml-auto"></span>
                     </div>
                 </div>
@@ -517,6 +530,7 @@ function hasModule($module, $modules) {
                 this.selectedHotel = null;
                 this.dateRange = '30';
                 this.selectedPlatform = '';
+                this.sortOrder = 'date_desc';
                 this.reviewsOffset = 0;
                 this.reviewsLimit = 20;
                 this.loadingReviews = false;
@@ -583,6 +597,15 @@ function hasModule($module, $modules) {
                         this.selectedPlatform = e.target.value;
                         this.loadReviews(true);
                         this.loadStats();
+                    });
+                }
+                
+                // Selector de ordenamiento
+                const sortOrder = document.getElementById('sortOrder');
+                if (sortOrder) {
+                    sortOrder.addEventListener('change', (e) => {
+                        this.sortOrder = e.target.value;
+                        this.loadReviews(true);
                     });
                 }
             }
@@ -740,7 +763,7 @@ function hasModule($module, $modules) {
                 }
                 
                 try {
-                    let url = `client-api.php?action=reviews&hotel_id=${this.selectedHotel}&date_range=${this.dateRange}&limit=${this.reviewsLimit}&offset=${this.reviewsOffset}`;
+                    let url = `client-api.php?action=reviews&hotel_id=${this.selectedHotel}&date_range=${this.dateRange}&limit=${this.reviewsLimit}&offset=${this.reviewsOffset}&sort=${this.sortOrder}`;
                     if (this.selectedPlatform) {
                         url += `&platform=${this.selectedPlatform}`;
                     }

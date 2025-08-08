@@ -89,6 +89,7 @@ function getReviews($pdo, $user) {
     $hotelId = $_GET['hotel_id'] ?? null;
     $dateRange = $_GET['date_range'] ?? 30;
     $platform = $_GET['platform'] ?? null;
+    $sort = $_GET['sort'] ?? 'date_desc';
     $limit = $_GET['limit'] ?? 20;
     $offset = $_GET['offset'] ?? 0;
     
@@ -117,6 +118,24 @@ function getReviews($pdo, $user) {
             $params[] = $platform;
         }
         
+        // Construir cláusula ORDER BY
+        $orderClause = "ORDER BY ";
+        switch ($sort) {
+            case 'date_asc':
+                $orderClause .= "scraped_at ASC";
+                break;
+            case 'rating_desc':
+                $orderClause .= "rating DESC, scraped_at DESC";
+                break;
+            case 'rating_asc':
+                $orderClause .= "rating ASC, scraped_at DESC";
+                break;
+            case 'date_desc':
+            default:
+                $orderClause .= "scraped_at DESC";
+                break;
+        }
+        
         // Obtener reseñas
         $reviewsStmt = $pdo->prepare("
             SELECT 
@@ -135,7 +154,7 @@ function getReviews($pdo, $user) {
                 scraped_at
             FROM reviews 
             $whereClause
-            ORDER BY scraped_at DESC
+            $orderClause
             LIMIT $limit OFFSET $offset
         ");
         
