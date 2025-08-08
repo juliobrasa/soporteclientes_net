@@ -31,6 +31,11 @@ class ApifyClient {
             return $this->simulateExtractionStart($config);
         }
         
+        // Si es extracción SOLO de Booking, usar el actor específico de Booking
+        if ($this->isBookingOnly($config)) {
+            return $this->startBookingExtractionAsync($config);
+        }
+        
         $input = $this->buildExtractionInput($config);
         
         $response = $this->makeRequest('POST', "/acts/{$this->actorId}/runs", [
@@ -49,9 +54,7 @@ class ApifyClient {
         }
         
         // Determinar si es solo Booking o múltiples plataformas
-        $isBookingOnly = isset($config['platforms']) && $config['platforms'] === ['booking'];
-        
-        if ($isBookingOnly) {
+        if ($this->isBookingOnly($config)) {
             return $this->runBookingExtractionSync($config, $timeout);
         }
         
@@ -132,7 +135,7 @@ class ApifyClient {
             'reviewsFromDate' => date('Y-01-01'), // Fecha desde cuando extraer
             'scrapeReviewPictures' => false, // Para reducir costo
             'scrapeReviewResponses' => true,  // Incluir respuestas del hotel
-            // Habilitar plataformas específicas
+            // Habilitar plataformas específicas (por defecto todas)
             'enableGoogleMaps' => true,
             'enableTripadvisor' => true, 
             'enableBooking' => true,
@@ -233,9 +236,9 @@ class ApifyClient {
     }
     
     /**
-     * Ejecutar extracción específica de Booking.com
+     * Ejecutar extracción específica de Booking.com (síncrona)
      */
-    private function runBookingExtractionSync($config, $timeout = 300) {
+    public function runBookingExtractionSync($config, $timeout = 300) {
         // Obtener URL de Booking del hotel
         $bookingUrl = $this->getBookingUrlForHotel($config['hotel_id'] ?? null);
         
@@ -271,6 +274,34 @@ class ApifyClient {
             'execution_time' => 0,
             'reviews_count' => is_array($response) ? count($response) : 0
         ];
+    }
+    
+    /**
+     * Iniciar extracción específica de Booking.com (asíncrona)
+     */
+    public function startBookingExtractionAsync($config) {
+        // Obtener URL de Booking del hotel
+        $bookingUrl = $this->getBookingUrlForHotel($config['hotel_id'] ?? ($config['hotelId'] ?? null));
+        if (!$bookingUrl) {
+            throw new Exception("No se encontró URL de Booking para el hotel");
+        }
+        
+        $input = [
+            'startUrls' => [
+                ['url' => $bookingUrl]
+            ],
+            'maxItems' => $config['maxReviews'] ?? 50,
+            'includeReviewText' => true,
+            'includeReviewerInfo' => true,
+            'proxyConfiguration' => [
+                'useApifyProxy' => true,
+                'apifyProxyGroups' => ['RESIDENTIAL']
+            ]
+        ];
+        
+        return $this->makeRequest('POST', "/acts/{$this->bookingActorId}/runs", [
+            'input' => $input
+        ]);
     }
     
     /**
@@ -456,6 +487,17 @@ class ApifyClient {
                 'executionTime' => rand(30, 180) // segundos
             ]
         ];
+    }
+
+    /**
+     * Determinar si la extracción es únicamente de Booking
+     */
+    private function isBookingOnly($config) {
+        if (!isset($config['platforms']) || !is_array($config['platforms'])) {
+            return false;
+        }
+        $platforms = array_values(array_unique(array_map('strtolower', $config['platforms'])));
+        return count($platforms) === 1 && $platforms[0] === 'booking';
     }
 }
 

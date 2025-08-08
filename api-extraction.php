@@ -147,14 +147,24 @@ function handleSyncExtraction($input, $pdo) {
         }
         
         if (!$hotel['google_place_id']) {
-            response([
-                'error' => 'Hotel no tiene Google Place ID configurado',
-                'action_required' => 'configure_place_id',
-                'hotel_name' => $hotel['nombre_hotel']
-            ], 400);
+
+
+
+
+
+            // Permitimos booking-only sin Place ID (usa url_booking). Para el resto, error
+            $onlyBooking = count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking';
+            if (!$onlyBooking) {
+                response([
+                    'error' => 'Hotel no tiene Google Place ID configurado',
+                    'action_required' => 'configure_place_id',
+                    'hotel_name' => $hotel['nombre_hotel']
+                ], 400);
+            }
         }
         
-        // Configurar extracción usando la lógica corregida
+
+        // Configurar extracción usando la lógica
         $extractionConfig = [
             'hotel_id' => $hotelId,
             'platforms' => $platforms,
@@ -163,15 +173,24 @@ function handleSyncExtraction($input, $pdo) {
             'timeout' => $timeout
         ];
         
-        // Ejecutar extracción síncrona
-        DebugLogger::info("Ejecutando extracción síncrona en Apify", [
-            'config' => $extractionConfig,
-            'timeout' => $timeout
-        ]);
+
+        // Si no es booking-only, pasar google_place_id como hotelId para el actor multi-OTA
+        if (!(count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking') && !empty($hotel['google_place_id'])) {
+            $extractionConfig['hotelId'] = $hotel['google_place_id'];
+        }
         
-        $startTime = time();
+        // Ejecutar extracción
         $apifyClient = new ApifyClient();
-        $apifyResponse = $apifyClient->runHotelExtractionSync($extractionConfig, $timeout);
+        $startTime = time();
+        
+        if (count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking') {
+            DebugLogger::info('Usando actor específico de Booking (sync)');
+            $apifyResponse = $apifyClient->runBookingExtractionSync($extractionConfig, $timeout);
+        } else {
+            DebugLogger::info('Usando actor multi-plataforma (sync)');
+            $apifyResponse = $apifyClient->runHotelExtractionSync($extractionConfig, $timeout);
+        }
+        
         $executionTime = time() - $startTime;
         
         DebugLogger::info("Respuesta síncrona de Apify", [
@@ -194,8 +213,9 @@ function handleSyncExtraction($input, $pdo) {
         $savedCount = 0;
         foreach ($reviews as $review) {
             try {
-                // Guardar reseña usando la estructura real de la tabla reviews
-                // Obtener nombre del hotel para la inserción
+
+
+                // Guardar reseña
                 $hotelNameStmt = $pdo->prepare("SELECT nombre_hotel FROM hoteles WHERE id = ?");
                 $hotelNameStmt->execute([$hotelId]);
                 $hotelData = $hotelNameStmt->fetch();
@@ -215,27 +235,27 @@ function handleSyncExtraction($input, $pdo) {
                 ");
                 
                 $stmt->execute([
-                    $review['reviewId'] . '_' . $hotelId, // unique_id
+                    ($review['reviewId'] ?? ($review['id'] ?? uniqid('bk_'))) . '_' . $hotelId, // unique_id
                     $hotelId, // hotel_id
                     $hotelName, // hotel_name
                     'Cancún, México', // hotel_destination
-                    $review['reviewerName'] ?? 'Anónimo', // user_name
+                    $review['reviewerName'] ?? ($review['user_name'] ?? 'Anónimo'), // user_name
                     $review['reviewDate'] ?? date('Y-m-d'), // review_date
                     $review['rating'] ?? 0, // rating
                     'Reseña de ' . ($review['platform'] ?? 'plataforma'), // review_title
-                    $review['reviewText'] ?? '', // liked_text
+                    $review['reviewText'] ?? ($review['liked_text'] ?? ''), // liked_text
                     $review['platform'] ?? 'apify', // source_platform
-                    $review['reviewId'], // platform_review_id
+                    $review['reviewId'] ?? ($review['id'] ?? null), // platform_review_id
                     'sync_' . time(), // extraction_run_id
                     'completed', // extraction_status
-                    $review['helpful'] ?? 0, // helpful_votes
-                    'auto' // review_language
+                    $review['helpful'] ?? ($review['helpfulVotes'] ?? 0), // helpful_votes
+                    $review['language'] ?? 'auto' // review_language
                 ]);
                 
                 $savedCount++;
             } catch (Exception $e) {
                 DebugLogger::error("Error guardando reseña", [
-                    'review_id' => $review['reviewId'] ?? 'unknown',
+                    'review_id' => $review['reviewId'] ?? ($review['id'] ?? 'unknown'),
                     'error' => $e->getMessage()
                 ]);
             }
@@ -317,13 +337,17 @@ function handleStartExtraction($input, $pdo) {
             response(['error' => 'Hotel no encontrado'], 404);
         }
         
-        // Si no tiene Place ID, necesitamos configurarlo
+        // Si no tiene Place ID, necesitamos configurarlo (para actor multi OTA). Para Booking-only no es crítico si hay url_booking
         if (!$hotel['google_place_id']) {
-            response([
-                'error' => 'Hotel no tiene Google Place ID configurado',
-                'action_required' => 'configure_place_id',
-                'hotel_name' => $hotel['nombre_hotel']
-            ], 400);
+            // Si es booking-only permitimos continuar (actor usa url_booking). Si no, error.
+            $onlyBooking = count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking';
+            if (!$onlyBooking) {
+                response([
+                    'error' => 'Hotel no tiene Google Place ID configurado',
+                    'action_required' => 'configure_place_id',
+                    'hotel_name' => $hotel['nombre_hotel']
+                ], 400);
+            }
         }
         
         // Estimar costo
@@ -331,7 +355,7 @@ function handleStartExtraction($input, $pdo) {
         $apifyClient = new ApifyClient();
         $costEstimate = $apifyClient->estimateCost($totalReviews);
         
-        // Configurar extracción usando la lógica corregida
+        // Configurar extracción
         $extractionConfig = [
             'hotel_id' => $hotelId,
             'platforms' => $platforms,
@@ -339,9 +363,23 @@ function handleStartExtraction($input, $pdo) {
             'languages' => $languages
         ];
         
-        // Iniciar extracción en Apify
-        DebugLogger::info("Llamando a Apify", ['config' => $extractionConfig]);
-        $apifyResponse = $apifyClient->startHotelExtraction($extractionConfig);
+        // Para multi-OTA, pasar Place ID al cliente Apify
+        $onlyBooking = count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking';
+        if (!$onlyBooking && !empty($hotel['google_place_id'])) {
+            $extractionConfig['hotelId'] = $hotel['google_place_id'];
+        }
+        
+        // Si es SOLO Booking, usar actor específico de Booking
+        DebugLogger::info('Detección de plataformas para inicio asíncrono', ['platforms' => $platforms]);
+
+        if ($onlyBooking) {
+            DebugLogger::info('Usando actor específico de Booking (async)');
+            $apifyResponse = $apifyClient->startBookingExtractionAsync($extractionConfig);
+        } else {
+            DebugLogger::info('Usando actor multi-plataforma (async)');
+            $apifyResponse = $apifyClient->startHotelExtraction($extractionConfig); // internamente usa multi-OTA
+        }
+        
         DebugLogger::info("Respuesta de Apify", ['response' => $apifyResponse]);
         
         if (!isset($apifyResponse['data']['id'])) {
@@ -495,8 +533,8 @@ function handleGetHotelExtractions($hotelId, $pdo) {
     try {
         $stmt = $pdo->prepare("
             SELECT 
-                aer.*,
-                h.nombre_hotel,
+                aer.*, 
+                h.nombre_hotel, 
                 TIMESTAMPDIFF(MINUTE, aer.started_at, COALESCE(aer.finished_at, NOW())) as duration_minutes
             FROM apify_extraction_runs aer
             JOIN hoteles h ON aer.hotel_id = h.id
@@ -566,8 +604,8 @@ function handleGetAllRuns($pdo) {
     try {
         $stmt = $pdo->query("
             SELECT 
-                aer.*,
-                h.nombre_hotel,
+                aer.*, 
+                h.nombre_hotel, 
                 TIMESTAMPDIFF(MINUTE, aer.started_at, COALESCE(aer.finished_at, NOW())) as duration_minutes
             FROM apify_extraction_runs aer
             JOIN hoteles h ON aer.hotel_id = h.id
