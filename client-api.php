@@ -125,7 +125,7 @@ function getReviews($pdo, $user) {
                 scraped_at
             FROM reviews 
             WHERE hotel_id = ? 
-            AND scraped_at BETWEEN ? AND ?
+            AND DATE(scraped_at) BETWEEN ? AND ?
             ORDER BY scraped_at DESC
             LIMIT $limit OFFSET $offset
         ");
@@ -152,7 +152,7 @@ function getReviews($pdo, $user) {
             SELECT COUNT(*) as total 
             FROM reviews 
             WHERE hotel_id = ? 
-            AND scraped_at BETWEEN ? AND ?
+            AND DATE(scraped_at) BETWEEN ? AND ?
         ");
         $countStmt->execute([$hotelId, $startDate, $endDate]);
         $total = $countStmt->fetchColumn();
@@ -201,7 +201,7 @@ function getStats($pdo, $user) {
                 COUNT(CASE WHEN rating <= 2 THEN 1 END) as negative_count
             FROM reviews 
             WHERE hotel_id = ? 
-            AND scraped_at BETWEEN ? AND ?
+            AND DATE(scraped_at) BETWEEN ? AND ?
         ");
         
         $statsStmt->execute([$hotelId, $startDate, $endDate]);
@@ -267,7 +267,7 @@ function getDashboardData($pdo, $user) {
                 COUNT(CASE WHEN rating <= 2 THEN 1 END) as negative_reviews
             FROM reviews 
             WHERE hotel_id = ? 
-            AND scraped_at BETWEEN ? AND ?
+            AND DATE(scraped_at) BETWEEN ? AND ?
         ");
         
         $reviewsStmt->execute([$hotelId, $startDate, $endDate]);
