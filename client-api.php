@@ -66,6 +66,10 @@ switch ($action) {
         getDashboardData($pdo, $user);
         break;
         
+    case 'otas':
+        getOTAsData($pdo, $user);
+        break;
+        
     case 'generate_response':
         generateResponse($pdo, $user);
         break;
@@ -337,6 +341,142 @@ function getDashboardData($pdo, $user) {
         
     } catch (Exception $e) {
         response(['error' => 'Error obteniendo datos del dashboard: ' . $e->getMessage()], 500);
+    }
+}
+
+/**
+ * Obtener datos de OTAs
+ */
+function getOTAsData($pdo, $user) {
+    $hotelId = $_GET['hotel_id'] ?? null;
+    $dateRange = $_GET['date_range'] ?? 30;
+    
+    if (!$hotelId) {
+        response(['error' => 'hotel_id es requerido'], 400);
+    }
+    
+    if (!verifyHotelAccess($hotelId, $user)) {
+        response(['error' => 'Sin acceso a este hotel'], 403);
+    }
+    
+    try {
+        $startDate = date('Y-m-d', strtotime("-{$dateRange} days"));
+        $endDate = date('Y-m-d');
+        
+        // Obtener estadísticas por plataforma para el período actual
+        $otasStmt = $pdo->prepare("
+            SELECT 
+                source_platform as platform,
+                COUNT(*) as reviews_count,
+                AVG(rating) as avg_rating
+            FROM reviews 
+            WHERE hotel_id = ? 
+            AND DATE(scraped_at) BETWEEN ? AND ?
+            AND source_platform IS NOT NULL
+            GROUP BY source_platform
+            ORDER BY reviews_count DESC
+        ");
+        
+        $otasStmt->execute([$hotelId, $startDate, $endDate]);
+        $currentData = [];
+        foreach ($otasStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $currentData[$row['platform']] = $row;
+        }
+        
+        // Obtener período anterior para calcular cambios
+        $prevStartDate = date('Y-m-d', strtotime("-" . ($dateRange * 2) . " days"));
+        $prevEndDate = $startDate;
+        
+        $prevStmt = $pdo->prepare("
+            SELECT 
+                source_platform as platform,
+                COUNT(*) as reviews_count,
+                AVG(rating) as avg_rating
+            FROM reviews 
+            WHERE hotel_id = ? 
+            AND DATE(scraped_at) BETWEEN ? AND ?
+            AND source_platform IS NOT NULL
+            GROUP BY source_platform
+        ");
+        
+        $prevStmt->execute([$hotelId, $prevStartDate, $prevEndDate]);
+        $prevData = [];
+        foreach ($prevStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $prevData[$row['platform']] = $row;
+        }
+        
+        // Obtener datos del año completo para acumulados
+        $yearStart = date('Y-01-01');
+        $accStmt = $pdo->prepare("
+            SELECT 
+                source_platform as platform,
+                COUNT(*) as total_reviews,
+                AVG(rating) as avg_rating
+            FROM reviews 
+            WHERE hotel_id = ? 
+            AND DATE(scraped_at) BETWEEN ? AND ?
+            AND source_platform IS NOT NULL
+            GROUP BY source_platform
+        ");
+        
+        $accStmt->execute([$hotelId, $yearStart, $endDate]);
+        $accumulatedData = [];
+        foreach ($accStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $accumulatedData[$row['platform']] = $row;
+        }
+        
+        // Mapear datos con información de OTAs
+        $otasMapping = [
+            'booking' => ['name' => 'Booking.com', 'logo' => 'B'],
+            'google' => ['name' => 'Google', 'logo' => 'G'],
+            'tripadvisor' => ['name' => 'TripAdvisor', 'logo' => 'T'],
+            'expedia' => ['name' => 'Expedia', 'logo' => 'E'],
+            'despegar' => ['name' => 'Despegar', 'logo' => 'D']
+        ];
+        
+        $formattedOTAs = [];
+        foreach ($otasMapping as $platform => $info) {
+            $current = $currentData[$platform] ?? null;
+            $prev = $prevData[$platform] ?? null;
+            $accumulated = $accumulatedData[$platform] ?? null;
+            
+            // Calcular cambios porcentuales
+            $ratingChange = 0;
+            $reviewsChange = 0;
+            
+            if ($prev && $current) {
+                if ($prev['avg_rating'] > 0) {
+                    $ratingChange = (($current['avg_rating'] - $prev['avg_rating']) / $prev['avg_rating']) * 100;
+                }
+                if ($prev['reviews_count'] > 0) {
+                    $reviewsChange = (($current['reviews_count'] - $prev['reviews_count']) / $prev['reviews_count']) * 100;
+                }
+            }
+            
+            $formattedOTAs[] = [
+                'platform' => $platform,
+                'name' => $info['name'],
+                'logo' => $info['logo'],
+                'current' => [
+                    'rating' => $current ? round($current['avg_rating'], 2) : null,
+                    'reviews' => $current ? (int)$current['reviews_count'] : 0,
+                    'rating_change' => $ratingChange,
+                    'reviews_change' => $reviewsChange
+                ],
+                'accumulated' => [
+                    'rating' => $accumulated ? round($accumulated['avg_rating'], 2) : null,
+                    'total_reviews' => $accumulated ? (int)$accumulated['total_reviews'] : 0
+                ]
+            ];
+        }
+        
+        response([
+            'success' => true,
+            'data' => $formattedOTAs
+        ]);
+        
+    } catch (Exception $e) {
+        response(['error' => 'Error obteniendo datos de OTAs: ' . $e->getMessage()], 500);
     }
 }
 

@@ -73,6 +73,62 @@ function hasModule($module, $modules) {
         #hotelSelector {
             min-width: 220px;
         }
+        
+        /* Estilos para tabla OTAs */
+        .ota-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .ota-logo.booking { background-color: #1e40af; }
+        .ota-logo.google { background-color: #dc2626; }
+        .ota-logo.tripadvisor { background-color: #16a34a; }
+        .ota-logo.expedia { background-color: #2563eb; }
+        .ota-logo.despegar { background-color: #7c3aed; }
+        
+        .metric-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        
+        .metric-change {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .metric-change.positive {
+            color: #16a34a;
+        }
+        
+        .metric-change.negative {
+            color: #dc2626;
+        }
+        
+        .metric-change.neutral {
+            color: #6b7280;
+        }
+        
+        .metric-label {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .otas-table tbody tr:hover {
+            background-color: #f9fafb;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gray-100">
@@ -410,9 +466,29 @@ function hasModule($module, $modules) {
                         <h3 class="text-lg font-semibold text-gray-900">Ranking por OTA's</h3>
                     </div>
                     
-                    <div class="text-center py-8">
-                        <i data-lucide="loader" class="w-8 h-8 text-blue-500 mx-auto mb-4 animate-spin"></i>
-                        <p class="text-gray-600">Cargando datos de OTAs...</p>
+                    <!-- Tabla de métricas OTAs -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full otas-table">
+                            <thead>
+                                <tr class="border-b-2 border-gray-200">
+                                    <th class="text-left py-4 px-4 text-sm font-semibold text-gray-700">OTAs</th>
+                                    <th class="text-center py-4 px-4 text-sm font-semibold text-gray-700">Calificación</th>
+                                    <th class="text-center py-4 px-4 text-sm font-semibold text-gray-700">Cantidad de Reseñas</th>
+                                    <th class="text-center py-4 px-4 text-sm font-semibold text-gray-700">Acumulado 2025</th>
+                                </tr>
+                            </thead>
+                            <tbody id="otas-table-body" class="divide-y divide-gray-100">
+                                <!-- Los datos se cargan dinámicamente -->
+                                <tr class="loading-row">
+                                    <td colspan="4" class="text-center py-8">
+                                        <div class="flex items-center justify-center space-x-3">
+                                            <i data-lucide="loader" class="w-6 h-6 text-blue-500 animate-spin"></i>
+                                            <span class="text-gray-600">Cargando datos de OTAs...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 <?php else: ?>
@@ -567,6 +643,9 @@ function hasModule($module, $modules) {
                         if (document.getElementById('reseñas-section').style.display !== 'none') {
                             this.loadReviews(true);
                         }
+                        if (document.getElementById('otas-section').style.display !== 'none') {
+                            this.loadOTAsData();
+                        }
                     });
                 }
                 
@@ -578,6 +657,9 @@ function hasModule($module, $modules) {
                         this.loadDashboardData();
                         if (document.getElementById('reseñas-section').style.display !== 'none') {
                             this.loadReviews(true);
+                        }
+                        if (document.getElementById('otas-section').style.display !== 'none') {
+                            this.loadOTAsData();
                         }
                     });
                 }
@@ -642,6 +724,8 @@ function hasModule($module, $modules) {
                 if (section === 'reseñas') {
                     this.loadReviews(true);
                     this.loadStats();
+                } else if (section === 'otas') {
+                    this.loadOTAsData();
                 }
             }
             
@@ -911,6 +995,113 @@ function hasModule($module, $modules) {
                         </div>
                     </div>
                 `;
+            }
+            
+            async loadOTAsData() {
+                if (!this.selectedHotel) return;
+                
+                const tbody = document.getElementById('otas-table-body');
+                if (!tbody) return;
+                
+                try {
+                    // Mostrar loading
+                    tbody.innerHTML = `
+                        <tr class="loading-row">
+                            <td colspan="4" class="text-center py-8">
+                                <div class="flex items-center justify-center space-x-3">
+                                    <i data-lucide="loader" class="w-6 h-6 text-blue-500 animate-spin"></i>
+                                    <span class="text-gray-600">Cargando datos de OTAs...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    
+                    // Inicializar iconos
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                    
+                    const response = await fetch(`client-api.php?action=otas&hotel_id=${this.selectedHotel}&date_range=${this.dateRange}`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.renderOTAsTable(result.data, tbody);
+                    } else {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="4" class="text-center py-8 text-red-600">
+                                    Error: ${result.error}
+                                </td>
+                            </tr>
+                        `;
+                    }
+                } catch (error) {
+                    console.error('Error loading OTAs data:', error);
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center py-8 text-red-600">
+                                Error cargando datos de OTAs
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+            
+            renderOTAsTable(otasData, tbody) {
+                if (!otasData || otasData.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center py-8 text-gray-500">
+                                No hay datos de OTAs disponibles para este período
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tbody.innerHTML = otasData.map(ota => {
+                    const current = ota.current;
+                    const accumulated = ota.accumulated;
+                    
+                    // Determinar clases de color para los cambios
+                    const ratingChangeClass = current.rating_change > 0 ? 'positive' : current.rating_change < 0 ? 'negative' : 'neutral';
+                    const reviewsChangeClass = current.reviews_change > 0 ? 'positive' : current.reviews_change < 0 ? 'negative' : 'neutral';
+                    
+                    const ratingChangeIcon = current.rating_change > 0 ? '↗' : current.rating_change < 0 ? '↘' : '→';
+                    const reviewsChangeIcon = current.reviews_change > 0 ? '↗' : current.reviews_change < 0 ? '↘' : '→';
+                    
+                    return `
+                        <tr class="hover:bg-gray-50 transition-all">
+                            <td class="py-4 px-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="ota-logo ${ota.platform}">${ota.logo}</div>
+                                    <span class="font-medium text-gray-900">${ota.name}</span>
+                                </div>
+                            </td>
+                            <td class="py-4 px-4 text-center">
+                                <div class="metric-value">${current.rating || '--'}</div>
+                                ${current.rating ? `
+                                    <div class="metric-change ${ratingChangeClass}">
+                                        ${ratingChangeIcon} ${Math.abs(current.rating_change).toFixed(1)}%
+                                    </div>
+                                ` : '<div class="metric-change neutral">--</div>'}
+                            </td>
+                            <td class="py-4 px-4 text-center">
+                                <div class="metric-value">${current.reviews}</div>
+                                ${current.reviews > 0 ? `
+                                    <div class="metric-change ${reviewsChangeClass}">
+                                        ${reviewsChangeIcon} ${Math.abs(current.reviews_change).toFixed(1)}%
+                                    </div>
+                                ` : '<div class="metric-change neutral">--</div>'}
+                            </td>
+                            <td class="py-4 px-4 text-center">
+                                <div class="metric-value">${accumulated.rating || '--'}</div>
+                                <div class="metric-label">Promedio</div>
+                                <div class="text-sm text-gray-600">${accumulated.total_reviews} reseñas</div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
             }
             
             // Métodos para las acciones de reseñas
