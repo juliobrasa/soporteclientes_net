@@ -1,0 +1,14 @@
+[2025-08-08 23:28:44] [INFO] Iniciando procesamiento de datos Apify...
+[2025-08-08 23:28:44] [INFO] Procesando 2 reviews de Apify
+[2025-08-08 23:28:44] [INFO] Preparación completada: 0 éxitos, 2 fallos
+[2025-08-08 23:28:44] [WARNING] Errores en row_0: Campo requerido faltante: rating
+[2025-08-08 23:28:44] [WARNING] Errores en row_1: Campo requerido faltante: rating
+[2025-08-08 23:28:44] [ERROR] No hay datos válidos para insertar
+[2025-08-08 23:29:07] [INFO] Iniciando procesamiento de datos Apify...
+[2025-08-08 23:29:07] [INFO] Procesando 2 reviews de Apify
+[2025-08-08 23:29:07] [INFO] Preparación completada: 2 éxitos, 0 fallos
+[2025-08-08 23:29:07] [SUCCESS] Transacción completada: 2 insertados, 0 actualizados, 0 omitidos
+[2025-08-08 23:34:34] [INFO] Iniciando procesamiento de datos Apify...
+[2025-08-08 23:34:34] [INFO] Procesando 2 reviews de Apify
+[2025-08-08 23:34:34] [INFO] Preparación completada: 2 éxitos, 0 fallos
+[2025-08-08 23:34:34] [SUCCESS] Transacción completada: 0 insertados, 2 actualizados, 0 omitidos
