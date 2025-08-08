@@ -154,16 +154,13 @@ function handleSyncExtraction($input, $pdo) {
             ], 400);
         }
         
-        // Configurar extracción
+        // Configurar extracción usando la lógica corregida
         $extractionConfig = [
-            'startIds' => [$hotel['google_place_id']],
+            'hotel_id' => $hotelId,
+            'platforms' => $platforms,
             'maxReviews' => $maxReviews,
-            'reviewPlatforms' => $platforms,
-            'reviewLanguages' => $languages,
-            'reviewDates' => [
-                'from' => date('Y-01-01'),
-                'to' => date('Y-12-31')
-            ]
+            'languages' => $languages,
+            'timeout' => $timeout
         ];
         
         // Ejecutar extracción síncrona
@@ -334,16 +331,12 @@ function handleStartExtraction($input, $pdo) {
         $apifyClient = new ApifyClient();
         $costEstimate = $apifyClient->estimateCost($totalReviews);
         
-        // Configurar extracción
+        // Configurar extracción usando la lógica corregida
         $extractionConfig = [
-            'startIds' => [$hotel['google_place_id']],
+            'hotel_id' => $hotelId,
+            'platforms' => $platforms,
             'maxReviews' => $maxReviews,
-            'reviewPlatforms' => $platforms,
-            'reviewLanguages' => $languages,
-            'reviewDates' => [
-                'from' => date('Y-01-01'),
-                'to' => date('Y-12-31')
-            ]
+            'languages' => $languages
         ];
         
         // Iniciar extracción en Apify
