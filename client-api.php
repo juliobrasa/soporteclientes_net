@@ -375,7 +375,7 @@ function getOTAsData($pdo, $user) {
                 AVG(rating) as avg_rating
             FROM reviews 
             WHERE hotel_id = ? 
-            AND DATE(scraped_at) BETWEEN ? AND ?
+            AND DATE(review_date) BETWEEN ? AND ?
             AND source_platform IS NOT NULL
             GROUP BY source_platform
             ORDER BY reviews_count DESC
@@ -398,7 +398,7 @@ function getOTAsData($pdo, $user) {
                 AVG(rating) as avg_rating
             FROM reviews 
             WHERE hotel_id = ? 
-            AND DATE(scraped_at) BETWEEN ? AND ?
+            AND DATE(review_date) BETWEEN ? AND ?
             AND source_platform IS NOT NULL
             GROUP BY source_platform
         ");
@@ -418,7 +418,7 @@ function getOTAsData($pdo, $user) {
                 AVG(rating) as avg_rating
             FROM reviews 
             WHERE hotel_id = ? 
-            AND DATE(scraped_at) BETWEEN ? AND ?
+            AND DATE(review_date) BETWEEN ? AND ?
             AND source_platform IS NOT NULL
             GROUP BY source_platform
         ");
