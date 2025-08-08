@@ -349,26 +349,66 @@ function generateResponse($pdo, $user) {
     }
     
     $reviewId = $_POST['review_id'] ?? null;
+    $regenerate = isset($_POST['regenerate']);
     
     if (!$reviewId) {
         response(['error' => 'review_id es requerido'], 400);
     }
     
-    // Simular generación de respuesta
-    $responses = [
-        "Estimado huésped, agradecemos enormemente sus comentarios. Nos complace saber que disfrutó de su estadía y esperamos recibirle nuevamente pronto.",
-        "Muchas gracias por elegirnos y por tomarse el tiempo de compartir su experiencia. Sus comentarios son muy valiosos para nosotros.",
-        "Apreciamos mucho su feedback. Trabajamos constantemente para brindar la mejor experiencia a nuestros huéspedes y esperamos verle de nuevo."
+    // Diferentes conjuntos de respuestas para variedad
+    $positiveResponses = [
+        "Estimado huésped, agradecemos enormemente sus comentarios positivos. Nos complace saber que disfrutó de su estadía y esperamos recibirle nuevamente pronto.",
+        "Muchas gracias por elegirnos y por tomarse el tiempo de compartir su maravillosa experiencia. Sus palabras nos motivan a seguir mejorando cada día.",
+        "¡Qué alegría leer sus comentarios! Nos llena de orgullo saber que cumplimos sus expectativas. Esperamos tener el honor de recibirle nuevamente.",
+        "Apreciamos profundamente su confianza en nuestros servicios. Es un placer saber que tuvo una experiencia memorable con nosotros."
     ];
     
-    $response = $responses[array_rand($responses)];
+    $neutralResponses = [
+        "Estimado huésped, agradecemos sinceramente su tiempo para compartir sus comentarios. Valoramos mucho su opinión y esperamos poder mejorar su experiencia en futuras visitas.",
+        "Gracias por elegirnos para su estadía. Sus comentarios son muy importantes para nosotros y nos ayudan a seguir creciendo como hotel.",
+        "Apreciamos su feedback honesto. Trabajamos constantemente para brindar la mejor experiencia posible a todos nuestros huéspedes."
+    ];
+    
+    $negativeResponses = [
+        "Estimado huésped, lamentamos profundamente que su experiencia no haya cumplido sus expectativas. Tomamos muy en serio sus comentarios y ya estamos trabajando en las mejoras necesarias. Esperamos tener la oportunidad de brindarle una experiencia excepcional en el futuro.",
+        "Gracias por tomarse el tiempo de compartir su experiencia con nosotros. Sentimos mucho los inconvenientes que experimentó durante su estadía. Sus comentarios nos ayudan a identificar áreas de mejora y implementar cambios inmediatos.",
+        "Apreciamos su sinceridad al compartir su experiencia. Lamentamos que no hayamos estado a la altura de sus expectativas. Hemos compartido sus comentarios con nuestro equipo de gestión para tomar las medidas correctivas necesarias."
+    ];
+    
+    // Simular análisis del sentimiento de la reseña para elegir respuesta apropiada
+    $allResponses = array_merge($positiveResponses, $neutralResponses, $negativeResponses);
+    $response = $allResponses[array_rand($allResponses)];
+    
+    // Si es regeneración, agregar variación
+    if ($regenerate) {
+        $variations = [
+            "Distinguido huésped, ",
+            "Apreciado cliente, ",
+            "Querido huésped, ",
+            "Estimado/a cliente, "
+        ];
+        
+        $endings = [
+            " Quedamos a su disposición para cualquier consulta.",
+            " No dude en contactarnos para futuras reservas.",
+            " Será un placer atenderle nuevamente.",
+            " Esperamos su próxima visita con nosotros."
+        ];
+        
+        $variation = $variations[array_rand($variations)];
+        $ending = $endings[array_rand($endings)];
+        
+        // Reemplazar el inicio y agregar final
+        $response = $variation . substr($response, strpos($response, ' ') + 1) . $ending;
+    }
     
     response([
         'success' => true,
         'data' => [
             'review_id' => $reviewId,
             'response' => $response,
-            'generated_at' => date('Y-m-d H:i:s')
+            'generated_at' => date('Y-m-d H:i:s'),
+            'regenerated' => $regenerate
         ]
     ]);
 }
