@@ -9,30 +9,32 @@
 window.AdminConfig = {
     // Configuración de la API - MIGRADO A LARAVEL
     api: {
-        baseUrl: 'public/api',  // URL base para Laravel API
+        baseUrl: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+                    ? 'http://localhost:8000/api/legacy'  // Desarrollo local
+                    : '/kavia-laravel/public/api/legacy',  // Producción
         endpoints: {
             // === HOTELES (MIGRADO A LARAVEL) ===
             hotels: {
-                list: 'hotels',                        // GET /api/hotels
-                create: 'hotels',                       // POST /api/hotels
-                show: 'hotels/{id}',                    // GET /api/hotels/{id}
-                update: 'hotels/{id}',                  // PUT /api/hotels/{id}
-                delete: 'hotels/{id}',                  // DELETE /api/hotels/{id}
-                toggleStatus: 'hotels/{id}/toggle-status', // POST /api/hotels/{id}/toggle-status
-                stats: 'hotels/stats/summary'           // GET /api/hotels/stats/summary
+                list: 'hotels',                        // GET /api/legacy/hotels
+                create: 'hotels',                       // POST /api/legacy/hotels
+                show: 'hotels/{id}',                    // GET /api/legacy/hotels/{id}
+                update: 'hotels/{id}',                  // PUT /api/legacy/hotels/{id}
+                delete: 'hotels/{id}',                  // DELETE /api/legacy/hotels/{id}
+                toggleStatus: 'hotels/{id}/toggle-status', // POST /api/legacy/hotels/{id}/toggle-status
+                stats: 'hotels/stats/summary'           // GET /api/legacy/hotels/stats/summary
             },
             
             // === AI PROVIDERS (MIGRADO A LARAVEL) ===
             aiProviders: {
-                list: 'ai-providers',                   // GET /api/ai-providers
-                create: 'ai-providers',                 // POST /api/ai-providers
-                show: 'ai-providers/{id}',              // GET /api/ai-providers/{id}
-                update: 'ai-providers/{id}',            // PUT /api/ai-providers/{id}
-                delete: 'ai-providers/{id}',            // DELETE /api/ai-providers/{id}
-                toggle: 'ai-providers/{id}/toggle',     // POST /api/ai-providers/{id}/toggle
-                test: 'ai-providers/{id}/test',         // POST /api/ai-providers/{id}/test
-                stats: 'ai-providers/stats',            // GET /api/ai-providers/stats
-                defaults: 'ai-providers/defaults'       // GET /api/ai-providers/defaults
+                list: 'ai-providers',                   // GET /api/legacy/ai-providers
+                create: 'ai-providers',                 // POST /api/legacy/ai-providers
+                show: 'ai-providers/{id}',              // GET /api/legacy/ai-providers/{id}
+                update: 'ai-providers/{id}',            // PUT /api/legacy/ai-providers/{id}
+                delete: 'ai-providers/{id}',            // DELETE /api/legacy/ai-providers/{id}
+                toggle: 'ai-providers/{id}/toggle',     // POST /api/legacy/ai-providers/{id}/toggle
+                test: 'ai-providers/{id}/test',         // POST /api/legacy/ai-providers/{id}/test
+                stats: 'ai-providers/stats',            // GET /api/legacy/ai-providers/stats
+                defaults: 'ai-providers/defaults'       // GET /api/legacy/ai-providers/defaults
             },
             
             // === PROMPTS (MIGRADO A LARAVEL) ===
@@ -51,12 +53,53 @@ window.AdminConfig = {
                 recommended: 'prompts/recommended/{category}' // GET /api/prompts/recommended/{category}
             },
             
+            // === EXTERNAL APIS (MIGRADO A LARAVEL) ===
+            externalApis: {
+                list: 'external-apis',                  // GET /api/external-apis
+                create: 'external-apis',                // POST /api/external-apis
+                show: 'external-apis/{id}',             // GET /api/external-apis/{id}
+                update: 'external-apis/{id}',           // PUT /api/external-apis/{id}
+                delete: 'external-apis/{id}',           // DELETE /api/external-apis/{id}
+                toggle: 'external-apis/{id}/toggle',    // POST /api/external-apis/{id}/toggle
+                test: 'external-apis/{id}/test',        // POST /api/external-apis/{id}/test
+                usage: 'external-apis/{id}/usage',      // POST /api/external-apis/{id}/usage
+                stats: 'external-apis/stats',           // GET /api/external-apis/stats
+                defaults: 'external-apis/defaults'      // GET /api/external-apis/defaults
+            },
+            
+            // === SYSTEM LOGS (MIGRADO A LARAVEL) ===
+            systemLogs: {
+                list: 'system-logs',                       // GET /api/system-logs
+                create: 'system-logs',                      // POST /api/system-logs
+                show: 'system-logs/{id}',                   // GET /api/system-logs/{id}
+                delete: 'system-logs/{id}',                 // DELETE /api/system-logs/{id}
+                resolve: 'system-logs/{id}/resolve',        // POST /api/system-logs/{id}/resolve
+                stats: 'system-logs/stats',                 // GET /api/system-logs/stats
+                timeline: 'system-logs/timeline',           // GET /api/system-logs/timeline
+                config: 'system-logs/config',               // GET /api/system-logs/config
+                export: 'system-logs/export',               // GET /api/system-logs/export
+                cleanup: 'system-logs/cleanup'              // POST /api/system-logs/cleanup
+            },
+            
+            // === EXTRACTION JOBS (MIGRADO A LARAVEL) ===
+            extractionJobs: {
+                list: 'extraction-jobs',                   // GET /api/extraction-jobs
+                create: 'extraction-jobs',                 // POST /api/extraction-jobs
+                show: 'extraction-jobs/{id}',              // GET /api/extraction-jobs/{id}
+                update: 'extraction-jobs/{id}',            // PUT /api/extraction-jobs/{id}
+                delete: 'extraction-jobs/{id}',            // DELETE /api/extraction-jobs/{id}
+                start: 'extraction-jobs/{id}/start',       // POST /api/extraction-jobs/{id}/start
+                pause: 'extraction-jobs/{id}/pause',       // POST /api/extraction-jobs/{id}/pause
+                cancel: 'extraction-jobs/{id}/cancel',     // POST /api/extraction-jobs/{id}/cancel
+                retry: 'extraction-jobs/{id}/retry',       // POST /api/extraction-jobs/{id}/retry
+                clone: 'extraction-jobs/{id}/clone',       // POST /api/extraction-jobs/{id}/clone
+                runs: 'extraction-jobs/{id}/runs',         // GET /api/extraction-jobs/{id}/runs
+                logs: 'extraction-jobs/{id}/logs',         // GET /api/extraction-jobs/{id}/logs
+                stats: 'extraction-jobs/stats',            // GET /api/extraction-jobs/stats
+                hotels: 'extraction-jobs/hotels'           // GET /api/extraction-jobs/hotels
+            },
+            
             // === PENDIENTES DE MIGRAR (USAR admin_api.php TEMPORAL) ===
-            // APIs/Proveedores Externos
-            getApiProviders: 'getApiProviders',
-            saveApiProvider: 'saveApiProvider',
-            deleteApiProvider: 'deleteApiProvider',
-            testApiProvider: 'testApiProvider',
             
             // Extracción
             getExtractionHotels: 'getExtractionHotels',
@@ -64,16 +107,16 @@ window.AdminConfig = {
             getExtractionStatus: 'getExtractionStatus',
             getApifyStatus: 'getApifyStatus',
             
-            // Logs
-            getLogs: 'getLogs',
-            clearLogs: 'clearLogs',
             
-            // Herramientas
-            getDbStats: 'getDbStats',
-            scanDuplicates: 'scanDuplicates',
-            deleteDuplicates: 'deleteDuplicates',
-            optimizeTables: 'optimizeTables',
-            checkIntegrity: 'checkIntegrity'
+            // === TOOLS (MIGRADO A LARAVEL) ===
+            tools: {
+                stats: 'tools/stats',                      // GET /api/tools/stats
+                scanDuplicates: 'tools/duplicates',        // GET /api/tools/duplicates
+                deleteDuplicates: 'tools/duplicates',      // DELETE /api/tools/duplicates
+                optimizeTables: 'tools/optimize',          // POST /api/tools/optimize
+                checkIntegrity: 'tools/integrity',         // GET /api/tools/integrity
+                systemInfo: 'tools/system-info'            // GET /api/tools/system-info
+            }
         },
         timeout: 30000, // 30 segundos
         retries: 3,
@@ -85,10 +128,11 @@ window.AdminConfig = {
                 hotels: true,
                 aiProviders: true,
                 prompts: true,
-                apiProviders: false,    // Pendiente
-                extraction: false,      // Pendiente
-                logs: false,            // Pendiente
-                tools: false           // Pendiente
+                externalApis: true,     // ✅ MIGRADO 
+                systemLogs: true,       // ✅ MIGRADO
+                extractionJobs: true,   // ✅ MIGRADO
+                extraction: true,       // ✅ MIGRADO (alias for extractionJobs)
+                tools: true             // ✅ MIGRADO
             },
             
             // Headers para requests a Laravel

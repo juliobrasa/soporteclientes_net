@@ -43,13 +43,30 @@ class TabManager {
         const availableTabs = AdminConfig?.tabs?.available || ['hotels'];
         
         availableTabs.forEach(tabName => {
+            // Buscar elemento del tab (puede ser -tab o -direct-system)
+            let element = document.getElementById(`${tabName}-tab`);
+            if (!element) {
+                element = document.getElementById(`${tabName}-direct-system`);
+            }
+            
+            // Para el caso especial de 'ia' que usa 'providers' como elemento
+            if (tabName === 'ia' && !element) {
+                element = document.getElementById('providers-direct-system');
+            }
+            
             this.registerTab(tabName, {
                 label: AdminConfig?.tabs?.labels?.[tabName] || tabName,
                 icon: AdminConfig?.tabs?.icons?.[tabName] || 'fas fa-circle',
                 loadFunction: this.getLoadFunction(tabName),
-                element: document.getElementById(`${tabName}-tab`),
+                element: element,
                 button: document.querySelector(`[data-tab="${tabName}"]`)
             });
+            
+            if (AdminConfig?.debug?.enabled && element) {
+                console.log(`✅ Tab registrado: ${tabName} -> ${element.id}`);
+            } else if (AdminConfig?.debug?.enabled) {
+                console.warn(`❌ No se encontró elemento para tab: ${tabName}`);
+            }
         });
     }
     
@@ -222,6 +239,9 @@ class TabManager {
             throw new Error(`Elemento no encontrado para tab: ${tab.name}`);
         }
         
+        // Ocultar TODOS los otros elementos de tab
+        this.hideAllTabs();
+        
         // Cargar contenido si es necesario
         if (!tab.isLoaded && this.config.loadOnDemand) {
             await this.loadTabContent(tab);
@@ -243,6 +263,17 @@ class TabManager {
             tab.element.style.opacity = '1';
             tab.element.style.transform = 'translateY(0)';
         }
+    }
+    
+    /**
+     * Oculta todos los tabs
+     */
+    hideAllTabs() {
+        // Ocultar todos los elementos -tab y -direct-system
+        const tabElements = document.querySelectorAll('.tab-content, .module-direct-system');
+        tabElements.forEach(element => {
+            element.style.display = 'none';
+        });
     }
     
     /**
@@ -412,9 +443,16 @@ class TabManager {
         const urlParams = new URLSearchParams(window.location.search);
         const tabFromUrl = urlParams.get('tab');
         
+        if (AdminConfig?.debug?.enabled) {
+            console.log('📍 Tab desde URL:', tabFromUrl);
+            console.log('📋 Tabs disponibles:', Array.from(this.tabs.keys()));
+        }
+        
         if (tabFromUrl && this.tabs.has(tabFromUrl)) {
+            console.log(`🎯 Cambiando a tab desde URL: ${tabFromUrl}`);
             this.switchTab(tabFromUrl, false);
         } else {
+            console.log(`🏠 Cargando tab por defecto: ${this.currentTab}`);
             this.switchTab(this.currentTab, false);
         }
     }
@@ -594,13 +632,19 @@ class TabManager {
     }
 }
 
-// Crear instancia global
-window.tabManager = new TabManager();
-
-// Funciones de conveniencia globales
-window.switchTab = (tabName) => window.tabManager.switchTab(tabName);
-window.refreshCurrentTab = () => window.tabManager.refreshCurrentTab();
-window.reloadTab = (tabName) => window.tabManager.reloadTab(tabName);
+// Crear instancia global cuando DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    // Esperar un poco más para que NavigationManagerV2 se inicialice primero
+    setTimeout(() => {
+        window.tabManager = new TabManager();
+        console.log('🎭 TabManager inicializado después de NavigationManager');
+        
+        // Configurar funciones globales después de la inicialización
+        window.switchTab = (tabName) => window.tabManager?.switchTab(tabName);
+        window.refreshCurrentTab = () => window.tabManager?.refreshCurrentTab();
+        window.reloadTab = (tabName) => window.tabManager?.reloadTab(tabName);
+    }, 100);
+});
 
 // Event listeners para integración con otros módulos
 document.addEventListener('tabChange', (e) => {

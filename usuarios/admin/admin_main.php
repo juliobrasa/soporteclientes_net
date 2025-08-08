@@ -538,9 +538,21 @@
         if (directContent) {
             directContent.innerHTML = '<div style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Cargando hoteles...</div>';
             
-            fetch('admin_api.php?action=getHotels')
-                .then(response => response.json())
+            // Usar Laravel API directamente
+            const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+                ? 'http://localhost:8000/api/legacy'  // Desarrollo local
+                : '/kavia-laravel/public/api/legacy';  // Producción
+            
+            fetch(`${baseUrl}/hotels`)
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Hotels data received:', data);
                     if (data.success && data.hotels) {
                         displayHotelsDirectTable(data.hotels);
                     } else {
@@ -548,6 +560,7 @@
                     }
                 })
                 .catch(error => {
+                    console.error('Error loading hotels:', error);
                     directContent.innerHTML = `<div style="color: #dc3545; text-align: center; padding: 20px;">❌ Error de conexión: ${error.message}</div>`;
                 });
         }
@@ -820,7 +833,7 @@
     
     // Crear tabManager compatible que reemplaza el existente
     window.tabManager = {
-        currentTab: 'hotels', // Tab por defecto
+        currentTab: new URLSearchParams(window.location.search).get('tab') || 'hotels', // Tab desde URL o defecto
         
         // Función principal para cambiar tabs
         switchTab: function(tabName, updateHistory = true) {
@@ -928,8 +941,14 @@
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🧭 Inicializando sistema de navegación...');
         
-        // Mostrar módulo inicial (Hotels por defecto)
-        window.tabManager.switchTab('hotels');
+        // Obtener tab desde URL o usar hotels por defecto
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialTab = urlParams.get('tab') || 'hotels';
+        
+        console.log(`🎯 Tab inicial detectado: ${initialTab}`);
+        
+        // Mostrar módulo inicial
+        window.tabManager.switchTab(initialTab);
         
         // Interceptar clicks en navegación si existe
         document.addEventListener('click', function(e) {
@@ -1072,20 +1091,23 @@ Creado: ${hotel.created_at || 'N/A'}
                 return;
             }
             
-            // Enviar todos los datos del hotel con el nuevo estado
-            const response = await fetch('admin_api.php', {
-                method: 'POST',
+            // Enviar datos del hotel usando Laravel API
+            const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+                ? 'http://localhost:8000/api/legacy'  // Desarrollo local
+                : '/kavia-laravel/public/api/legacy';  // Producción
+            
+            const response = await fetch(`${baseUrl}/hotels/${hotelId}`, {
+                method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({
-                    action: 'saveHotel',
-                    id: hotelId,
-                    name: hotel.nombre_hotel,
-                    description: hotel.hoja_destino || '',
-                    website: hotel.url_booking || '',
-                    total_rooms: hotel.max_reviews || 200,
-                    status: newStatus ? 'active' : 'inactive'
+                    nombre_hotel: hotel.nombre_hotel,
+                    hoja_destino: hotel.hoja_destino || '',
+                    url_booking: hotel.url_booking || '',
+                    max_reviews: hotel.max_reviews || 200,
+                    activo: newStatus
                 })
             });
             
@@ -1117,15 +1139,16 @@ Creado: ${hotel.created_at || 'N/A'}
         }
         
         try {
-            const response = await fetch('admin_api.php', {
-                method: 'POST',
+            const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+                ? 'http://localhost:8000/api/legacy'  // Desarrollo local
+                : '/kavia-laravel/public/api/legacy';  // Producción
+            
+            const response = await fetch(`${baseUrl}/hotels/${hotelId}`, {
+                method: 'DELETE',
                 headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    action: 'deleteHotel',
-                    id: hotelId
-                })
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
             });
             
             const result = await response.json();
@@ -1153,20 +1176,34 @@ Creado: ${hotel.created_at || 'N/A'}
         }
         
         try {
-            const requestData = {
-                action: 'saveHotel',
-                ...hotelData
-            };
+            const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+                ? 'http://localhost:8000/api/legacy'  // Desarrollo local
+                : '/kavia-laravel/public/api/legacy';  // Producción
             
-            console.log('📤 Enviando datos:', requestData);
+            console.log('📤 Enviando datos:', hotelData);
             
-            const response = await fetch('admin_api.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestData)
-            });
+            let response;
+            if (hotelData.id) {
+                // Actualizar hotel existente
+                response = await fetch(`${baseUrl}/hotels/${hotelData.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(hotelData)
+                });
+            } else {
+                // Crear nuevo hotel
+                response = await fetch(`${baseUrl}/hotels`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(hotelData)
+                });
+            }
             
             console.log('📥 Response status:', response.status);
             
@@ -1193,7 +1230,11 @@ Creado: ${hotel.created_at || 'N/A'}
     // Función auxiliar para obtener hoteles actuales
     async function getCurrentHotels() {
         try {
-            const response = await fetch('admin_api.php?action=getHotels');
+            const baseUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+                ? 'http://localhost:8000/api/legacy'  // Desarrollo local
+                : '/kavia-laravel/public/api/legacy';  // Producción
+            
+            const response = await fetch(`${baseUrl}/hotels`);
             const result = await response.json();
             
             if (result.success) {

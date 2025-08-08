@@ -1,0 +1,219 @@
+/* Estilos personalizados para el dashboard */
+
+/* Asegurar que los iconos de Lucide se rendericen correctamente */
+[data-lucide] {
+    stroke-width: 2;
+    stroke: currentColor;
+    fill: none;
+}
+
+/* Transiciones suaves para los botones del menú */
+.menu-button {
+    transition: all 0.2s ease-in-out;
+}
+
+.menu-button:hover {
+    transform: translateX(2px);
+}
+
+.menu-button.active {
+    background-color: #06b6d4 !important;
+    color: white !important;
+    border-left: 4px solid #0891b2;
+}
+
+.menu-button:not(.active) {
+    color: #d1d5db;
+}
+
+/* Animaciones para las barras de progreso */
+.progress-bar {
+    transition: width 0.8s ease-in-out;
+}
+
+/* Estilos para las tarjetas de estadísticas */
+.stat-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Animaciones para los círculos de progreso */
+.circular-progress {
+    transition: stroke-dashoffset 0.6s ease-in-out;
+}
+
+/* Estilos para las tablas responsivas */
+.table-responsive {
+    min-height: 200px;
+}
+
+/* Estilos para las reseñas */
+.review-card {
+    transition: all 0.2s ease-in-out;
+    border-left: 4px solid transparent;
+}
+
+.review-card:hover {
+    border-left-color: #06b6d4;
+    transform: translateX(2px);
+}
+
+/* Estilos para las estrellas de calificación */
+.star-rating {
+    display: flex;
+    gap: 2px;
+}
+
+.star-rating .star {
+    transition: color 0.2s ease-in-out;
+}
+
+.star-rating .star.filled {
+    color: #fbbf24;
+}
+
+.star-rating .star:not(.filled) {
+    color: #d1d5db;
+}
+
+/* Estilos para los badges de plataforma */
+.platform-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    color: white;
+}
+
+.platform-badge.booking { background-color: #1e40af; }
+.platform-badge.google { background-color: #dc2626; }
+.platform-badge.tripadvisor { background-color: #16a34a; }
+.platform-badge.expedia { background-color: #2563eb; }
+.platform-badge.despegar { background-color: #7c3aed; }
+
+/* Animaciones de entrada */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.content-section {
+    animation: slideInUp 0.4s ease-out;
+}
+
+/* Estilos para el selector de hotel */
+#hotelSelector {
+    min-width: 220px;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.spinner {
+    border: 2px solid #f3f4f6;
+    border-top: 2px solid #06b6d4;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Estilos para tooltips */
+.tooltip {
+    position: relative;
+}
+
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #374151;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+/* Estilos para notificaciones */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    min-width: 300px;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estilos para el estado de carga de las reseñas */
+.reviews-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+/* Estilos para los botones de acción de reseñas */
+.review-actions {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.review-actions button {
+    transition: all 0.2s ease-in-out;
+}
+
+.review-actions button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
