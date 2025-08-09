@@ -351,7 +351,7 @@ try {
                 'provider_name' => $provider['name'],
                 'provider_type' => $provider['provider_type'],
                 'test_message' => 'Conexión exitosa con ' . $provider['name'],
-                'response_time' => rand(150, 800) . 'ms',
+                'response_time' => null, // Tiempo real si implementamos test
                 'status' => 'OK'
             ];
             
@@ -2368,12 +2368,12 @@ try {
                 $data = $_POST;
             }
             
-            // Simular prueba de prompt
+            // No implementamos test real, devolver error
             $response = [
-                'response' => 'Esta es una respuesta simulada del prompt de prueba. El análisis indica un sentimiento positivo con una valoración de 4.2/5 estrellas.',
-                'tokens_used' => rand(50, 200),
-                'estimated_cost' => '$' . number_format(rand(1, 10) / 1000, 4),
-                'processing_time' => rand(200, 800) . 'ms'
+                'error' => 'Test de prompt no implementado. Configure la integración real para probar.',
+                'tokens_used' => 0,
+                'estimated_cost' => '$0.0000',
+                'processing_time' => '0ms'
             ];
             
             sendResponse([
@@ -2623,11 +2623,11 @@ try {
             try {
                 // Estadísticas simuladas para desarrollo
                 $stats = [
-                    'total_logs' => rand(5000, 15000),
-                    'errors_today' => rand(5, 25),
-                    'active_users' => rand(15, 45),
-                    'system_uptime' => rand(86400, 2592000), // 1 día a 30 días en segundos
-                    'db_queries_today' => rand(10000, 50000)
+                    'total_logs' => 0,
+                    'errors_today' => 0,
+                    'active_users' => 0,
+                    'system_uptime' => 0,
+                    'db_queries_today' => 0
                 ];
                 
                 sendResponse([

@@ -244,14 +244,14 @@ function getStats($pdo, $user) {
         $statsStmt->execute($params);
         $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
         
-        // Si no hay datos reales, usar datos de ejemplo
+        // Si no hay datos, devolver valores reales (cero)
         if (!$stats['total_reviews'] || $stats['total_reviews'] == 0) {
             $stats = [
-                'total_reviews' => rand(20, 60),
-                'avg_rating' => rand(360, 440) / 100,
-                'positive_count' => rand(15, 45),
-                'negative_count' => rand(2, 8),
-                'neutral_count' => rand(3, 10)
+                'total_reviews' => 0,
+                'avg_rating' => 0,
+                'positive_count' => 0,
+                'negative_count' => 0,
+                'neutral_count' => 0
             ];
         }
         
@@ -342,27 +342,27 @@ function getDashboardData($pdo, $user) {
         $accumulatedStmt->execute([$hotelId, $yearStart, $endDate]);
         $accumulatedStats = $accumulatedStmt->fetch(PDO::FETCH_ASSOC);
         
-        // Si no hay datos, generar datos de ejemplo realistas
+        // Si no hay datos, devolver valores reales (cero)
         if (!$currentStats['total_reviews'] || $currentStats['total_reviews'] == 0) {
             $currentStats = [
-                'total_reviews' => rand(15, 45),
-                'avg_rating' => rand(350, 450) / 100, // 3.5 - 4.5
-                'positive_reviews' => rand(12, 35),
-                'negative_reviews' => rand(1, 5),
-                'neutral_reviews' => rand(2, 8),
-                'active_platforms' => rand(2, 4),
-                'responded_reviews' => rand(5, 20)
+                'total_reviews' => 0,
+                'avg_rating' => 0,
+                'positive_reviews' => 0,
+                'negative_reviews' => 0,
+                'neutral_reviews' => 0,
+                'active_platforms' => 0,
+                'responded_reviews' => 0
             ];
         }
         
         if (!$accumulatedStats['total_reviews'] || $accumulatedStats['total_reviews'] == 0) {
             $accumulatedStats = [
-                'total_reviews' => rand(150, 350),
-                'avg_rating' => rand(380, 450) / 100,
-                'positive_reviews' => rand(120, 280),
-                'negative_reviews' => rand(10, 30),
-                'active_platforms' => rand(3, 5),
-                'responded_reviews' => rand(50, 150)
+                'total_reviews' => 0,
+                'avg_rating' => 0,
+                'positive_reviews' => 0,
+                'negative_reviews' => 0,
+                'active_platforms' => 0,
+                'responded_reviews' => 0
             ];
         }
         

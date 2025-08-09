@@ -771,38 +771,38 @@ function hasModule($module, $modules) {
                         this.updateDashboardUI(result.data);
                     } else {
                         console.error('API returned error:', result.error);
-                        // Si la API falla, usar datos de ejemplo para demonstrar funcionalidad
-                        this.updateDashboardUI(this.getFallbackData());
+                        // Mostrar datos vacíos cuando no hay datos reales
+                        this.updateDashboardUI(this.getEmptyData());
                     }
                 } catch (error) {
                     console.error('Error loading dashboard data:', error);
                 }
             }
             
-            getFallbackData() {
-                // Datos de ejemplo para demostrar la funcionalidad cuando la API falla
+            getEmptyData() {
+                // Datos vacíos cuando no hay información real disponible
                 return {
                     iro: {
-                        score: Math.floor(Math.random() * 20) + 60, // 60-80
-                        calificacion: Math.floor(Math.random() * 20) + 70, // 70-90
-                        cobertura: Math.floor(Math.random() * 30) + 60, // 60-90
-                        reseñas: Math.floor(Math.random() * 40) + 60 // 60-100
+                        score: 0,
+                        calificacion: 0,
+                        cobertura: 0,
+                        reseñas: 0
                     },
                     stats: {
-                        total_reviews: Math.floor(Math.random() * 30) + 20, // 20-50
-                        avg_rating: (Math.random() * 1.5 + 3.5).toFixed(2), // 3.5-5.0
-                        otas_activas: Math.floor(Math.random() * 3) + 2, // 2-4
-                        coverage: Math.floor(Math.random() * 30) + 60 // 60-90
+                        total_reviews: 0,
+                        avg_rating: 0,
+                        otas_activas: 0,
+                        coverage: 0
                     },
                     period_stats: {
-                        total_reviews: Math.floor(Math.random() * 30) + 20,
-                        avg_rating: (Math.random() * 1.5 + 3.5).toFixed(2),
-                        active_platforms: Math.floor(Math.random() * 3) + 2,
-                        coverage: Math.floor(Math.random() * 30) + 60 + '%'
+                        total_reviews: 0,
+                        avg_rating: 0,
+                        active_platforms: 0,
+                        coverage: '0%'
                     },
                     accumulated_stats: {
-                        total_reviews: Math.floor(Math.random() * 200) + 150, // 150-350
-                        avg_rating: (Math.random() * 1.2 + 3.8).toFixed(2) // 3.8-5.0
+                        total_reviews: 0,
+                        avg_rating: 0
                     }
                 };
             }
