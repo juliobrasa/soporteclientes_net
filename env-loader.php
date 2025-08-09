@@ -15,6 +15,7 @@ class EnvironmentLoader
     private static $loaded = false;
     private static $config = [];
     private static $envPaths = [
+        '.env.local.working',
         '.env.local',
         '.env', 
         '.env.production'
