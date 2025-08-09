@@ -467,6 +467,173 @@ class ApifyDataProcessor
         $stmt->execute($params);
         return $stmt->fetch();
     }
+    
+    /**
+     * Procesar resultados de un run de Apify (llamado desde handleGetRunStatus)
+     */
+    public function processApifyResults($runId, $hotelId)
+    {
+        $this->log("Procesando resultados del run: $runId para hotel: $hotelId");
+        
+        try {
+            // Obtener datos del dataset
+            $datasetItems = $this->getRunDataset($runId);
+            
+            if (empty($datasetItems)) {
+                $this->log("No se encontraron datos en el dataset del run: $runId", 'WARNING');
+                return ['processed' => 0, 'errors' => 0, 'total' => 0];
+            }
+            
+            $processed = 0;
+            $errors = 0;
+            
+            // CORRECCIÓN: Detectar formato de datos (per-review vs per-hotel)
+            $firstItem = $datasetItems[0];
+            $isPerReview = isset($firstItem['userName']) || isset($firstItem['reviewTextParts']) || 
+                          isset($firstItem['reviewDate']) || (isset($firstItem['rating']) && 
+                          !isset($firstItem['hotel']) && !isset($firstItem['reviews']));
+            
+            $this->log("Formato detectado: " . ($isPerReview ? 'per-review (Booking)' : 'per-hotel (multi-OTA)'));
+            
+            if ($isPerReview) {
+                // Formato Booking: cada item es una reseña individual
+                foreach ($datasetItems as $reviewItem) {
+                    try {
+                        $normalizedReview = $this->normalizeBookingReview($reviewItem, $hotelId, $runId);
+                        $this->insertReviewUnified($normalizedReview);
+                        $processed++;
+                    } catch (Exception $e) {
+                        $this->log("Error procesando reseña Booking: " . $e->getMessage(), 'ERROR');
+                        $errors++;
+                    }
+                }
+            } else {
+                // Formato multi-OTA: cada item contiene {hotel: {...}, reviews: [...]}
+                foreach ($datasetItems as $item) {
+                    try {
+                        if (isset($item['reviews']) && is_array($item['reviews'])) {
+                            foreach ($item['reviews'] as $review) {
+                                $normalizedReview = $this->normalizeMultiOTAReview($review, $hotelId, $runId);
+                                $this->insertReviewUnified($normalizedReview);
+                                $processed++;
+                            }
+                        }
+                    } catch (Exception $e) {
+                        $this->log("Error procesando item multi-OTA: " . $e->getMessage(), 'ERROR');
+                        $errors++;
+                    }
+                }
+            }
+            
+            $this->log("Procesamiento completado - Procesadas: $processed, Errores: $errors");
+            
+            return [
+                'processed' => $processed,
+                'errors' => $errors,
+                'total' => count($datasetItems)
+            ];
+            
+        } catch (Exception $e) {
+            $this->log("Error en processApifyResults: " . $e->getMessage(), 'ERROR');
+            throw $e;
+        }
+    }
+    
+    /**
+     * Normalizar reseña del formato Booking (per-review)
+     */
+    private function normalizeBookingReview($reviewItem, $hotelId, $runId)
+    {
+        return [
+            'unique_id' => ($reviewItem['id'] ?? uniqid('booking_')) . '_' . $hotelId,
+            'hotel_id' => $hotelId,
+            'user_name' => $reviewItem['userName'] ?? 'Anónimo',
+            'review_text' => $reviewItem['reviewTextParts']['Liked'] ?? ($reviewItem['reviewText'] ?? ''),
+            'liked_text' => $reviewItem['reviewTextParts']['Liked'] ?? '',
+            'disliked_text' => $reviewItem['reviewTextParts']['Disliked'] ?? '',
+            'source_platform' => 'booking',
+            'rating' => $this->normalizeRating($reviewItem['rating'] ?? 0, 'booking'),
+            'original_rating' => $reviewItem['rating'] ?? 0,
+            'review_date' => $reviewItem['reviewDate'] ?? date('Y-m-d'),
+            'review_title' => $reviewItem['reviewTitle'] ?? null,
+            'property_response' => $reviewItem['ownerResponse'] ?? null,
+            'platform_review_id' => $reviewItem['id'] ?? null,
+            'extraction_run_id' => $runId,
+            'helpful_votes' => $reviewItem['helpfulVotes'] ?? 0,
+            'reviewer_location' => $reviewItem['userLocation'] ?? null,
+            'stay_date' => $reviewItem['stayDate'] ?? null,
+            'room_type' => $reviewItem['roomInfo'] ?? null,
+            'number_of_nights' => $reviewItem['stayLength'] ?? null,
+            'review_language' => $reviewItem['language'] ?? 'auto',
+            'scraped_at' => date('Y-m-d H:i:s')
+        ];
+    }
+    
+    /**
+     * Normalizar reseña del formato multi-OTA
+     */
+    private function normalizeMultiOTAReview($review, $hotelId, $runId)
+    {
+        return [
+            'unique_id' => ($review['id'] ?? uniqid('multiota_')) . '_' . $hotelId,
+            'hotel_id' => $hotelId,
+            'user_name' => $review['author_name'] ?? $review['reviewer_name'] ?? 'Anónimo',
+            'review_text' => $review['review_text'] ?? $review['text'] ?? '',
+            'liked_text' => $review['liked_text'] ?? $review['positive_text'] ?? '',
+            'disliked_text' => $review['disliked_text'] ?? $review['negative_text'] ?? '',
+            'source_platform' => $review['platform'] ?? 'unknown',
+            'rating' => $this->normalizeRating($review['rating'] ?? 0, $review['platform'] ?? 'generic'),
+            'original_rating' => $review['original_rating'] ?? $review['rating'] ?? 0,
+            'review_date' => $review['date_created'] ?? $review['review_date'] ?? date('Y-m-d'),
+            'review_title' => $review['title'] ?? null,
+            'property_response' => $review['response_from_owner'] ?? $review['management_response'] ?? null,
+            'platform_review_id' => $review['external_id'] ?? $review['review_id'] ?? null,
+            'extraction_run_id' => $runId,
+            'helpful_votes' => $review['helpful_votes'] ?? 0,
+            'review_language' => $review['language'] ?? 'auto',
+            'scraped_at' => date('Y-m-d H:i:s')
+        ];
+    }
+    
+    /**
+     * Normalizar rating según la plataforma
+     */
+    private function normalizeRating($rating, $platform)
+    {
+        $rating = floatval($rating);
+        
+        switch (strtolower($platform)) {
+            case 'booking':
+                // Booking usa escala 1-10, normalizar a 1-5
+                return round(($rating / 10) * 5, 1);
+            case 'tripadvisor':
+            case 'google':
+            default:
+                // Otras plataformas suelen usar 1-5
+                return round($rating, 1);
+        }
+    }
+    
+    /**
+     * Insertar reseña en esquema unificado
+     */
+    private function insertReviewUnified($reviewData)
+    {
+        $columns = array_keys($reviewData);
+        $placeholders = ':' . implode(', :', $columns);
+        $columnsList = implode(', ', $columns);
+        
+        $sql = "INSERT INTO reviews ({$columnsList}) VALUES ({$placeholders})
+                ON DUPLICATE KEY UPDATE 
+                rating = VALUES(rating),
+                review_text = VALUES(review_text),
+                liked_text = VALUES(liked_text),
+                disliked_text = VALUES(disliked_text),
+                updated_at = NOW()";
+        
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute($reviewData);
+    }
 }
 
 // Funci�n helper para compatibilidad

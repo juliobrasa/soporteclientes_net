@@ -246,21 +246,32 @@ function handleSyncExtraction($input, $pdo) {
                         review_date = VALUES(review_date)
                 ");
                 
+                // Normalizar datos de la reseña
+                $reviewTitle = $review['reviewTitle'] ?? ($review['title'] ?? null);
+                $hotelDestination = $hotel['destino'] ?? $hotel['destination'] ?? null; // Usar campo real si existe
+                $platform = 'booking'; // Para sync siempre es booking
+                $normalizedRating = floatval($review['rating'] ?? 0);
+                
+                // Normalizar rating de Booking (1-10) a escala 1-5
+                if ($normalizedRating > 5) {
+                    $normalizedRating = round(($normalizedRating / 10) * 5, 1);
+                }
+                
                 $stmt->execute([
-                    ($review['reviewId'] ?? ($review['id'] ?? uniqid('bk_'))) . '_' . $hotelId, // unique_id
+                    ($review['reviewId'] ?? ($review['id'] ?? uniqid('booking_'))) . '_' . $hotelId, // unique_id
                     $hotelId, // hotel_id
                     $hotelName, // hotel_name
-                    'Cancún, México', // hotel_destination
-                    $review['reviewerName'] ?? ($review['user_name'] ?? 'Anónimo'), // user_name
+                    $hotelDestination, // hotel_destination (no hardcoded)
+                    $review['reviewerName'] ?? ($review['userName'] ?? 'Anónimo'), // user_name
                     $review['reviewDate'] ?? date('Y-m-d'), // review_date
-                    $review['rating'] ?? 0, // rating
-                    'Reseña de ' . ($review['platform'] ?? 'plataforma'), // review_title
-                    $review['reviewText'] ?? ($review['liked_text'] ?? ''), // liked_text
-                    $review['platform'] ?? 'apify', // source_platform
+                    $normalizedRating, // rating normalizado
+                    $reviewTitle ?? 'Reseña', // review_title (usar real o genérico)
+                    $review['reviewText'] ?? ($review['reviewTextParts']['Liked'] ?? ''), // liked_text
+                    $platform, // source_platform (unificado)
                     $review['reviewId'] ?? ($review['id'] ?? null), // platform_review_id
                     'sync_' . time(), // extraction_run_id
                     'completed', // extraction_status
-                    $review['helpful'] ?? ($review['helpfulVotes'] ?? 0), // helpful_votes
+                    $review['helpfulVotes'] ?? ($review['helpful'] ?? 0), // helpful_votes
                     $review['language'] ?? 'auto' // review_language
                 ]);
                 
