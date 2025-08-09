@@ -395,7 +395,7 @@ $hotels = getHotelsWithPortals();
                                 <?php foreach ($hotels as $hotel): ?>
                                     <?php if ($hotel['has_booking']): ?>
                                     <div class="form-check">
-                                        <input class="form-check-input booking-hotel-checkbox" type="checkbox" name="hotel_ids[]" value="<?php echo $hotel['id']; ?>" id="booking_hotel_<?php echo $hotel['id']; ?>">
+                                        <input class="form-check-input booking-hotel-checkbox" type="checkbox" name="hotel_ids[]" value="<?php echo $hotel['id']; ?>" id="booking_hotel_<?php echo $hotel['id']; ?>" data-has-booking-url="<?php echo !empty($hotel['url_booking']) || !empty($hotel['booking_url']) ? 'true' : 'false'; ?>">
                                         <label class="form-check-label" for="booking_hotel_<?php echo $hotel['id']; ?>">
                                             <i class="fas fa-bed text-primary"></i> <?php echo htmlspecialchars($hotel['nombre_hotel']); ?>
                                             <small class="text-muted d-block"><?php 
@@ -484,12 +484,20 @@ $hotels = getHotelsWithPortals();
     <?php endif; ?>
 
     function toggleAllBookingHotels() {
+        console.log('🔄 toggleAllBookingHotels ejecutada');
+        
         const selectAllCheckbox = document.getElementById('select_all_booking_hotels');
         const hotelCheckboxes = document.querySelectorAll('.booking-hotel-checkbox');
         
+        console.log('📋 Checkbox principal:', selectAllCheckbox?.checked);
+        console.log('📋 Checkboxes encontrados:', hotelCheckboxes.length);
+        
         hotelCheckboxes.forEach(checkbox => {
             checkbox.checked = selectAllCheckbox.checked;
+            console.log(`✅ Hotel ${checkbox.value}: ${checkbox.checked}`);
         });
+        
+        console.log('✅ toggleAllBookingHotels completada');
     }
 
     function getSelectedBookingHotels() {
@@ -500,11 +508,30 @@ $hotels = getHotelsWithPortals();
     }
 
     function startBookingExtraction() {
-        console.log('🚀 Iniciando extracción de Booking...');
+        console.log('🚀 startBookingExtraction ejecutada - iniciando extracción de Booking...');
         
         const selectedHotels = getSelectedBookingHotels();
         if (selectedHotels.length === 0) {
             alert('Por favor selecciona al menos un hotel con URL de Booking');
+            return;
+        }
+
+        // VALIDACIÓN PREVIA: Verificar que todos los hoteles seleccionados tienen url_booking
+        const hotelsWithoutBookingUrl = [];
+        selectedHotels.forEach(hotelId => {
+            const hotelCheckbox = document.getElementById(`booking_hotel_${hotelId}`);
+            if (hotelCheckbox) {
+                const hasBookingUrl = hotelCheckbox.hasAttribute('data-has-booking-url') && 
+                                    hotelCheckbox.getAttribute('data-has-booking-url') === 'true';
+                if (!hasBookingUrl) {
+                    const hotelName = hotelCheckbox.closest('.form-check').querySelector('label').textContent.trim();
+                    hotelsWithoutBookingUrl.push(hotelName);
+                }
+            }
+        });
+
+        if (hotelsWithoutBookingUrl.length > 0) {
+            alert(`❌ ERROR: Los siguientes hoteles no tienen URL de Booking configurada:\n\n${hotelsWithoutBookingUrl.join('\n')}\n\nConfigure las URLs de Booking antes de continuar.`);
             return;
         }
 
