@@ -72,6 +72,26 @@ RedirectMatch 403 ^/node_modules
     Allow from all
 </Files>
 
+<Files "test-minimal-api.php">
+    Order allow,deny
+    Allow from all
+</Files>
+
+<Files "test-db-connection.php">
+    Order allow,deny
+    Allow from all
+</Files>
+
+<Files "test-php-basic.php">
+    Order allow,deny
+    Allow from all
+</Files>
+
+<Files "api-extraction-minimal.php">
+    Order allow,deny
+    Allow from all
+</Files>
+
 # Headers de seguridad
 <IfModule mod_headers.c>
     # Prevenir XSS

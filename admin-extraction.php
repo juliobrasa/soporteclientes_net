@@ -650,7 +650,7 @@ $hotels = getActiveHotels();
             
             console.log(`📋 Datos para hotel ${hotelId}:`, data);
             
-            return fetch('api-extraction.php', {
+            return fetch('api-extraction-minimal.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

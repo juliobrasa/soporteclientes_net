@@ -64,9 +64,26 @@ if (!$isAuthenticated) {
     ], 401);
 }
 
-// Conectar a base de datos
+// Conectar a base de datos - Función de respaldo si no se carga desde admin-config
+if (!function_exists('getDBConnection')) {
+    function getDBConnection() {
+        try {
+            // Usar EnvironmentLoader para obtener credenciales seguras
+            return EnvironmentLoader::createDatabaseConnection();
+        } catch (Exception $e) {
+            error_log("Error de conexión BD (api-extraction): " . $e->getMessage());
+            return null;
+        }
+    }
+}
+
 $pdo = getDBConnection();
 if (!$pdo) {
+    DebugLogger::error("Error de conexión a la base de datos", [
+        'function_exists' => function_exists('getDBConnection'),
+        'environment_loaded' => class_exists('EnvironmentLoader'),
+        'included_files' => get_included_files()
+    ]);
     response(['error' => 'Error de conexión a la base de datos'], 500);
 }
 
