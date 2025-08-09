@@ -379,7 +379,15 @@ $hotels = getActiveHotels();
                                 <hr class="my-2">
                                 <?php foreach ($hotels as $hotel): ?>
                                     <div class="form-check">
-                                        <input class="form-check-input hotel-checkbox" type="checkbox" name="hotel_ids[]" value="<?php echo $hotel['id']; ?>" id="hotel_<?php echo $hotel['id']; ?>">
+                                        <input 
+                                            class="form-check-input hotel-checkbox" 
+                                            type="checkbox" 
+                                            name="hotel_ids[]" 
+                                            value="<?php echo $hotel['id']; ?>" 
+                                            id="hotel_<?php echo $hotel['id']; ?>"
+                                            data-url-booking="<?php echo htmlspecialchars($hotel['url_booking'] ?? '', ENT_QUOTES); ?>"
+                                            data-place-id="<?php echo htmlspecialchars($hotel['google_place_id'] ?? '', ENT_QUOTES); ?>"
+                                        >
                                         <label class="form-check-label" for="hotel_<?php echo $hotel['id']; ?>">
                                             <?php echo htmlspecialchars($hotel['nombre_hotel']); ?>
                                         </label>
@@ -574,6 +582,44 @@ $hotels = getActiveHotels();
     });
     <?php endif; ?>
 
+    function validateExtractionPrereqs() {
+        const selectedCheckboxes = document.querySelectorAll('.hotel-checkbox:checked');
+        const selectedPlatforms = Array.from(document.querySelectorAll('input[name="platforms[]"]:checked')).map(cb => cb.value.toLowerCase());
+        
+        if (selectedCheckboxes.length === 0) {
+            alert('Por favor selecciona al menos un hotel');
+            return false;
+        }
+        
+        if (selectedPlatforms.length === 0) {
+            alert('Por favor selecciona al menos una plataforma');
+            return false;
+        }
+        
+        // Validación específica para Booking-only
+        const onlyBooking = selectedPlatforms.length === 1 && selectedPlatforms[0] === 'booking';
+        
+        for (let checkbox of selectedCheckboxes) {
+            const hotelName = checkbox.nextElementSibling.textContent.trim();
+            
+            if (onlyBooking) {
+                const bookingUrl = checkbox.dataset.urlBooking;
+                if (!bookingUrl || bookingUrl.trim() === '') {
+                    alert(`El hotel "${hotelName}" no tiene URL de Booking configurada.\n\nPara extraer solo de Booking, todos los hoteles deben tener URL de Booking.`);
+                    return false;
+                }
+            } else {
+                const placeId = checkbox.dataset.placeId;
+                if (!placeId || placeId.trim() === '') {
+                    alert(`El hotel "${hotelName}" no tiene Google Place ID configurado.\n\nPara extracciones multi-plataforma, todos los hoteles deben tener Place ID.`);
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+
     function getSelectedHotels() {
         const hotels = [];
         const checkboxes = document.querySelectorAll('input[name="hotel_ids[]"]:checked');
@@ -583,6 +629,11 @@ $hotels = getActiveHotels();
 
     function startExtraction() {
         console.log('🚀 Iniciando extracción...');
+        
+        // Validar prerequisitos antes de continuar
+        if (!validateExtractionPrereqs()) {
+            return;
+        }
         
         let formData, isSync, selectedHotels, extractionMode;
         
@@ -619,6 +670,15 @@ $hotels = getActiveHotels();
             if (selectedHotels.length === 0) {
                 console.error('❌ No hay hoteles seleccionados');
                 alert('Por favor selecciona al menos un hotel');
+                return;
+            }
+            
+            console.log('🔍 Paso 5: Validando prerequisitos...');
+            const platforms = getSelectedPlatforms();
+            const validation = validateExtractionPrereqs(platforms, selectedHotels);
+            if (!validation.valid) {
+                console.error('❌ Validación fallida:', validation.errors);
+                alert('Error de validación:\n\n' + validation.errors.join('\n'));
                 return;
             }
         } catch (error) {
@@ -765,6 +825,50 @@ $hotels = getActiveHotels();
         hotelCheckboxes.forEach(checkbox => {
             checkbox.checked = selectAllCheckbox.checked;
         });
+    }
+    
+    /**
+     * Validar prerequisitos antes de enviar extracción
+     */
+    function validateExtractionPrereqs(platforms, selectedHotels) {
+        const errors = [];
+        const selectedHotelIds = selectedHotels.map(h => h.toString());
+        
+        // Obtener datos de los checkboxes seleccionados
+        const selectedCheckboxes = document.querySelectorAll('.hotel-checkbox:checked');
+        const hotelData = Array.from(selectedCheckboxes).map(checkbox => ({
+            id: checkbox.value,
+            name: checkbox.nextElementSibling.textContent.trim(),
+            urlBooking: checkbox.dataset.urlBooking || '',
+            placeId: checkbox.dataset.placeId || ''
+        }));
+        
+        console.log('Validando prerequisitos:', {platforms, hotelData});
+        
+        // Si Booking está seleccionado: exigir url_booking
+        if (platforms.includes('booking')) {
+            const hotelsWithoutBookingUrl = hotelData.filter(hotel => !hotel.urlBooking);
+            if (hotelsWithoutBookingUrl.length > 0) {
+                const hotelNames = hotelsWithoutBookingUrl.map(h => `- ${h.name}`).join('\n');
+                errors.push(`Los siguientes hoteles no tienen URL de Booking configurada:\n${hotelNames}\n\nConfigura las URLs de Booking antes de extraer.`);
+            }
+        }
+        
+        // Si hay otras plataformas: exigir google_place_id
+        const otherPlatforms = platforms.filter(p => p !== 'booking');
+        if (otherPlatforms.length > 0) {
+            const hotelsWithoutPlaceId = hotelData.filter(hotel => !hotel.placeId);
+            if (hotelsWithoutPlaceId.length > 0) {
+                const hotelNames = hotelsWithoutPlaceId.map(h => `- ${h.name}`).join('\n');
+                const platformNames = otherPlatforms.join(', ');
+                errors.push(`Los siguientes hoteles no tienen Google Place ID configurado:\n${hotelNames}\n\nConfigura los Place IDs para usar las plataformas: ${platformNames}`);
+            }
+        }
+        
+        return {
+            valid: errors.length === 0,
+            errors: errors
+        };
     }
     
     function showExtractionLoader(message) {

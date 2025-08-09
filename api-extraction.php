@@ -6,7 +6,7 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: https://soporteclientes.net');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Admin-Session');
+header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 header('Access-Control-Allow-Credentials: true');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -110,11 +110,7 @@ switch ($method) {
         }
         break;
         
-    case 'PUT':
-        if (isset($_GET['run_id'])) {
-            handleUpdateRun($_GET['run_id'], $input, $pdo);
-        }
-        break;
+    // PUT endpoint eliminado - handleUpdateRun no implementado
         
     case 'DELETE':
         if (isset($_GET['job_id'])) {
@@ -157,24 +153,26 @@ function handleSyncExtraction($input, $pdo) {
         }
         
         // CORRECCIÓN: Validación explícita para Booking-only (sync)
-        $onlyBooking = count(array_unique(array_map("strtolower", $platforms))) === 1 && strtolower($platforms[0]) === "booking";
+        $onlyBooking = count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking';
         
         if ($onlyBooking) {
             // Para Booking-only, verificar que tenga url_booking
-            if (empty($hotel["url_booking"])) {
+            if (empty($hotel['url_booking'])) {
                 response([
-                    "error" => "Hotel no tiene URL de Booking configurada",
-                    "action_required" => "configure_booking_url",
-                    "hotel_name" => $hotel["nombre_hotel"]
+                    'error' => 'Hotel no tiene URL de Booking configurada',
+                    'action_required' => 'configure_booking_url',
+                    'hotel_name' => $hotel['nombre_hotel']
                 ], 400);
             }
-        } elseif (!$hotel["google_place_id"]) {
+        } else {
             // Para multi-OTA, verificar que tenga Place ID
-            response([
-                "error" => "Hotel no tiene Google Place ID configurado",
-                "action_required" => "configure_place_id",
-                "hotel_name" => $hotel["nombre_hotel"]
-            ], 400);
+            if (!$hotel['google_place_id']) {
+                response([
+                    'error' => 'Hotel no tiene Google Place ID configurado',
+                    'action_required' => 'configure_place_id',
+                    'hotel_name' => $hotel['nombre_hotel']
+                ], 400);
+            }
         }
         
 
