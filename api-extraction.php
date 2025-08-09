@@ -503,12 +503,41 @@ function handleGetRunStatus($runId, $pdo) {
         // Actualizar estado en base de datos
         $status = mapApifyStatus($apifyStatus['data']['status']);
         
-        $stmt = $pdo->prepare("
-            UPDATE apify_extraction_runs 
-            SET status = ?, apify_response = ?
-            WHERE apify_run_id = ?
-        ");
+        // Si es estado final, actualizar finished_at
+        $finalStates = ['succeeded', 'failed', 'timeout'];
+        if (in_array($status, $finalStates)) {
+            $stmt = $pdo->prepare("
+                UPDATE apify_extraction_runs 
+                SET status = ?, apify_response = ?, finished_at = NOW()
+                WHERE apify_run_id = ?
+            ");
+        } else {
+            $stmt = $pdo->prepare("
+                UPDATE apify_extraction_runs 
+                SET status = ?, apify_response = ?
+                WHERE apify_run_id = ?
+            ");
+        }
         $stmt->execute([$status, json_encode($apifyStatus), $runId]);
+        
+        // Sincronizar estado con extraction_jobs si es estado final
+        if (in_array($status, $finalStates)) {
+            $stmt = $pdo->prepare("SELECT job_id FROM apify_extraction_runs WHERE apify_run_id = ?");
+            $stmt->execute([$runId]);
+            $run = $stmt->fetch();
+            
+            if ($run && $run['job_id']) {
+                $jobStatus = ($status === 'succeeded') ? 'completed' : (($status === 'failed') ? 'failed' : 'timeout');
+                $stmt = $pdo->prepare("
+                    UPDATE extraction_jobs 
+                    SET status = ?, progress = 100, completed_at = NOW(), updated_at = NOW()
+                    WHERE id = ?
+                ");
+                $stmt->execute([$jobStatus, $run['job_id']]);
+                
+                DebugLogger::info("Job status sincronizado", ['job_id' => $run['job_id'], 'status' => $jobStatus]);
+            }
+        }
         
         // Si está completado, procesar resultados
         if ($status === 'succeeded' && $apifyStatus['data']['status'] === 'SUCCEEDED') {
