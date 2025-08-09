@@ -559,7 +559,7 @@ class ApifyClient
             
             $bookingUrl = $hotel['url_booking'];
             
-            // CORRECCIÓN: Formato de input unificado para PbMHke3jW25J6hSOA
+            // CORRECCIÓN: Formato de input unificado para PbMHke3jW25J6hSOA con configuración anti-bloqueo
             $input = [
                 'startUrls' => [
                     ['url' => $bookingUrl]
@@ -567,7 +567,16 @@ class ApifyClient
                 'includeReviewText' => true,
                 'includeReviewerInfo' => true,
                 'maxItems' => $config['maxReviews'] ?? 200,
-                'proxyConfiguration' => ['useApifyProxy' => true]
+                'proxyConfiguration' => [
+                    'useApifyProxy' => true,
+                    'apifyProxyGroups' => ['RESIDENTIAL'],
+                    'apifyProxyCountry' => 'US'
+                ],
+                'maxRequestRetries' => 5,
+                'requestHandlerTimeoutSecs' => 180,
+                'maxConcurrency' => 1, // Reducir concurrencia para evitar detección
+                'requestIntervalMillis' => 5000, // 5 segundos entre requests
+                'ignoreSslErrors' => true
             ];
             
             $queryParams = http_build_query([
@@ -623,7 +632,7 @@ class ApifyClient
                 throw new Exception("Hotel no tiene URL de Booking configurada");
             }
             
-            // CORRECCIÓN: Mismo formato que sync
+            // CORRECCIÓN: Mismo formato que sync con configuración anti-bloqueo
             $input = [
                 'startUrls' => [
                     ['url' => $hotel['url_booking']]
@@ -631,7 +640,16 @@ class ApifyClient
                 'includeReviewText' => true,
                 'includeReviewerInfo' => true,
                 'maxItems' => $config['maxReviews'] ?? 200,
-                'proxyConfiguration' => ['useApifyProxy' => true]
+                'proxyConfiguration' => [
+                    'useApifyProxy' => true,
+                    'apifyProxyGroups' => ['RESIDENTIAL'],
+                    'apifyProxyCountry' => 'US'
+                ],
+                'maxRequestRetries' => 5,
+                'requestHandlerTimeoutSecs' => 180,
+                'maxConcurrency' => 1,
+                'requestIntervalMillis' => 5000,
+                'ignoreSslErrors' => true
             ];
             
             $response = $this->makeRequest('POST', "/acts/{$this->bookingActorId}/runs", $input);
