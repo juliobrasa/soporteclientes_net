@@ -41,6 +41,14 @@ session_start();
 // SOLO verificar sesión normal - NO hay fallback vulnerable
 $isAuthenticated = isset($_SESSION['admin_logged']) && $_SESSION['admin_logged'] === true;
 
+// Autenticación adicional con X-Admin-Session que debe coincidir con session_id
+if (!$isAuthenticated && isset($_SERVER['HTTP_X_ADMIN_SESSION'])) {
+    $headerSid = $_SERVER['HTTP_X_ADMIN_SESSION'];
+    if ($headerSid === session_id()) {
+        $isAuthenticated = true;
+    }
+}
+
 // Log de intento de acceso
 DebugLogger::info("Intento de acceso a API", [
     'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
@@ -110,7 +118,9 @@ switch ($method) {
         }
         break;
         
-    // PUT endpoint eliminado - handleUpdateRun no implementado
+    case 'PUT':
+        response(['error' => 'Método no soportado'], 405);
+        break;
         
     case 'DELETE':
         if (isset($_GET['job_id'])) {
@@ -238,8 +248,8 @@ function handleSyncExtraction($input, $pdo) {
                         unique_id, hotel_id, hotel_name, hotel_destination,
                         user_name, review_date, rating, review_title, liked_text,
                         source_platform, platform_review_id, extraction_run_id, 
-                        extraction_status, scraped_at, helpful_votes, review_language
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)
+                        extraction_status, scraped_at, helpful_votes, review_language, original_rating
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?)
                     ON DUPLICATE KEY UPDATE
                         rating = VALUES(rating),
                         liked_text = VALUES(liked_text),
@@ -249,8 +259,16 @@ function handleSyncExtraction($input, $pdo) {
                 // Normalizar datos de la reseña
                 $reviewTitle = $review['reviewTitle'] ?? ($review['title'] ?? null);
                 $hotelDestination = $hotel['destino'] ?? null; // Usar campo real de la BD
-                $platform = 'booking'; // Para sync siempre es booking
+                
+                // Determinar plataforma basado en configuración real
+                $sourcePlatform = (count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking') 
+                    ? 'booking' 
+                    : ($review['platform'] ?? 'apify');
+                    
                 $normalizedRating = floatval($review['rating'] ?? 0);
+                
+                // Guardar rating original antes de normalizar
+                $originalRating = $normalizedRating;
                 
                 // Normalizar rating de Booking (1-10) a escala 1-5
                 if ($normalizedRating > 5) {
@@ -267,12 +285,13 @@ function handleSyncExtraction($input, $pdo) {
                     $normalizedRating, // rating normalizado
                     $reviewTitle, // review_title (NULL si no existe, no hardcoded)
                     $review['reviewText'] ?? ($review['reviewTextParts']['Liked'] ?? ''), // liked_text
-                    $platform, // source_platform (unificado)
+                    $sourcePlatform, // source_platform (determinado dinámicamente)
                     $review['reviewId'] ?? ($review['id'] ?? null), // platform_review_id
                     'sync_' . time(), // extraction_run_id
                     'completed', // extraction_status
                     $review['helpfulVotes'] ?? ($review['helpful'] ?? 0), // helpful_votes
-                    $review['language'] ?? 'auto' // review_language
+                    $review['language'] ?? 'auto', // review_language
+                    $originalRating // original_rating antes de normalizar
                 ]);
                 
                 $savedCount++;
