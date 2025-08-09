@@ -14,11 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Configuración de base de datos
-$host = "localhost";
-$db_name = "soporteia_bookingkavia";
-$username = "soporteia_admin";
-$password = "QCF8RhS*}.Oj0u(v";
+// Configuración de base de datos usando EnvironmentLoader
+require_once 'env-loader.php';
 
 // Función para enviar respuesta JSON
 function sendResponse($data, $status = 200) {
@@ -41,12 +38,11 @@ function sendError($message, $error = null) {
 
 // Conectar a la base de datos
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8mb4", $username, $password, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
-    ]);
-} catch(PDOException $e) {
+    $pdo = EnvironmentLoader::createDatabaseConnection();
+    if (!$pdo) {
+        throw new PDOException("No se pudo establecer conexión a la base de datos");
+    }
+} catch(Exception $e) {
     sendError('Error de conexión a la base de datos', $e->getMessage());
 }
 
