@@ -1,7 +1,7 @@
 <?php
 /**
  * Cargador Seguro de Variables de Entorno
- * Versión corregida sin credenciales hardcodeadas
+ * Versiï¿½n corregida sin credenciales hardcodeadas
  */
 
 // Prevenir acceso directo
@@ -36,7 +36,7 @@ class EnvironmentLoader
             self::parseEnvFile($envFile);
         }
         
-        // Cargar valores por defecto si no están definidos
+        // Cargar valores por defecto si no estï¿½n definidos
         self::loadDefaults();
         
         self::$loaded = true;
@@ -73,7 +73,7 @@ class EnvironmentLoader
                 continue;
             }
             
-            // Parsear línea KEY=VALUE
+            // Parsear lï¿½nea KEY=VALUE
             if (strpos($line, '=') !== false) {
                 list($key, $value) = explode('=', $line, 2);
                 $key = trim($key);
@@ -84,7 +84,7 @@ class EnvironmentLoader
                 
                 self::$config[$key] = $value;
                 
-                // También establecer en $_ENV para compatibilidad
+                // Tambiï¿½n establecer en $_ENV para compatibilidad
                 $_ENV[$key] = $value;
                 putenv("$key=$value");
             }
@@ -100,30 +100,30 @@ class EnvironmentLoader
             // Base de datos (valores ejemplo - DEBEN ser configurados en .env)
             'DB_HOST' => 'localhost',
             'DB_PORT' => '3306', 
-            'DB_DATABASE' => 'soporteclientes_db',
-            'DB_USERNAME' => 'db_user',
-            'DB_PASSWORD' => '', // DEBE ser configurado en .env
+            'DB_NAME' => 'soporteclientes_db',
+            'DB_USER' => 'db_user',
+            'DB_PASS' => '', // DEBE ser configurado en .env
             
             // APIs (valores ejemplo - DEBEN ser configurados en .env)
             'APIFY_API_TOKEN' => '', // DEBE ser configurado en .env
             'OPENAI_API_KEY' => '', // DEBE ser configurado en .env
             
-            // Configuración de aplicación
+            // Configuraciï¿½n de aplicaciï¿½n
             'APP_ENV' => 'production',
             'APP_DEBUG' => 'false',
             'APP_URL' => 'https://soporteclientes.net',
             'APP_NAME' => 'Soporte Clientes',
             
-            // Configuración de cache y session
+            // Configuraciï¿½n de cache y session
             'CACHE_DRIVER' => 'file',
             'SESSION_LIFETIME' => '120',
             'SESSION_DRIVER' => 'file',
             
-            // Configuración de logging
+            // Configuraciï¿½n de logging
             'LOG_CHANNEL' => 'stack',
             'LOG_LEVEL' => 'error',
             
-            // Configuración de correo
+            // Configuraciï¿½n de correo
             'MAIL_DRIVER' => 'smtp',
             'MAIL_HOST' => 'localhost',
             'MAIL_PORT' => '587',
@@ -156,7 +156,7 @@ class EnvironmentLoader
     }
     
     /**
-     * Obtener valor de configuración
+     * Obtener valor de configuraciï¿½n
      */
     public static function get($key, $default = null) 
     {
@@ -168,7 +168,7 @@ class EnvironmentLoader
     }
     
     /**
-     * Verificar si una configuración existe
+     * Verificar si una configuraciï¿½n existe
      */
     public static function has($key) 
     {
@@ -194,7 +194,7 @@ class EnvironmentLoader
         
         $safe = self::$config;
         $sensitiveKeys = [
-            'DB_PASSWORD', 'APIFY_API_TOKEN', 'OPENAI_API_KEY', 
+            'DB_PASS', 'APIFY_API_TOKEN', 'OPENAI_API_KEY', 
             'MAIL_PASSWORD', 'JWT_SECRET', 'APP_KEY'
         ];
         
@@ -208,7 +208,7 @@ class EnvironmentLoader
     }
     
     /**
-     * Validar configuración crítica
+     * Validar configuraciï¿½n crï¿½tica
      */
     public static function validateCriticalConfig() 
     {
@@ -218,7 +218,7 @@ class EnvironmentLoader
         
         $errors = [];
         $required = [
-            'DB_HOST', 'DB_DATABASE', 'DB_USERNAME', 'DB_PASSWORD'
+            'DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASS'
         ];
         
         foreach ($required as $key) {
@@ -227,16 +227,16 @@ class EnvironmentLoader
             }
         }
         
-        // Validaciones específicas
+        // Validaciones especï¿½ficas
         if (self::get('APP_DEBUG', 'false') === 'true' && self::get('APP_ENV') === 'production') {
-            $errors[] = "DEBUG no debe estar activo en producción";
+            $errors[] = "DEBUG no debe estar activo en producciï¿½n";
         }
         
         return $errors;
     }
     
     /**
-     * Crear conexión PDO usando configuración cargada
+     * Crear conexiï¿½n PDO usando configuraciï¿½n cargada
      */
     public static function createDatabaseConnection() 
     {
@@ -246,9 +246,9 @@ class EnvironmentLoader
         
         $host = self::get('DB_HOST');
         $port = self::get('DB_PORT');
-        $database = self::get('DB_DATABASE');
-        $username = self::get('DB_USERNAME');
-        $password = self::get('DB_PASSWORD');
+        $database = self::get('DB_NAME');
+        $username = self::get('DB_USER');
+        $password = self::get('DB_PASS');
         
         $dsn = "mysql:host=$host;port=$port;dbname=$database;charset=utf8mb4";
         
@@ -262,8 +262,8 @@ class EnvironmentLoader
         try {
             return new PDO($dsn, $username, $password, $options);
         } catch (PDOException $e) {
-            error_log("L Error de conexión DB: " . $e->getMessage());
-            throw new Exception("Error de conexión a la base de datos");
+            error_log("L Error de conexiï¿½n DB: " . $e->getMessage());
+            throw new Exception("Error de conexiï¿½n a la base de datos");
         }
     }
     
@@ -277,10 +277,10 @@ class EnvironmentLoader
         
         error_log(" Entorno cargado correctamente: $configCount variables $status");
         
-        // Verificar configuración crítica
+        // Verificar configuraciï¿½n crï¿½tica
         $errors = self::validateCriticalConfig();
         if (!empty($errors)) {
-            error_log("  Errores de configuración: " . implode(', ', $errors));
+            error_log("ï¿½ Errores de configuraciï¿½n: " . implode(', ', $errors));
         }
     }
 }
