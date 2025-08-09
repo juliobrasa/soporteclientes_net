@@ -40,6 +40,12 @@ RedirectMatch 403 ^/node_modules
     Allow from env=admin_authenticated
 </FilesMatch>
 
+# Permitir admin-debug-logs.php (página del panel admin)
+<Files "admin-debug-logs.php">
+    Order allow,deny
+    Allow from all
+</Files>
+
 # Headers de seguridad
 <IfModule mod_headers.c>
     # Prevenir XSS

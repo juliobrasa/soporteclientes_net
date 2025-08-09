@@ -12,7 +12,7 @@ if (!isset($_SESSION['admin_logged']) || $_SESSION['admin_logged'] !== true) {
 
 require_once 'csp-config.php';
 setAdminCSP();
-require_once 'debug-logger.php';
+require_once 'admin-tools/debug-logger.php';
 
 // Manejar acciones
 $message = '';
