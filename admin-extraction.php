@@ -610,7 +610,7 @@ $hotels = getActiveHotels();
             
             extractionMode = extractionModeElement.value;
             isSync = extractionMode === 'sync';
-            console.log(`✅ Modo de extracción: ${extractionMode}`);
+            console.log('Modo de extracción: ' + extractionMode);
             
             console.log('🔍 Paso 4: Obteniendo hoteles seleccionados...');
             selectedHotels = getSelectedHotels();
@@ -654,14 +654,14 @@ $hotels = getActiveHotels();
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Admin-Session': '<?php echo session_id(); ?>',
+                    'X-Admin-Session': '<?php echo addslashes(session_id()); ?>',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'same-origin',
                 body: JSON.stringify(data)
             })
             .then(response => {
-                console.log(`📡 Respuesta HTTP ${response.status} para hotel ${hotelId}`);
+                console.log('Respuesta HTTP ' + response.status + ' para hotel ' + hotelId);
                 return response.json();
             })
             .then(result => {
@@ -683,8 +683,8 @@ $hotels = getActiveHotels();
             const successful = results.filter(r => r.status === 'fulfilled' && r.value.success);
             const failed = results.filter(r => r.status === 'rejected' || !r.value.success);
             
-            console.log(`✅ Exitosas: ${successful.length}/${selectedHotels.length}`);
-            console.log(`❌ Fallidas: ${failed.length}/${selectedHotels.length}`);
+            console.log('Exitosas: ' + successful.length + '/' + selectedHotels.length);
+            console.log('Fallidas: ' + failed.length + '/' + selectedHotels.length);
             
             const syncResults = successful.filter(r => r.value.sync_mode);
             const asyncResults = successful.filter(r => !r.value.sync_mode);
@@ -709,7 +709,7 @@ $hotels = getActiveHotels();
             }
             
             if (failed.length > 0) {
-                message += `\n\n❌ Errores: ${failed.length}`;
+                message += '\n\nErrores: ' + failed.length;
                 // Mostrar detalles de los errores
                 failed.forEach((result, index) => {
                     if (result.status === 'rejected') {
@@ -802,11 +802,11 @@ $hotels = getActiveHotels();
     }
     
     function loadJobDetails(id) {
-        fetch(`api-extraction.php?job_id=${id}`, {
+        fetch('api-extraction.php?job_id=' + id, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Admin-Session': '<?php echo session_id(); ?>',
+                'X-Admin-Session': '<?php echo addslashes(session_id()); ?>',
                 'X-Requested-With': 'XMLHttpRequest'
             },
             credentials: 'same-origin'
@@ -1065,10 +1065,10 @@ $hotels = getActiveHotels();
         if (confirm('¿Estás seguro de que quieres eliminar este trabajo de extracción?\n\nEsta acción no se puede deshacer.')) {
             console.log('🗑️ Eliminando trabajo ID:', id);
             
-            fetch(`api-extraction.php?job_id=${id}`, {
+            fetch('api-extraction.php?job_id=' + id, {
                 method: 'DELETE',
                 headers: {
-                    'X-Admin-Session': '<?php echo session_id(); ?>',
+                    'X-Admin-Session': '<?php echo addslashes(session_id()); ?>',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'same-origin'
@@ -1138,7 +1138,7 @@ $hotels = getActiveHotels();
         pollingCount = 0;
         pollingInterval = setInterval(() => {
             pollingCount++;
-            console.log(`🔄 Polling #${pollingCount}`);
+            console.log('Polling #' + pollingCount);
             
             try {
                 updateExtractionProgress();
@@ -1170,14 +1170,14 @@ $hotels = getActiveHotels();
     function updateExtractionProgress() {
         fetch('api-extraction.php?action=get_recent', {
             headers: {
-                'X-Admin-Session': '<?php echo session_id(); ?>',
+                'X-Admin-Session': '<?php echo addslashes(session_id()); ?>',
                 'X-Requested-With': 'XMLHttpRequest'
             },
             credentials: 'same-origin'
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                throw new Error('HTTP ' + response.status + ': ' + response.statusText);
             }
             return response.json();
         })
@@ -1192,7 +1192,7 @@ $hotels = getActiveHotels();
                     job.status === 'pending' || job.status === 'running'
                 );
                 
-                console.log(`🔄 Jobs activos: ${activeJobs.length}/${data.data.length}`);
+                console.log('Jobs activos: ' + activeJobs.length + '/' + data.data.length);
                 
                 if (activeJobs.length === 0 && data.data.length > 0) {
                     stopProgressPolling();
@@ -1245,8 +1245,6 @@ $hotels = getActiveHotels();
         });
     }
     
-    /* Función duplicada eliminada - ver función principal arriba */">${status.charAt(0).toUpperCase() + status.slice(1)}</span>`;
-    }
     
     function getProgressBar(progress) {
         const progressColor = progress == 100 ? 'bg-success' : (progress > 50 ? 'bg-info' : 'bg-warning');
