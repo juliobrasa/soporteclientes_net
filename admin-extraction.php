@@ -613,7 +613,7 @@ $hotels = getActiveHotels();
             return;
         }
         
-        let formData, isSync, selectedHotels, extractionMode;
+        let formData, isSync, extractionMode;
         
         try {
             console.log('🔍 Paso 1: Verificando formulario...');
@@ -642,7 +642,7 @@ $hotels = getActiveHotels();
             console.log('Modo de extracción: ' + extractionMode);
             
             console.log('🔍 Paso 4: Obteniendo hoteles seleccionados...');
-            selectedHotels = getSelectedHotels();
+            // selectedHotels ya definido anteriormente - reutilizar
             console.log('✅ Hoteles seleccionados:', selectedHotels);
             
             // Validación ya realizada al inicio de la función
@@ -783,14 +783,28 @@ $hotels = getActiveHotels();
         return platforms.length > 0 ? platforms : ['tripadvisor', 'booking', 'google'];
     }
     
+    // Hacer startExtraction globalmente disponible
+    window.startExtraction = startExtraction;
+    
     function toggleAllHotels() {
+        console.log('🔄 toggleAllHotels ejecutada');
+        
         const selectAllCheckbox = document.getElementById('select_all_hotels');
         const hotelCheckboxes = document.querySelectorAll('.hotel-checkbox');
         
+        console.log('📋 Checkbox principal:', selectAllCheckbox?.checked);
+        console.log('📋 Checkboxes encontrados:', hotelCheckboxes.length);
+        
         hotelCheckboxes.forEach(checkbox => {
             checkbox.checked = selectAllCheckbox.checked;
+            console.log(`✅ Hotel ${checkbox.value}: ${checkbox.checked}`);
         });
+        
+        console.log('✅ toggleAllHotels completada');
     }
+    
+    // Hacer la función globalmente disponible
+    window.toggleAllHotels = toggleAllHotels;
     
     /**
      * Validar prerequisitos antes de enviar extracción
