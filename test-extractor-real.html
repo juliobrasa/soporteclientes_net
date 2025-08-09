@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Extractor Real</title>
+</head>
+<body>
+    <h1>Test del Extractor con Sesión Real</h1>
+    
+    <div>
+        <button id="loginFirst">1. Iniciar Sesión Admin</button>
+        <button id="testExtraction">2. Probar Extracción</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+    const results = document.getElementById('results');
+    
+    document.getElementById('loginFirst').onclick = function() {
+        // Redirigir a login admin
+        window.location.href = '/admin-login.php';
+    };
+    
+    document.getElementById('testExtraction').onclick = async function() {
+        results.innerHTML = '<p>🔄 Probando extracción...</p>';
+        
+        const testData = {
+            hotel_ids: [6],
+            max_reviews: 200,
+            platforms: ['booking'],
+            extraction_mode: 'async'
+        };
+        
+        try {
+            const response = await fetch('/api-extraction.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                    // NO envío X-Admin-Session - debería usar cookie automáticamente
+                },
+                credentials: 'same-origin', // IMPORTANTE: incluir cookies
+                body: JSON.stringify(testData)
+            });
+            
+            results.innerHTML += `<p>📊 HTTP Status: ${response.status}</p>`;
+            
+            const responseText = await response.text();
+            results.innerHTML += `<p>📋 Response: <pre>${responseText}</pre></p>`;
+            
+            if (response.ok) {
+                const data = JSON.parse(responseText);
+                results.innerHTML += `<p>✅ Éxito: ${JSON.stringify(data, null, 2)}</p>`;
+            } else {
+                results.innerHTML += `<p>❌ Error ${response.status}: ${responseText}</p>`;
+            }
+            
+        } catch (error) {
+            results.innerHTML += `<p>💥 Error de red: ${error.message}</p>`;
+        }
+    };
+    </script>
+</body>
+</html>
