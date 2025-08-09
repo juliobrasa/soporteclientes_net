@@ -147,8 +147,8 @@ function handleSyncExtraction($input, $pdo) {
         $languages = $input['languages'] ?? ['en', 'es'];
         $timeout = min($input['timeout'] ?? 300, 300); // Máximo 5 minutos
         
-        // Verificar que el hotel existe y obtener su Place ID
-        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id FROM hoteles WHERE id = ?");
+        // Verificar que el hotel existe y obtener su Place ID y URL de Booking
+        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id, url_booking FROM hoteles WHERE id = ?");
         $stmt->execute([$hotelId]);
         $hotel = $stmt->fetch();
         
@@ -156,21 +156,25 @@ function handleSyncExtraction($input, $pdo) {
             response(['error' => 'Hotel no encontrado'], 404);
         }
         
-        if (!$hotel['google_place_id']) {
-
-
-
-
-
-            // Permitimos booking-only sin Place ID (usa url_booking). Para el resto, error
-            $onlyBooking = count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking';
-            if (!$onlyBooking) {
+        // CORRECCIÓN: Validación explícita para Booking-only (sync)
+        $onlyBooking = count(array_unique(array_map("strtolower", $platforms))) === 1 && strtolower($platforms[0]) === "booking";
+        
+        if ($onlyBooking) {
+            // Para Booking-only, verificar que tenga url_booking
+            if (empty($hotel["url_booking"])) {
                 response([
-                    'error' => 'Hotel no tiene Google Place ID configurado',
-                    'action_required' => 'configure_place_id',
-                    'hotel_name' => $hotel['nombre_hotel']
+                    "error" => "Hotel no tiene URL de Booking configurada",
+                    "action_required" => "configure_booking_url",
+                    "hotel_name" => $hotel["nombre_hotel"]
                 ], 400);
             }
+        } elseif (!$hotel["google_place_id"]) {
+            // Para multi-OTA, verificar que tenga Place ID
+            response([
+                "error" => "Hotel no tiene Google Place ID configurado",
+                "action_required" => "configure_place_id",
+                "hotel_name" => $hotel["nombre_hotel"]
+            ], 400);
         }
         
 
@@ -338,8 +342,8 @@ function handleStartExtraction($input, $pdo) {
         $platforms = $input['platforms'] ?? ['tripadvisor', 'booking', 'google'];
         $languages = $input['languages'] ?? ['en', 'es'];
         
-        // Verificar que el hotel existe y obtener su Place ID
-        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id FROM hoteles WHERE id = ?");
+        // Verificar que el hotel existe y obtener su Place ID y URL de Booking
+        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id, url_booking FROM hoteles WHERE id = ?");
         $stmt->execute([$hotelId]);
         $hotel = $stmt->fetch();
         
@@ -347,11 +351,21 @@ function handleStartExtraction($input, $pdo) {
             response(['error' => 'Hotel no encontrado'], 404);
         }
         
-        // Si no tiene Place ID, necesitamos configurarlo (para actor multi OTA). Para Booking-only no es crítico si hay url_booking
-        if (!$hotel['google_place_id']) {
-            // Si es booking-only permitimos continuar (actor usa url_booking). Si no, error.
-            $onlyBooking = count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking';
-            if (!$onlyBooking) {
+        // CORRECCIÓN: Validación explícita para Booking-only
+        $onlyBooking = count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking';
+        
+        if ($onlyBooking) {
+            // Para Booking-only, verificar que tenga url_booking
+            if (empty($hotel['url_booking'])) {
+                response([
+                    'error' => 'Hotel no tiene URL de Booking configurada',
+                    'action_required' => 'configure_booking_url',
+                    'hotel_name' => $hotel['nombre_hotel']
+                ], 400);
+            }
+        } else {
+            // Para multi-OTA, verificar que tenga Place ID
+            if (!$hotel['google_place_id']) {
                 response([
                     'error' => 'Hotel no tiene Google Place ID configurado',
                     'action_required' => 'configure_place_id',

@@ -512,4 +512,309 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_NAME'])) {
     }
 }
 
+/**
+ * Cliente Apify corregido para manejar tanto Booking como Multi-OTA
+ */
+class ApifyClient 
+{
+    private $apiToken;
+    private $baseUrl = 'https://api.apify.com/v2';
+    
+    // CORRECCIÓN: Actor ID correcto para Booking (reviews)
+    private $bookingActorId = 'PbMHke3jW25J6hSOA'; // Actor de reviews de Booking
+    private $multiOtaActorId = 'dSCLg0C3YEZ83HzYX'; // Actor multi-OTA
+    
+    public function __construct() {
+        $this->apiToken = EnvironmentLoader::get('APIFY_API_TOKEN');
+        if (!$this->apiToken) {
+            throw new Exception("APIFY_API_TOKEN no configurado");
+        }
+    }
+    
+    /**
+     * CORRECCIÓN: runBookingExtractionSync con try/catch y formato correcto
+     */
+    public function runBookingExtractionSync($config, $timeout = 300) {
+        try {
+            // Verificar que tenemos url_booking
+            $hotelId = $config['hotel_id'];
+            if (!$hotelId) {
+                throw new Exception("hotel_id requerido para extracción de Booking");
+            }
+            
+            // Obtener URL de Booking desde BD
+            $pdo = EnvironmentLoader::createDatabaseConnection();
+            $stmt = $pdo->prepare("SELECT url_booking FROM hoteles WHERE id = ?");
+            $stmt->execute([$hotelId]);
+            $hotel = $stmt->fetch();
+            
+            if (!$hotel || empty($hotel['url_booking'])) {
+                // CORRECCIÓN: Devolver error estructurado en lugar de excepción
+                return [
+                    'success' => false,
+                    'error' => 'Hotel no tiene URL de Booking configurada',
+                    'data' => []
+                ];
+            }
+            
+            $bookingUrl = $hotel['url_booking'];
+            
+            // CORRECCIÓN: Formato de input unificado para PbMHke3jW25J6hSOA
+            $input = [
+                'startUrls' => [
+                    ['url' => $bookingUrl]
+                ],
+                'includeReviewText' => true,
+                'includeReviewerInfo' => true,
+                'maxItems' => $config['maxReviews'] ?? 200,
+                'proxyConfiguration' => ['useApifyProxy' => true]
+            ];
+            
+            $queryParams = http_build_query([
+                'timeout' => $timeout,
+                'memory' => 2048
+            ]);
+            
+            $response = $this->makeRequest(
+                'POST',
+                "/acts/{$this->bookingActorId}/run-sync-get-dataset-items?{$queryParams}",
+                $input
+            );
+            
+            if ($response && is_array($response)) {
+                return [
+                    'success' => true,
+                    'data' => $response,
+                    'stats' => ['total_reviews' => count($response)]
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'error' => 'No se obtuvieron resultados de Apify',
+                    'data' => []
+                ];
+            }
+            
+        } catch (Exception $e) {
+            // CORRECCIÓN: No dejar que la excepción termine en 500
+            error_log("Error en runBookingExtractionSync: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => 'Error en extracción de Booking: ' . $e->getMessage(),
+                'data' => []
+            ];
+        }
+    }
+    
+    /**
+     * Extracción asíncrona de Booking con formato correcto
+     */
+    public function startBookingExtractionAsync($config) {
+        try {
+            $hotelId = $config['hotel_id'];
+            
+            // Obtener URL de Booking desde BD
+            $pdo = EnvironmentLoader::createDatabaseConnection();
+            $stmt = $pdo->prepare("SELECT url_booking FROM hoteles WHERE id = ?");
+            $stmt->execute([$hotelId]);
+            $hotel = $stmt->fetch();
+            
+            if (!$hotel || empty($hotel['url_booking'])) {
+                throw new Exception("Hotel no tiene URL de Booking configurada");
+            }
+            
+            // CORRECCIÓN: Mismo formato que sync
+            $input = [
+                'startUrls' => [
+                    ['url' => $hotel['url_booking']]
+                ],
+                'includeReviewText' => true,
+                'includeReviewerInfo' => true,
+                'maxItems' => $config['maxReviews'] ?? 200,
+                'proxyConfiguration' => ['useApifyProxy' => true]
+            ];
+            
+            $response = $this->makeRequest('POST', "/acts/{$this->bookingActorId}/runs", $input);
+            
+            return [
+                'success' => true,
+                'data' => $response
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+    }
+    
+    /**
+     * Extracción síncrona multi-OTA
+     */
+    public function runHotelExtractionSync($config, $timeout = 300) {
+        try {
+            $input = $this->buildExtractionInput($config);
+            
+            $queryParams = http_build_query([
+                'timeout' => $timeout,
+                'memory' => 4096
+            ]);
+            
+            $response = $this->makeRequest(
+                'POST',
+                "/acts/{$this->multiOtaActorId}/run-sync-get-dataset-items?{$queryParams}",
+                $input
+            );
+            
+            if ($response && is_array($response)) {
+                return [
+                    'success' => true,
+                    'data' => $response,
+                    'stats' => ['total_reviews' => count($response)]
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'error' => 'No se obtuvieron resultados del actor multi-OTA',
+                    'data' => []
+                ];
+            }
+            
+        } catch (Exception $e) {
+            error_log("Error en runHotelExtractionSync: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => 'Error en extracción multi-OTA: ' . $e->getMessage(),
+                'data' => []
+            ];
+        }
+    }
+    
+    /**
+     * Iniciar extracción asíncrona multi-OTA
+     */
+    public function startHotelExtraction($config) {
+        try {
+            $input = $this->buildExtractionInput($config);
+            $response = $this->makeRequest('POST', "/acts/{$this->multiOtaActorId}/runs", $input);
+            
+            return [
+                'success' => true,
+                'data' => $response
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+    }
+    
+    /**
+     * CORRECCIÓN: buildExtractionInput con mapeo correcto de plataformas
+     */
+    private function buildExtractionInput($config) {
+        // CORRECCIÓN: Inicializar todos los enables como false
+        $input = [
+            'enableBooking' => false,
+            'enableGoogleMaps' => false,
+            'enableTripadvisor' => false,
+            'enableExpedia' => false,
+            'enableHotelsCom' => false,
+            'enableYelp' => false,
+            'enableAirbnb' => false,
+            'maxReviews' => $config['maxReviews'] ?? 100,
+            'languages' => $config['languages'] ?? ['en', 'es']
+        ];
+        
+        // Si tenemos hotelId (Place ID), usarlo
+        if (!empty($config['hotelId'])) {
+            $input['hotelId'] = $config['hotelId'];
+        }
+        
+        // CORRECCIÓN: Activar solo las plataformas seleccionadas
+        $platforms = $config['platforms'] ?? [];
+        foreach ($platforms as $platform) {
+            $flag = ApifyConfig::getPlatformFlag(strtolower($platform));
+            if ($flag && array_key_exists($flag, $input)) {
+                $input[$flag] = true;
+            }
+        }
+        
+        return $input;
+    }
+    
+    /**
+     * Obtener estado de una ejecución
+     */
+    public function getRunStatus($runId) {
+        try {
+            $response = $this->makeRequest('GET', "/actor-runs/{$runId}");
+            return [
+                'success' => true,
+                'data' => $response
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'data' => null
+            ];
+        }
+    }
+    
+    /**
+     * Estimar costo de extracción
+     */
+    public function estimateCost($totalReviews) {
+        // Estimación aproximada: $0.001 por review
+        return $totalReviews * 0.001;
+    }
+    
+    /**
+     * Realizar petición HTTP a Apify API
+     */
+    private function makeRequest($method, $endpoint, $data = null) {
+        $url = $this->baseUrl . $endpoint;
+        
+        $headers = [
+            'Authorization: Bearer ' . $this->apiToken,
+            'Content-Type: application/json'
+        ];
+        
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => $method,
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_TIMEOUT => 60
+        ]);
+        
+        if ($data !== null) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        }
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+        
+        if ($error) {
+            throw new Exception("cURL Error: $error");
+        }
+        
+        if ($httpCode >= 400) {
+            $errorData = json_decode($response, true);
+            $errorMessage = $errorData['error']['message'] ?? "HTTP $httpCode";
+            throw new Exception("Apify API Error: $errorMessage");
+        }
+        
+        return json_decode($response, true);
+    }
+}
 ?>
