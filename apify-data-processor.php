@@ -566,9 +566,7 @@ class ApifyClient
                 'startUrls' => [
                     ['url' => $bookingUrl]
                 ],
-                'maxItems' => $config['maxReviews'] ?? 50,
-                'includeReviewText' => true,
-                'includeReviewerInfo' => true,
+                'maxReviewsPerHotel' => $config['maxReviews'] ?? 50,
                 'proxyConfiguration' => [
                     'useApifyProxy' => true,
                     'apifyProxyGroups' => ['RESIDENTIAL']
@@ -607,9 +605,7 @@ class ApifyClient
             'startUrls' => [
                 ['url' => $bookingUrl]
             ],
-            'maxItems' => $config['maxReviews'] ?? 50,
-            'includeReviewText' => true,
-            'includeReviewerInfo' => true,
+            'maxReviewsPerHotel' => $config['maxReviews'] ?? 50,
             'proxyConfiguration' => [
                 'useApifyProxy' => true,
                 'apifyProxyGroups' => ['RESIDENTIAL']
