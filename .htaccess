@@ -1,0 +1,15 @@
+
+# Protección scripts debug/repair
+<Files "test_ai.php">
+    Require all denied
+</Files>
+
+# Protección scripts debug/repair
+<Files "admin_api.php">
+    Require all denied
+</Files>
+
+# Protección scripts debug/repair
+<Files "admin_enhanced.php">
+    Require all denied
+</Files>
