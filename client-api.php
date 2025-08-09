@@ -28,14 +28,11 @@ function response($data, $status = 200) {
     exit;
 }
 
-// Configuración de base de datos
-$host = "soporteclientes.net";
-$dbname = "soporteia_bookingkavia";
-$username = "soporteia_admin";
-$password = "QCF8RhS*}.Oj0u(v";
+// Configuración de base de datos usando EnvironmentLoader
+require_once 'env-loader.php';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $pdo = EnvironmentLoader::createDatabaseConnection();
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch(PDOException $e) {
     response(['error' => 'Error de conexión a la base de datos'], 500);
