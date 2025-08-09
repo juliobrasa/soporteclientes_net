@@ -674,17 +674,17 @@ function handleGetJobDetails($jobId, $pdo) {
         // Agregar estadísticas al resultado
         $job['review_stats'] = $reviewStats;
         
-        // Obtener logs recientes relacionados
+        // Obtener logs recientes relacionados (compatible con diferentes versiones MySQL)
         $logsStmt = $pdo->prepare("
             SELECT message, level, created_at, context
             FROM debug_logs 
-            WHERE JSON_EXTRACT(context, '$.job_id') = ? 
-               OR JSON_EXTRACT(context, '$.hotel_id') = ?
+            WHERE (context LIKE CONCAT('%\"job_id\":\"', ?, '\"%') OR context LIKE CONCAT('%\"job_id\":', ?, '%'))
+               OR (context LIKE CONCAT('%\"hotel_id\":\"', ?, '\"%') OR context LIKE CONCAT('%\"hotel_id\":', ?, '%'))
             ORDER BY created_at DESC 
             LIMIT 10
         ");
         
-        $logsStmt->execute([$jobId, $job['hotel_id']]);
+        $logsStmt->execute([$jobId, $jobId, $job['hotel_id'], $job['hotel_id']]);
         $logs = $logsStmt->fetchAll();
         
         $job['recent_logs'] = $logs;
@@ -771,6 +771,142 @@ function handleCancelRun($runId, $pdo) {
     } catch (Exception $e) {
         response(['error' => $e->getMessage()], 500);
     }
+}
+
+/**
+ * Actualizar estado de una ejecución (PUT endpoint)
+ */
+function handleUpdateRun($runId, $input, $pdo) {
+    try {
+        DebugLogger::info("Actualizando run", ['run_id' => $runId, 'input' => $input]);
+        
+        // Validar que el run existe
+        $stmt = $pdo->prepare("SELECT id, hotel_id, status FROM apify_extraction_runs WHERE apify_run_id = ?");
+        $stmt->execute([$runId]);
+        $run = $stmt->fetch();
+        
+        if (!$run) {
+            response(['error' => 'Run no encontrado'], 404);
+        }
+        
+        // Campos actualizables
+        $updateFields = [];
+        $updateValues = [];
+        
+        // Status
+        if (isset($input['status'])) {
+            $newStatus = mapApifyStatus($input['status']);
+            $updateFields[] = "status = ?";
+            $updateValues[] = $newStatus;
+            
+            // Si es un estado final, marcar finished_at
+            if (in_array($newStatus, ['succeeded', 'failed', 'timeout'])) {
+                $updateFields[] = "finished_at = NOW()";
+            }
+        }
+        
+        // Progress
+        if (isset($input['progress'])) {
+            $progress = max(0, min(100, intval($input['progress'])));
+            $updateFields[] = "progress = ?";
+            $updateValues[] = $progress;
+        }
+        
+        // Reviews extracted count
+        if (isset($input['reviews_extracted'])) {
+            $reviewsCount = max(0, intval($input['reviews_extracted']));
+            $updateFields[] = "reviews_extracted = ?";
+            $updateValues[] = $reviewsCount;
+        }
+        
+        // Respuesta completa de Apify
+        if (isset($input['apify_response'])) {
+            $updateFields[] = "apify_response = ?";
+            $updateValues[] = json_encode($input['apify_response']);
+        }
+        
+        if (empty($updateFields)) {
+            response(['error' => 'No hay campos para actualizar'], 400);
+        }
+        
+        // Actualizar run
+        $updateValues[] = $runId;
+        $sql = "UPDATE apify_extraction_runs SET " . implode(', ', $updateFields) . " WHERE apify_run_id = ?";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($updateValues);
+        
+        // Si hay job_id vinculado, sincronizar extraction_jobs
+        if ($run['job_id'] ?? null) {
+            $jobUpdateFields = [];
+            $jobUpdateValues = [];
+            
+            if (isset($input['status'])) {
+                $jobStatus = mapApifyStatusToJobStatus($input['status']);
+                $jobUpdateFields[] = "status = ?";
+                $jobUpdateValues[] = $jobStatus;
+                
+                if (in_array($jobStatus, ['completed', 'failed', 'timeout'])) {
+                    $jobUpdateFields[] = "completed_at = NOW()";
+                }
+            }
+            
+            if (isset($input['progress'])) {
+                $jobUpdateFields[] = "progress = ?";
+                $jobUpdateValues[] = $progress;
+            }
+            
+            if (isset($input['reviews_extracted'])) {
+                $jobUpdateFields[] = "reviews_extracted = ?";
+                $jobUpdateValues[] = $reviewsCount;
+            }
+            
+            if (!empty($jobUpdateFields)) {
+                $jobUpdateFields[] = "updated_at = NOW()";
+                $jobUpdateValues[] = $run['job_id'];
+                
+                $jobSql = "UPDATE extraction_jobs SET " . implode(', ', $jobUpdateFields) . " WHERE id = ?";
+                $jobStmt = $pdo->prepare($jobSql);
+                $jobStmt->execute($jobUpdateValues);
+                
+                DebugLogger::info("Job sincronizado", ['job_id' => $run['job_id']]);
+            }
+        }
+        
+        DebugLogger::info("Run actualizado exitosamente", ['run_id' => $runId]);
+        
+        response([
+            'success' => true,
+            'message' => 'Run actualizado correctamente',
+            'run_id' => $runId,
+            'updated_fields' => count($updateFields)
+        ]);
+        
+    } catch (Exception $e) {
+        DebugLogger::error("Error actualizando run", [
+            'run_id' => $runId,
+            'error' => $e->getMessage()
+        ]);
+        response(['error' => $e->getMessage()], 500);
+    }
+}
+
+/**
+ * Mapear estados de Apify específicamente para jobs
+ */
+function mapApifyStatusToJobStatus($apifyStatus) {
+    $mapping = [
+        'READY' => 'pending',
+        'RUNNING' => 'running',
+        'SUCCEEDED' => 'completed',
+        'FAILED' => 'failed',
+        'TIMING-OUT' => 'timeout',
+        'TIMED-OUT' => 'timeout',
+        'ABORTING' => 'failed',
+        'ABORTED' => 'failed'
+    ];
+    
+    return $mapping[$apifyStatus] ?? 'pending';
 }
 
 /**

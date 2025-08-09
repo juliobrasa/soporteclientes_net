@@ -1,7 +1,7 @@
 <?php
 /**
- * Procesador de Datos Apify - Versión Completa y Corregida
- * Maneja extracción, procesamiento y almacenamiento de reviews
+ * Procesador de Datos Apify - Versiï¿½n Completa y Corregida
+ * Maneja extracciï¿½n, procesamiento y almacenamiento de reviews
  */
 
 require_once 'env-loader.php';
@@ -48,12 +48,12 @@ class ApifyDataProcessor
     }
     
     /**
-     * Procesar extracción completa para un hotel
+     * Procesar extracciï¿½n completa para un hotel
      */
     public function processHotelExtraction($hotelId, $platforms = null) 
     {
         try {
-            $this->log("=€ Iniciando extracción para hotel ID: $hotelId");
+            $this->log("=ï¿½ Iniciando extracciï¿½n para hotel ID: $hotelId");
             
             // Obtener datos del hotel
             $hotel = $this->getHotelData($hotelId);
@@ -64,13 +64,13 @@ class ApifyDataProcessor
             // Determinar plataformas a extraer
             $platforms = $platforms ?? ['booking', 'googlemaps', 'tripadvisor'];
             
-            // Crear job de extracción
+            // Crear job de extracciï¿½n
             $jobId = $this->createExtractionJob($hotelId, $platforms);
             
             // Configurar input para Apify
             $input = $this->buildExtractionInput($hotel, $platforms);
             
-            // Ejecutar extracción en Apify
+            // Ejecutar extracciï¿½n en Apify
             $runId = $this->executeApifyRun($input);
             
             // Registrar run en base de datos
@@ -79,7 +79,7 @@ class ApifyDataProcessor
             // Monitorear y procesar resultados
             $results = $this->monitorAndProcessRun($runId, $jobId);
             
-            $this->log(" Extracción completada para hotel $hotelId. Resultados: " . json_encode($results));
+            $this->log(" Extracciï¿½n completada para hotel $hotelId. Resultados: " . json_encode($results));
             
             return [
                 'success' => true,
@@ -89,7 +89,7 @@ class ApifyDataProcessor
             ];
             
         } catch (Exception $e) {
-            $this->log("L Error en extracción hotel $hotelId: " . $e->getMessage(), 'ERROR');
+            $this->log("L Error en extracciï¿½n hotel $hotelId: " . $e->getMessage(), 'ERROR');
             throw $e;
         }
     }
@@ -114,7 +114,7 @@ class ApifyDataProcessor
     }
     
     /**
-     * Crear job de extracción en base de datos
+     * Crear job de extracciï¿½n en base de datos
      */
     private function createExtractionJob($hotelId, $platforms) 
     {
@@ -133,7 +133,7 @@ class ApifyDataProcessor
     }
     
     /**
-     * Construir input para Apify usando configuración corregida
+     * Construir input para Apify usando configuraciï¿½n corregida
      */
     private function buildExtractionInput($hotel, $platforms) 
     {
@@ -147,20 +147,20 @@ class ApifyDataProcessor
             'hotelName' => $hotel['nombre_hotel'],
             'location' => $hotel['hoja_destino'],
             'city' => $this->extractCity($hotel['hoja_destino']),
-            'country' => 'Spain', // Default para la mayoría de hoteles
+            'country' => 'Spain', // Default para la mayorï¿½a de hoteles
             
-            // URLs específicas si están disponibles
+            // URLs especï¿½ficas si estï¿½n disponibles
             'bookingUrl' => $hotel['url_booking'] ?? null,
             'googleMapsUrl' => $hotel['google_maps_url'] ?? null,
             'placeId' => $hotel['place_id'] ?? null,
             
-            // Configuración de extracción
+            // Configuraciï¿½n de extracciï¿½n
             'maxReviews' => 100,
             'minRating' => 1,
             'language' => 'es',
             'sortBy' => 'newest',
             
-            // Configuración de performance
+            // Configuraciï¿½n de performance
             'waitForSelector' => true,
             'screenshot' => false,
             'htmlSnapshot' => false,
@@ -179,7 +179,7 @@ class ApifyDataProcessor
      */
     private function extractCity($destination) 
     {
-        // Lógica simple para extraer ciudad
+        // Lï¿½gica simple para extraer ciudad
         $parts = explode(',', $destination);
         return trim($parts[0]);
     }
@@ -204,7 +204,7 @@ class ApifyDataProcessor
         }
         
         $runId = $response['data']['id'];
-        $this->log("¶ Run iniciado en Apify: $runId");
+        $this->log("ï¿½ Run iniciado en Apify: $runId");
         
         return $runId;
     }
@@ -248,10 +248,10 @@ class ApifyDataProcessor
             }
             
             if (in_array($status['status'], ['FAILED', 'ABORTED', 'TIMED-OUT'])) {
-                throw new Exception("Run falló con status: " . $status['status']);
+                throw new Exception("Run fallï¿½ con status: " . $status['status']);
             }
             
-            $this->log("ó Run en progreso: {$status['status']}");
+            $this->log("ï¿½ Run en progreso: {$status['status']}");
             sleep($checkInterval);
         }
         
@@ -298,13 +298,13 @@ class ApifyDataProcessor
      */
     private function processRunResults($runId, $jobId) 
     {
-        $this->log("=Ê Procesando resultados del run: $runId");
+        $this->log("=ï¿½ Procesando resultados del run: $runId");
         
         // Obtener dataset del run
         $datasetItems = $this->getRunDataset($runId);
         
         if (empty($datasetItems)) {
-            $this->log("  No se encontraron datos en el dataset", 'WARNING');
+            $this->log("ï¿½ No se encontraron datos en el dataset", 'WARNING');
             return ['processed' => 0, 'errors' => 0];
         }
         
@@ -358,37 +358,36 @@ class ApifyDataProcessor
         
         $hotelId = $job['hotel_id'];
         
-        // Insertar review en tabla unificada
-        $stmt = $this->pdo->prepare("
-            INSERT IGNORE INTO reviews_unified (
-                hotel_id, platform, external_id, author_name, 
-                author_avatar, rating, title, comment, 
-                date_created, helpful_votes, total_votes,
-                author_reviews_count, is_verified, language,
-                created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-        ");
+        // Usar ReviewsSchemaAdapter para inserciÃ³n normalizada
+        require_once __DIR__ . '/ReviewsSchemaAdapter.php';
+        $adapter = new ReviewsSchemaAdapter($this->pdo);
         
-        $stmt->execute([
-            $hotelId,
-            $item['platform'] ?? 'unknown',
-            $item['reviewId'] ?? null,
-            $item['authorName'] ?? 'Anónimo',
-            $item['authorAvatar'] ?? null,
-            $item['rating'] ?? 0,
-            $item['title'] ?? '',
-            $item['text'] ?? '',
-            $item['publishedAt'] ?? null,
-            $item['helpfulVotes'] ?? 0,
-            $item['totalVotes'] ?? 0,
-            $item['authorReviewsCount'] ?? 0,
-            $item['verified'] ?? false,
-            $item['language'] ?? 'es'
-        ]);
+        // Preparar datos normalizados
+        $reviewData = [
+            'unique_id' => ($item['reviewId'] ?? $item['id'] ?? uniqid('apify_')) . '_' . $hotelId,
+            'hotel_id' => $hotelId,
+            'user_name' => $item['authorName'] ?? $item['author_name'] ?? 'AnÃ³nimo',
+            'review_text' => $item['comment'] ?? $item['review_text'] ?? null,
+            'liked_text' => $item['positiveText'] ?? null,
+            'disliked_text' => $item['negativeText'] ?? null,
+            'rating' => $item['rating'] ?? 0,
+            'source_platform' => $item['platform'] ?? 'apify',
+            'property_response' => $item['response'] ?? $item['managerResponse'] ?? null,
+            'review_date' => $item['date_created'] ?? $item['publishedAt'] ?? date('Y-m-d'),
+            'scraped_at' => date('Y-m-d H:i:s'),
+            'platform_review_id' => $item['reviewId'] ?? $item['external_id'] ?? null,
+            'extraction_run_id' => $runId ?? null,
+            'review_language' => $item['language'] ?? 'auto',
+            'helpful_votes' => $item['helpful_votes'] ?? 0
+        ];
+        
+        // Insertar usando adapter
+        return $adapter->insertReview($reviewData);
+        
     }
     
     /**
-     * Completar job de extracción
+     * Completar job de extracciï¿½n
      */
     private function completeExtractionJob($jobId, $processed, $errors) 
     {
@@ -407,7 +406,7 @@ class ApifyDataProcessor
     }
     
     /**
-     * Hacer petición a API de Apify
+     * Hacer peticiï¿½n a API de Apify
      */
     private function makeApifyRequest($url, $method = 'GET', $data = null) 
     {
@@ -446,7 +445,7 @@ class ApifyDataProcessor
     }
     
     /**
-     * Obtener estadísticas de procesamiento
+     * Obtener estadï¿½sticas de procesamiento
      */
     public function getProcessingStats($hotelId = null) 
     {
@@ -470,7 +469,7 @@ class ApifyDataProcessor
     }
 }
 
-// Función helper para compatibilidad
+// Funciï¿½n helper para compatibilidad
 function processHotelReviews($hotelId, $platforms = null) {
     $processor = new ApifyDataProcessor();
     return $processor->processHotelExtraction($hotelId, $platforms);
@@ -491,20 +490,20 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_NAME'])) {
                     exit(1);
                 }
                 
-                echo "=€ Procesando extracción para hotel ID: $hotelId\n";
+                echo "=ï¿½ Procesando extracciï¿½n para hotel ID: $hotelId\n";
                 $result = $processor->processHotelExtraction($hotelId);
                 echo " Completado: " . json_encode($result, JSON_PRETTY_PRINT) . "\n";
                 break;
                 
             case 'stats':
                 $stats = $processor->getProcessingStats($hotelId);
-                echo "=Ê Estadísticas: " . json_encode($stats, JSON_PRETTY_PRINT) . "\n";
+                echo "=ï¿½ Estadï¿½sticas: " . json_encode($stats, JSON_PRETTY_PRINT) . "\n";
                 break;
                 
             default:
                 echo "Comandos disponibles:\n";
-                echo "  process <hotel_id> - Procesar extracción para un hotel\n";
-                echo "  stats [hotel_id]   - Mostrar estadísticas de procesamiento\n";
+                echo "  process <hotel_id> - Procesar extracciï¿½n para un hotel\n";
+                echo "  stats [hotel_id]   - Mostrar estadï¿½sticas de procesamiento\n";
         }
         
     } catch (Exception $e) {
