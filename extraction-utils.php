@@ -27,10 +27,13 @@ class ExtractionInputBuilder
         ];
         
         // Mapeo de plataformas a flags
-                $platformMapping = [
+        $platformMapping = [
             'booking' => 'enableBooking',
+            'booking.com' => 'enableBooking',
             'googlemaps' => 'enableGoogleMaps',
+            'google maps' => 'enableGoogleMaps',
             'tripadvisor' => 'enableTripadvisor',
+            'trip advisor' => 'enableTripadvisor',
             'expedia' => 'enableExpedia',
             'agoda' => 'enableAgoda',
             'hotels.com' => 'enableHotelsCom',

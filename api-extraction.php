@@ -392,16 +392,30 @@ function handleStartExtraction($input, $pdo) {
             'cost_estimate' => $costEstimate
         ]);
         
-        // Guardar en base de datos
+        // Guardar en base de datos con vínculo job_id mejorado
         try {
+            // MEJORA: Crear job primero para obtener job_id y vincularlo con run_id
+            $jobStmt = $pdo->prepare("
+                INSERT INTO extraction_jobs (
+                    hotel_id, status, progress, platforms, created_at, started_at
+                ) VALUES (?, 'running', 0, ?, NOW(), NOW())
+            ");
+            $jobStmt->execute([$hotelId, json_encode($platforms)]);
+            $jobId = $pdo->lastInsertId();
+            
+            DebugLogger::info("Job creado para seguimiento", ['job_id' => $jobId]);
+            
+            // Insertar run con job_id vinculado
             $stmt = $pdo->prepare("
                 INSERT INTO apify_extraction_runs (
-                    hotel_id, apify_run_id, status, platforms_requested, 
-                    max_reviews_per_platform, cost_estimate, apify_response
-                ) VALUES (?, ?, 'pending', ?, ?, ?, ?)
+                    job_id, hotel_id, apify_run_id, status, platforms_requested,
+                    max_reviews_per_platform, cost_estimate, apify_response,
+                    started_at, created_at
+                ) VALUES (?, ?, ?, 'running', ?, ?, ?, ?, NOW(), NOW())
             ");
             
             $stmt->execute([
+                $jobId,            // job_id vinculado
                 $hotelId,
                 $runId,
                 json_encode($platforms),
@@ -410,18 +424,7 @@ function handleStartExtraction($input, $pdo) {
                 json_encode($apifyResponse)
             ]);
             
-            DebugLogger::info("apify_extraction_runs insertado", ['run_id' => $runId]);
-            
-            // También insertar en extraction_jobs para compatibilidad
-            $stmt = $pdo->prepare("
-                INSERT INTO extraction_jobs (
-                    hotel_id, status, progress, reviews_extracted, 
-                    created_at, updated_at
-                ) VALUES (?, 'pending', 0, 0, NOW(), NOW())
-            ");
-            $stmt->execute([$hotelId]);
-            
-            DebugLogger::info("extraction_jobs insertado", ['hotel_id' => $hotelId]);
+            DebugLogger::info("apify_extraction_runs insertado con job_id", ['run_id' => $runId, 'job_id' => $jobId]);
             
         } catch (PDOException $e) {
             DebugLogger::error("Error insertando en BD", [

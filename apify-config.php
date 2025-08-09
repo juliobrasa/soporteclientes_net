@@ -1,7 +1,7 @@
 <?php
 /**
- * Configuración Apify - Mapeo de Plataformas y Flags
- * Versión corregida con nombres estandardizados
+ * Configuraciï¿½n Apify - Mapeo de Plataformas y Flags
+ * Versiï¿½n corregida con nombres estandardizados
  */
 
 class ApifyConfig 
@@ -16,13 +16,13 @@ class ApifyConfig
         "tripadvisor" => "enableTripadvisor",
         "expedia" => "enableExpedia",
         "agoda" => "enableAgoda",
-        "hotels.com" => "enableHotelsCom",  // CORRECCIÓN: enableHotelsCom (no enableHotelscom)
+        "hotels.com" => "enableHotelsCom",  // CORRECCIï¿½N: enableHotelsCom (no enableHotelscom)
         "hotelscom" => "enableHotelsCom"    // Alias para compatibilidad
     ];
     
     /**
-     * Configuración estándar - usar 'platforms' consistentemente
-     * CORRECCIÓN: Ya no 'reviewPlatforms', sino 'platforms'
+     * Configuraciï¿½n estï¿½ndar - usar 'platforms' consistentemente
+     * CORRECCIï¿½N: Ya no 'reviewPlatforms', sino 'platforms'
      */
     public static $CONFIG_KEY = "platforms";
     
@@ -45,7 +45,7 @@ class ApifyConfig
     ];
     
     /**
-     * Configuración de timeouts y reintentos
+     * Configuraciï¿½n de timeouts y reintentos
      */
     public static $TIMEOUT_CONFIG = [
         "run_timeout" => 1800,      // 30 minutos
@@ -106,7 +106,7 @@ class ApifyConfig
     }
     
     /**
-     * Validar configuración antes de enviar a Apify
+     * Validar configuraciï¿½n antes de enviar a Apify
      */
     public static function validateConfig($config) 
     {
@@ -117,7 +117,7 @@ class ApifyConfig
             $errors[] = "Debe seleccionar al menos una plataforma";
         }
         
-        // Verificar que las plataformas son válidas
+        // Verificar que las plataformas son vï¿½lidas
         foreach ($config[self::$CONFIG_KEY] as $platform) {
             if (!self::isPlatformSupported($platform)) {
                 $errors[] = "Plataforma no soportada: $platform";
@@ -136,12 +136,12 @@ class ApifyConfig
     }
     
     /**
-     * Demo de configuración corregida para stats
+     * Demo de configuraciï¿½n corregida para stats
      */
     public static function getStatsConfig() 
     {
         return [
-            self::$CONFIG_KEY => ['booking', 'googlemaps', 'tripadvisor'], // CORRECCIÓN: platforms no reviewPlatforms
+            self::$CONFIG_KEY => ['booking', 'googlemaps', 'tripadvisor'], // CORRECCIï¿½N: platforms no reviewPlatforms
             'hotel_name' => 'Hotel Demo',
             'location' => 'Madrid, Spain',
             'max_reviews' => 100
@@ -156,12 +156,12 @@ class ApifyConfig
         return [
             'Access-Control-Allow-Origin' => '*',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, X-Admin-Session' // CORRECCIÓN: Headers completos
+            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, X-Admin-Session' // CORRECCIï¿½N: Headers completos
         ];
     }
     
     /**
-     * Configuración de logging mejorada
+     * Configuraciï¿½n de logging mejorada
      */
     public static function getLoggingConfig() 
     {
@@ -177,23 +177,20 @@ class ApifyConfig
 
 /**
  * FUNCIONES DE COMPATIBILIDAD LEGACY
- * Mantener compatibilidad con código existente
+ * Mantener compatibilidad con cï¿½digo existente
  */
 
 function getPlatformFlag($platform) {
     return ApifyConfig::getPlatformFlag($platform);
 }
 
-function buildExtractionInput($config) {
-    $platforms = $config[ApifyConfig::$CONFIG_KEY] ?? [];
-    return ApifyConfig::generateExtractionInput($platforms);
-}
+// buildExtractionInput() moved to extraction-utils.php to avoid duplication
 
 function validateApifyConfig($config) {
     return ApifyConfig::validateConfig($config);
 }
 
 // Log de carga del archivo
-error_log(" apify-config.php cargado correctamente con configuración estandardizada");
+error_log(" apify-config.php cargado correctamente con configuraciï¿½n estandardizada");
 
 ?>
