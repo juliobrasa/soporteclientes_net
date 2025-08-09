@@ -154,7 +154,7 @@ function handleSyncExtraction($input, $pdo) {
         $timeout = min($input['timeout'] ?? 300, 300); // Máximo 5 minutos
         
         // Verificar que el hotel existe y obtener su Place ID y URL de Booking
-        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id, url_booking, destino FROM hoteles WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id, url_booking, hoja_destino FROM hoteles WHERE id = ?");
         $stmt->execute([$hotelId]);
         $hotel = $stmt->fetch();
         
@@ -258,7 +258,7 @@ function handleSyncExtraction($input, $pdo) {
                 
                 // Normalizar datos de la reseña
                 $reviewTitle = $review['reviewTitle'] ?? ($review['title'] ?? null);
-                $hotelDestination = $hotel['destino'] ?? null; // Usar campo real de la BD
+                $hotelDestination = $hotel['hoja_destino'] ?? null; // Usar campo real de la BD
                 
                 // Determinar plataforma basado en configuración real
                 $sourcePlatform = (count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking') 
@@ -371,7 +371,7 @@ function handleStartExtraction($input, $pdo) {
         $languages = $input['languages'] ?? ['en', 'es'];
         
         // Verificar que el hotel existe y obtener su Place ID y URL de Booking
-        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id, url_booking, destino FROM hoteles WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id, url_booking, hoja_destino FROM hoteles WHERE id = ?");
         $stmt->execute([$hotelId]);
         $hotel = $stmt->fetch();
         
