@@ -1,0 +1,514 @@
+<?php
+/**
+ * Procesador de Datos Apify - Versión Completa y Corregida
+ * Maneja extracción, procesamiento y almacenamiento de reviews
+ */
+
+require_once 'env-loader.php';
+require_once 'apify-config.php';
+
+class ApifyDataProcessor 
+{
+    private $pdo;
+    private $apiToken;
+    private $logFile;
+    private $config;
+    
+    public function __construct() 
+    {
+        $this->pdo = EnvironmentLoader::createDatabaseConnection();
+        $this->apiToken = EnvironmentLoader::get('APIFY_API_TOKEN');
+        $this->logFile = __DIR__ . '/storage/logs/apify-processor.log';
+        $this->config = ApifyConfig::class;
+        
+        $this->ensureLogDirectory();
+        
+        if (empty($this->apiToken)) {
+            throw new Exception("APIFY_API_TOKEN no configurado en variables de entorno");
+        }
+    }
+    
+    private function ensureLogDirectory() 
+    {
+        $logDir = dirname($this->logFile);
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0755, true);
+        }
+    }
+    
+    private function log($message, $level = 'INFO') 
+    {
+        $timestamp = date('Y-m-d H:i:s');
+        $logEntry = "[$timestamp] [$level] $message\n";
+        file_put_contents($this->logFile, $logEntry, FILE_APPEND);
+        
+        if ($level === 'ERROR') {
+            error_log($logEntry);
+        }
+    }
+    
+    /**
+     * Procesar extracción completa para un hotel
+     */
+    public function processHotelExtraction($hotelId, $platforms = null) 
+    {
+        try {
+            $this->log("=€ Iniciando extracción para hotel ID: $hotelId");
+            
+            // Obtener datos del hotel
+            $hotel = $this->getHotelData($hotelId);
+            if (!$hotel) {
+                throw new Exception("Hotel no encontrado: $hotelId");
+            }
+            
+            // Determinar plataformas a extraer
+            $platforms = $platforms ?? ['booking', 'googlemaps', 'tripadvisor'];
+            
+            // Crear job de extracción
+            $jobId = $this->createExtractionJob($hotelId, $platforms);
+            
+            // Configurar input para Apify
+            $input = $this->buildExtractionInput($hotel, $platforms);
+            
+            // Ejecutar extracción en Apify
+            $runId = $this->executeApifyRun($input);
+            
+            // Registrar run en base de datos
+            $this->recordExtractionRun($jobId, $runId, $input);
+            
+            // Monitorear y procesar resultados
+            $results = $this->monitorAndProcessRun($runId, $jobId);
+            
+            $this->log(" Extracción completada para hotel $hotelId. Resultados: " . json_encode($results));
+            
+            return [
+                'success' => true,
+                'job_id' => $jobId,
+                'run_id' => $runId,
+                'results' => $results
+            ];
+            
+        } catch (Exception $e) {
+            $this->log("L Error en extracción hotel $hotelId: " . $e->getMessage(), 'ERROR');
+            throw $e;
+        }
+    }
+    
+    /**
+     * Obtener datos del hotel desde base de datos
+     */
+    private function getHotelData($hotelId) 
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT h.*, 
+                   COUNT(r.id) as total_reviews,
+                   AVG(r.rating) as avg_rating
+            FROM hoteles h 
+            LEFT JOIN reviews_unified r ON r.hotel_id = h.id
+            WHERE h.id = ? AND h.activo = 1
+            GROUP BY h.id
+        ");
+        
+        $stmt->execute([$hotelId]);
+        return $stmt->fetch();
+    }
+    
+    /**
+     * Crear job de extracción en base de datos
+     */
+    private function createExtractionJob($hotelId, $platforms) 
+    {
+        $stmt = $this->pdo->prepare("
+            INSERT INTO extraction_jobs (
+                hotel_id, platforms, status, created_at, started_at
+            ) VALUES (?, ?, 'pending', NOW(), NOW())
+        ");
+        
+        $stmt->execute([
+            $hotelId,
+            json_encode($platforms)
+        ]);
+        
+        return $this->pdo->lastInsertId();
+    }
+    
+    /**
+     * Construir input para Apify usando configuración corregida
+     */
+    private function buildExtractionInput($hotel, $platforms) 
+    {
+        // Usar ApifyConfig para generar input correcto
+        $platformFlags = ApifyConfig::generateExtractionInput($platforms);
+        
+        $input = array_merge($platformFlags, [
+            // Datos del hotel
+            'hotelName' => $hotel['nombre_hotel'],
+            'location' => $hotel['hoja_destino'],
+            'city' => $this->extractCity($hotel['hoja_destino']),
+            'country' => 'Spain', // Default para la mayoría de hoteles
+            
+            // URLs específicas si están disponibles
+            'bookingUrl' => $hotel['url_booking'] ?? null,
+            'googleMapsUrl' => $hotel['google_maps_url'] ?? null,
+            'placeId' => $hotel['place_id'] ?? null,
+            
+            // Configuración de extracción
+            'maxReviews' => 100,
+            'minRating' => 1,
+            'language' => 'es',
+            'sortBy' => 'newest',
+            
+            // Configuración de performance
+            'waitForSelector' => true,
+            'screenshot' => false,
+            'htmlSnapshot' => false,
+            
+            // Headers y proxies
+            'useRotatingProxies' => true,
+            'maxConcurrency' => 2
+        ]);
+        
+        $this->log("=' Input generado: " . json_encode($input, JSON_PRETTY_PRINT));
+        return $input;
+    }
+    
+    /**
+     * Extraer ciudad del destino
+     */
+    private function extractCity($destination) 
+    {
+        // Lógica simple para extraer ciudad
+        $parts = explode(',', $destination);
+        return trim($parts[0]);
+    }
+    
+    /**
+     * Ejecutar run en Apify
+     */
+    private function executeApifyRun($input) 
+    {
+        $actorId = ApifyConfig::$ACTOR_IDS['multi_otas'];
+        $url = "https://api.apify.com/v2/acts/$actorId/runs";
+        
+        $data = [
+            'input' => $input,
+            'timeout' => ApifyConfig::$TIMEOUT_CONFIG['run_timeout']
+        ];
+        
+        $response = $this->makeApifyRequest($url, 'POST', $data);
+        
+        if (!$response || !isset($response['data']['id'])) {
+            throw new Exception("Error iniciando run en Apify: " . json_encode($response));
+        }
+        
+        $runId = $response['data']['id'];
+        $this->log("¶ Run iniciado en Apify: $runId");
+        
+        return $runId;
+    }
+    
+    /**
+     * Registrar run en base de datos
+     */
+    private function recordExtractionRun($jobId, $runId, $input) 
+    {
+        $stmt = $this->pdo->prepare("
+            INSERT INTO apify_extraction_runs (
+                job_id, apify_run_id, input_config, status, 
+                started_at, created_at
+            ) VALUES (?, ?, ?, 'running', NOW(), NOW())
+        ");
+        
+        $stmt->execute([
+            $jobId,
+            $runId,
+            json_encode($input)
+        ]);
+    }
+    
+    /**
+     * Monitorear run y procesar resultados
+     */
+    private function monitorAndProcessRun($runId, $jobId) 
+    {
+        $maxWaitTime = ApifyConfig::$TIMEOUT_CONFIG['run_timeout'];
+        $checkInterval = ApifyConfig::$TIMEOUT_CONFIG['wait_timeout'];
+        $startTime = time();
+        
+        while ((time() - $startTime) < $maxWaitTime) {
+            $status = $this->checkRunStatus($runId);
+            
+            $this->updateRunStatus($runId, $status);
+            
+            if ($status['status'] === 'SUCCEEDED') {
+                $this->log(" Run completado exitosamente: $runId");
+                return $this->processRunResults($runId, $jobId);
+            }
+            
+            if (in_array($status['status'], ['FAILED', 'ABORTED', 'TIMED-OUT'])) {
+                throw new Exception("Run falló con status: " . $status['status']);
+            }
+            
+            $this->log("ó Run en progreso: {$status['status']}");
+            sleep($checkInterval);
+        }
+        
+        throw new Exception("Timeout esperando resultados del run: $runId");
+    }
+    
+    /**
+     * Verificar status del run en Apify
+     */
+    private function checkRunStatus($runId) 
+    {
+        $url = "https://api.apify.com/v2/actor-runs/$runId";
+        $response = $this->makeApifyRequest($url, 'GET');
+        
+        if (!$response || !isset($response['data'])) {
+            throw new Exception("Error obteniendo status del run: $runId");
+        }
+        
+        return $response['data'];
+    }
+    
+    /**
+     * Actualizar status del run en base de datos
+     */
+    private function updateRunStatus($runId, $statusData) 
+    {
+        $stmt = $this->pdo->prepare("
+            UPDATE apify_extraction_runs 
+            SET status = ?, progress = ?, updated_at = NOW()
+            WHERE apify_run_id = ?
+        ");
+        
+        $progress = $statusData['stats']['computeUnits'] ?? 0;
+        
+        $stmt->execute([
+            strtolower($statusData['status']),
+            $progress,
+            $runId
+        ]);
+    }
+    
+    /**
+     * Procesar resultados del run
+     */
+    private function processRunResults($runId, $jobId) 
+    {
+        $this->log("=Ê Procesando resultados del run: $runId");
+        
+        // Obtener dataset del run
+        $datasetItems = $this->getRunDataset($runId);
+        
+        if (empty($datasetItems)) {
+            $this->log("  No se encontraron datos en el dataset", 'WARNING');
+            return ['processed' => 0, 'errors' => 0];
+        }
+        
+        $processed = 0;
+        $errors = 0;
+        
+        foreach ($datasetItems as $item) {
+            try {
+                $this->processReviewItem($item, $jobId);
+                $processed++;
+            } catch (Exception $e) {
+                $this->log("L Error procesando item: " . $e->getMessage(), 'ERROR');
+                $errors++;
+            }
+        }
+        
+        // Actualizar job como completado
+        $this->completeExtractionJob($jobId, $processed, $errors);
+        
+        return [
+            'processed' => $processed,
+            'errors' => $errors,
+            'total' => count($datasetItems)
+        ];
+    }
+    
+    /**
+     * Obtener dataset del run
+     */
+    private function getRunDataset($runId) 
+    {
+        $url = "https://api.apify.com/v2/actor-runs/$runId/dataset/items";
+        $response = $this->makeApifyRequest($url, 'GET');
+        
+        return $response ?? [];
+    }
+    
+    /**
+     * Procesar item individual de review
+     */
+    private function processReviewItem($item, $jobId) 
+    {
+        // Obtener hotel_id del job
+        $stmt = $this->pdo->prepare("SELECT hotel_id FROM extraction_jobs WHERE id = ?");
+        $stmt->execute([$jobId]);
+        $job = $stmt->fetch();
+        
+        if (!$job) {
+            throw new Exception("Job no encontrado: $jobId");
+        }
+        
+        $hotelId = $job['hotel_id'];
+        
+        // Insertar review en tabla unificada
+        $stmt = $this->pdo->prepare("
+            INSERT IGNORE INTO reviews_unified (
+                hotel_id, platform, external_id, author_name, 
+                author_avatar, rating, title, comment, 
+                date_created, helpful_votes, total_votes,
+                author_reviews_count, is_verified, language,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        ");
+        
+        $stmt->execute([
+            $hotelId,
+            $item['platform'] ?? 'unknown',
+            $item['reviewId'] ?? null,
+            $item['authorName'] ?? 'Anónimo',
+            $item['authorAvatar'] ?? null,
+            $item['rating'] ?? 0,
+            $item['title'] ?? '',
+            $item['text'] ?? '',
+            $item['publishedAt'] ?? null,
+            $item['helpfulVotes'] ?? 0,
+            $item['totalVotes'] ?? 0,
+            $item['authorReviewsCount'] ?? 0,
+            $item['verified'] ?? false,
+            $item['language'] ?? 'es'
+        ]);
+    }
+    
+    /**
+     * Completar job de extracción
+     */
+    private function completeExtractionJob($jobId, $processed, $errors) 
+    {
+        $status = $errors > 0 ? 'completed_with_errors' : 'completed';
+        
+        $stmt = $this->pdo->prepare("
+            UPDATE extraction_jobs 
+            SET status = ?, processed_reviews = ?, errors_count = ?, 
+                completed_at = NOW(), updated_at = NOW()
+            WHERE id = ?
+        ");
+        
+        $stmt->execute([$status, $processed, $errors, $jobId]);
+        
+        $this->log(" Job completado: $jobId - Procesadas: $processed, Errores: $errors");
+    }
+    
+    /**
+     * Hacer petición a API de Apify
+     */
+    private function makeApifyRequest($url, $method = 'GET', $data = null) 
+    {
+        $ch = curl_init();
+        
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url . '?token=' . $this->apiToken,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => $method,
+            CURLOPT_TIMEOUT => 60,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Accept: application/json'
+            ]
+        ]);
+        
+        if ($data && in_array($method, ['POST', 'PUT'])) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        }
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        
+        curl_close($ch);
+        
+        if ($error) {
+            throw new Exception("Error CURL: $error");
+        }
+        
+        if ($httpCode >= 400) {
+            throw new Exception("Error HTTP $httpCode: $response");
+        }
+        
+        return json_decode($response, true);
+    }
+    
+    /**
+     * Obtener estadísticas de procesamiento
+     */
+    public function getProcessingStats($hotelId = null) 
+    {
+        $whereClause = $hotelId ? "WHERE ej.hotel_id = ?" : "";
+        $params = $hotelId ? [$hotelId] : [];
+        
+        $stmt = $this->pdo->prepare("
+            SELECT 
+                COUNT(*) as total_jobs,
+                SUM(CASE WHEN ej.status = 'completed' THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN ej.status = 'failed' THEN 1 ELSE 0 END) as failed,
+                SUM(CASE WHEN ej.status = 'running' THEN 1 ELSE 0 END) as running,
+                SUM(ej.processed_reviews) as total_reviews,
+                AVG(ej.processed_reviews) as avg_reviews_per_job
+            FROM extraction_jobs ej
+            $whereClause
+        ");
+        
+        $stmt->execute($params);
+        return $stmt->fetch();
+    }
+}
+
+// Función helper para compatibilidad
+function processHotelReviews($hotelId, $platforms = null) {
+    $processor = new ApifyDataProcessor();
+    return $processor->processHotelExtraction($hotelId, $platforms);
+}
+
+// Ejecutar si es llamado directamente
+if (basename(__FILE__) === basename($_SERVER['SCRIPT_NAME'])) {
+    $action = $argv[1] ?? 'help';
+    $hotelId = $argv[2] ?? null;
+    
+    try {
+        $processor = new ApifyDataProcessor();
+        
+        switch ($action) {
+            case 'process':
+                if (!$hotelId) {
+                    echo "Uso: php apify-data-processor.php process <hotel_id>\n";
+                    exit(1);
+                }
+                
+                echo "=€ Procesando extracción para hotel ID: $hotelId\n";
+                $result = $processor->processHotelExtraction($hotelId);
+                echo " Completado: " . json_encode($result, JSON_PRETTY_PRINT) . "\n";
+                break;
+                
+            case 'stats':
+                $stats = $processor->getProcessingStats($hotelId);
+                echo "=Ê Estadísticas: " . json_encode($stats, JSON_PRETTY_PRINT) . "\n";
+                break;
+                
+            default:
+                echo "Comandos disponibles:\n";
+                echo "  process <hotel_id> - Procesar extracción para un hotel\n";
+                echo "  stats [hotel_id]   - Mostrar estadísticas de procesamiento\n";
+        }
+        
+    } catch (Exception $e) {
+        echo "L Error: " . $e->getMessage() . "\n";
+        exit(1);
+    }
+}
+
+?>
