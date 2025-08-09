@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'admin-config.php';
 require_once 'apify-config.php';
 require_once 'apify-data-processor.php';
-require_once 'debug-logger.php';
+require_once 'admin-tools/debug-logger.php';
 
 function response($data, $status = 200) {
     http_response_code($status);
