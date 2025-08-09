@@ -774,6 +774,52 @@ function hasModule($module, $modules) {
                         iroStatus.textContent = 'Malo';
                         iroStatus.className = 'text-sm text-red-600';
                     }
+                    
+                    // Actualizar métricas individuales con barras de progreso
+                    const calificacionBar = document.querySelector('.metric-value').nextElementSibling.querySelector('.bg-blue-500');
+                    if (calificacionBar) {
+                        calificacionBar.style.width = data.iro.calificacion + '%';
+                        calificacionBar.parentElement.nextElementSibling.textContent = data.iro.calificacion + '%';
+                    }
+                    
+                    // Cobertura
+                    const coberturaBar = document.querySelectorAll('.bg-blue-500')[1];
+                    if (coberturaBar) {
+                        coberturaBar.style.width = data.iro.cobertura + '%';
+                        coberturaBar.parentElement.nextElementSibling.textContent = data.iro.cobertura + '%';
+                    }
+                    
+                    // Reseñas
+                    const reseñasBar = document.querySelectorAll('.bg-blue-500')[2];
+                    if (reseñasBar) {
+                        reseñasBar.style.width = data.iro.reseñas + '%';
+                        reseñasBar.parentElement.nextElementSibling.textContent = data.iro.reseñas + '%';
+                    }
+                }
+                
+                // Actualizar estadísticas del período
+                if (data.period_stats) {
+                    const statsElements = document.querySelectorAll('#resumen-section .text-lg.font-semibold');
+                    if (statsElements.length >= 4) {
+                        statsElements[0].textContent = data.period_stats.total_reviews;
+                        statsElements[1].textContent = data.period_stats.avg_rating;
+                        statsElements[2].textContent = data.period_stats.active_platforms;
+                        statsElements[3].textContent = data.period_stats.coverage;
+                    }
+                }
+                
+                // Actualizar tabla de dimensiones
+                if (data.period_stats && data.accumulated_stats) {
+                    const tableRows = document.querySelectorAll('#resumen-section tbody tr');
+                    if (tableRows.length >= 2) {
+                        // Calificaciones en OTAs
+                        tableRows[0].children[1].querySelector('span').textContent = data.period_stats.avg_rating + '/5';
+                        tableRows[0].children[2].querySelector('span').textContent = data.accumulated_stats.avg_rating + '/5';
+                        
+                        // Cantidad de reseñas
+                        tableRows[1].children[1].querySelector('span').textContent = data.period_stats.total_reviews;
+                        tableRows[1].children[2].querySelector('span').textContent = data.accumulated_stats.total_reviews;
+                    }
                 }
             }
             
