@@ -25,10 +25,11 @@
         results.innerHTML = '<p>🔄 Probando extracción...</p>';
         
         const testData = {
-            hotel_ids: [6],
+            hotel_id: 6,  // Cambiado de hotel_ids a hotel_id (singular)
             max_reviews: 200,
             platforms: ['booking'],
-            extraction_mode: 'async'
+            languages: ['en', 'es']
+            // Eliminado extraction_mode - no lo usa el API
         };
         
         try {

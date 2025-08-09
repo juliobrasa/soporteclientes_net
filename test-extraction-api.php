@@ -6,12 +6,13 @@
 echo "🧪 TEST DE API EXTRACTION\n";
 echo str_repeat("=", 40) . "\n\n";
 
-// Simular datos que envía el admin-extraction.php
+// Simular datos que envía el admin-extraction.php (corregido)
 $testData = [
-    'hotel_ids' => [6],
+    'hotel_id' => 6,  // Singular, no plural
     'max_reviews' => 200,
     'platforms' => ['booking'],
-    'extraction_mode' => 'async'
+    'languages' => ['en', 'es']
+    // Eliminado extraction_mode - no lo usa el API
 ];
 
 echo "📋 Datos de prueba:\n";

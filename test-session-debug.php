@@ -107,9 +107,10 @@ if (isset($_GET['login'])) {
                 },
                 credentials: 'same-origin',
                 body: JSON.stringify({
-                    hotel_ids: [6],
+                    hotel_id: 6,  // Corregido: singular no plural
                     max_reviews: 10,
-                    platforms: ['booking']
+                    platforms: ['booking'],
+                    languages: ['en', 'es']
                 })
             });
             
