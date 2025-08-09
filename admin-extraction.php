@@ -582,43 +582,6 @@ $hotels = getActiveHotels();
     });
     <?php endif; ?>
 
-    function validateExtractionPrereqs() {
-        const selectedCheckboxes = document.querySelectorAll('.hotel-checkbox:checked');
-        const selectedPlatforms = Array.from(document.querySelectorAll('input[name="platforms[]"]:checked')).map(cb => cb.value.toLowerCase());
-        
-        if (selectedCheckboxes.length === 0) {
-            alert('Por favor selecciona al menos un hotel');
-            return false;
-        }
-        
-        if (selectedPlatforms.length === 0) {
-            alert('Por favor selecciona al menos una plataforma');
-            return false;
-        }
-        
-        // Validación específica para Booking-only
-        const onlyBooking = selectedPlatforms.length === 1 && selectedPlatforms[0] === 'booking';
-        
-        for (let checkbox of selectedCheckboxes) {
-            const hotelName = checkbox.nextElementSibling.textContent.trim();
-            
-            if (onlyBooking) {
-                const bookingUrl = checkbox.dataset.urlBooking;
-                if (!bookingUrl || bookingUrl.trim() === '') {
-                    alert(`El hotel "${hotelName}" no tiene URL de Booking configurada.\n\nPara extraer solo de Booking, todos los hoteles deben tener URL de Booking.`);
-                    return false;
-                }
-            } else {
-                const placeId = checkbox.dataset.placeId;
-                if (!placeId || placeId.trim() === '') {
-                    alert(`El hotel "${hotelName}" no tiene Google Place ID configurado.\n\nPara extracciones multi-plataforma, todos los hoteles deben tener Place ID.`);
-                    return false;
-                }
-            }
-        }
-        
-        return true;
-    }
 
     function getSelectedHotels() {
         const hotels = [];
@@ -631,7 +594,22 @@ $hotels = getActiveHotels();
         console.log('🚀 Iniciando extracción...');
         
         // Validar prerequisitos antes de continuar
-        if (!validateExtractionPrereqs()) {
+        const selectedHotels = getSelectedHotels();
+        const selectedPlatforms = getSelectedPlatforms();
+        
+        if (selectedHotels.length === 0) {
+            alert('Por favor selecciona al menos un hotel');
+            return;
+        }
+        
+        if (selectedPlatforms.length === 0) {
+            alert('Por favor selecciona al menos una plataforma');
+            return;
+        }
+        
+        const validation = validateExtractionPrereqs(selectedPlatforms, selectedHotels);
+        if (!validation.valid) {
+            alert('Error de validación:\n\n' + validation.errors.join('\n'));
             return;
         }
         
@@ -667,20 +645,7 @@ $hotels = getActiveHotels();
             selectedHotels = getSelectedHotels();
             console.log('✅ Hoteles seleccionados:', selectedHotels);
             
-            if (selectedHotels.length === 0) {
-                console.error('❌ No hay hoteles seleccionados');
-                alert('Por favor selecciona al menos un hotel');
-                return;
-            }
-            
-            console.log('🔍 Paso 5: Validando prerequisitos...');
-            const platforms = getSelectedPlatforms();
-            const validation = validateExtractionPrereqs(platforms, selectedHotels);
-            if (!validation.valid) {
-                console.error('❌ Validación fallida:', validation.errors);
-                alert('Error de validación:\n\n' + validation.errors.join('\n'));
-                return;
-            }
+            // Validación ya realizada al inicio de la función
         } catch (error) {
             console.error('❌ Error en startExtraction():', error);
             alert('Error iniciando extracción: ' + error.message);
