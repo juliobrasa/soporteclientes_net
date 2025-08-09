@@ -87,7 +87,7 @@ function getActiveHotels() {
     if (!$pdo) return [];
     
     try {
-        $stmt = $pdo->query("SELECT id, nombre_hotel FROM hoteles WHERE activo = 1 ORDER BY nombre_hotel ASC");
+        $stmt = $pdo->query("SELECT id, nombre_hotel, url_booking, google_place_id FROM hoteles WHERE activo = 1 ORDER BY nombre_hotel ASC");
         return $stmt->fetchAll();
     } catch (PDOException $e) {
         error_log("Error obteniendo hoteles activos: " . $e->getMessage());
