@@ -7,10 +7,6 @@ if (!isset($_SESSION['admin_logged'])) {
 
 // Incluir configuración y funciones de base de datos
 include 'admin-config.php';
-// Aplicar CSP específico para páginas administrativas
-require_once 'csp-config.php';
-setAdminCSP();
-
 
 // Obtener datos reales
 $hotel_stats = getHotelStats();

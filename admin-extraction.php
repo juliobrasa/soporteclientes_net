@@ -5,6 +5,10 @@ if (!isset($_SESSION['admin_logged'])) {
     exit;
 }
 
+// Aplicar CSP específico para páginas administrativas
+require_once 'csp-config.php';
+setAdminCSP();
+
 include 'admin-config.php';
 
 // Obtener trabajos de extracción

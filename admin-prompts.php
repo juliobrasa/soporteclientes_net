@@ -6,6 +6,10 @@ if (!isset($_SESSION['admin_logged'])) {
 }
 
 include 'admin-config.php';
+// Aplicar CSP específico para páginas administrativas
+require_once 'csp-config.php';
+setAdminCSP();
+
 
 // Obtener prompts
 function getPrompts() {

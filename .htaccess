@@ -1,8 +1,8 @@
 # =============================================================================
-# CONFIGURACIÓN DE SEGURIDAD PRINCIPAL - SOPORTECLIENTES.NET
+# CONFIGURACIï¿½N DE SEGURIDAD PRINCIPAL - SOPORTECLIENTES.NET
 # =============================================================================
 
-# Proteger archivos de configuración críticos
+# Proteger archivos de configuraciï¿½n crï¿½ticos
 <Files ".env*">
     Order allow,deny
     Deny from all
@@ -47,16 +47,17 @@ RedirectMatch 403 ^/node_modules
     Header always set X-Frame-Options DENY
     Header always set X-XSS-Protection "1; mode=block"
     
-    # Política de contenido estricta
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https:"
+    # CSP manejado por archivos PHP especÃ­ficos - ver csp-config.php
+    # Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https:; object-src 'none'; base-uri 'self'"
     
     # Referrer policy
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     
-    # CORS para APIs
-    Header always set Access-Control-Allow-Origin "*"
+    # CORS restrictivo para APIs (solo admin panel)
+    Header always set Access-Control-Allow-Origin "https://soporteclientes.net"
     Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
     Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, X-Admin-Session"
+    Header always set Access-Control-Allow-Credentials "true"
 </IfModule>
 
 # Prevenir acceso directo a archivos PHP sensibles
@@ -70,7 +71,7 @@ RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
 RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Proteger contra inyección SQL en URLs
+# Proteger contra inyecciï¿½n SQL en URLs
 RewriteCond %{QUERY_STRING} [^a-zA-Z0-9_\-=&\.] [OR]
 RewriteCond %{QUERY_STRING} (union|select|insert|drop|delete|update|create|alter|exec|script) [NC]
 RewriteRule .* - [F,L]
@@ -79,7 +80,7 @@ RewriteRule .* - [F,L]
 RewriteCond %{HTTP_USER_AGENT} (sqlmap|nmap|nikto|scanner|crawler) [NC]
 RewriteRule .* - [F,L]
 
-# Limitar tamaño de request
+# Limitar tamaï¿½o de request
 LimitRequestBody 10485760
 
 # Prevenir hotlinking
@@ -87,7 +88,7 @@ RewriteCond %{HTTP_REFERER} !^$
 RewriteCond %{HTTP_REFERER} !^https?://soporteclientes\.net [NC]
 RewriteRule \.(jpg|jpeg|png|gif|ico|css|js)$ - [F,L]
 
-# Cache para recursos estáticos
+# Cache para recursos estï¿½ticos
 <IfModule mod_expires.c>
     ExpiresActive On
     ExpiresByType text/css "access plus 1 month"
@@ -99,7 +100,7 @@ RewriteRule \.(jpg|jpeg|png|gif|ico|css|js)$ - [F,L]
     ExpiresByType image/ico "access plus 1 year"
 </IfModule>
 
-# Compresión GZIP
+# Compresiï¿½n GZIP
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/plain
     AddOutputFilterByType DEFLATE text/html
@@ -113,20 +114,20 @@ RewriteRule \.(jpg|jpeg|png|gif|ico|css|js)$ - [F,L]
     AddOutputFilterByType DEFLATE application/json
 </IfModule>
 
-# Páginas de error personalizadas
+# Pï¿½ginas de error personalizadas
 ErrorDocument 403 /error-403.html
 ErrorDocument 404 /error-404.html
 ErrorDocument 500 /error-500.html
 
-# Configuración PHP de seguridad
+# Configuraciï¿½n PHP de seguridad
 <IfModule mod_php.c>
-    # Ocultar versión de PHP
+    # Ocultar versiï¿½n de PHP
     php_flag expose_php off
     
     # Deshabilitar funciones peligrosas
     php_admin_value disable_functions "exec,passthru,shell_exec,system,proc_open,popen,curl_exec,curl_multi_exec,parse_ini_file,show_source"
     
-    # Límites de memoria y tiempo
+    # Lï¿½mites de memoria y tiempo
     php_value memory_limit 256M
     php_value max_execution_time 60
     php_value max_input_time 30
