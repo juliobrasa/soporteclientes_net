@@ -58,7 +58,7 @@ class BookingExtractor {
             'startUrls' => [
                 ['url' => $bookingUrl]
             ],
-            'maxItems' => $maxReviews,
+            'maxReviewsPerHotel' => $maxReviews,
             'proxyConfiguration' => [
                 'useApifyProxy' => true,
                 'apifyProxyGroups' => ['RESIDENTIAL'] // IMPORTANTE: Usar proxies residenciales
@@ -134,7 +134,7 @@ class BookingExtractor {
             'startUrls' => [
                 ['url' => $bookingUrl]
             ],
-            'maxItems' => $maxReviews,
+            'maxReviewsPerHotel' => $maxReviews,
             'proxyConfiguration' => [
                 'useApifyProxy' => true,
                 'apifyProxyGroups' => ['RESIDENTIAL']
