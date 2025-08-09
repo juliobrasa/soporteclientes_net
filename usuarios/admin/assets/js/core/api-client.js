@@ -212,7 +212,7 @@ class AdminAPIClient {
         
         if (isLaravelEndpoint) {
             // Usar API de Laravel
-            const baseUrl = this.baseUrl || 'public/api';
+            const baseUrl = this.baseUrl;
             let finalUrl = `${baseUrl.replace(/\/$/, '')}/${endpoint}`;
             
             // Para GET requests con parámetros, agregar query string
@@ -246,11 +246,15 @@ class AdminAPIClient {
         if (endpoint.startsWith('hotels') && laravelModules.hotels) return true;
         if (endpoint.startsWith('ai-providers') && laravelModules.aiProviders) return true;
         if (endpoint.startsWith('prompts') && laravelModules.prompts) return true;
+        if (endpoint.startsWith('external-apis') && laravelModules.externalApis) return true;
+        if (endpoint.startsWith('system-logs') && laravelModules.systemLogs) return true;
+        if (endpoint.startsWith('extraction-jobs') && laravelModules.extractionJobs) return true;
+        if (endpoint.startsWith('tools') && laravelModules.tools) return true;
         
         // Endpoints específicos de Laravel
         const laravelEndpoints = [
-            'hotels/', 'ai-providers/', 'prompts/',
-            'hotels/stats', 'ai-providers/stats', 'prompts/stats'
+            'hotels/', 'ai-providers/', 'prompts/', 'external-apis/', 'system-logs/', 'extraction-jobs/', 'tools/',
+            'hotels/stats', 'ai-providers/stats', 'prompts/stats', 'external-apis/stats', 'system-logs/stats', 'extraction-jobs/stats', 'tools/stats'
         ];
         
         return laravelEndpoints.some(prefix => endpoint.startsWith(prefix));
@@ -440,6 +444,18 @@ class AdminAPIClient {
         } else if (endpoint.includes('prompts')) {
             this.clearCache('prompts');
             this.clearCache('getPrompts');
+        } else if (endpoint.includes('external-apis')) {
+            this.clearCache('external-apis');
+            this.clearCache('getApiProviders');
+            this.clearCache('getExternalApis');
+        } else if (endpoint.includes('system-logs')) {
+            this.clearCache('system-logs');
+            this.clearCache('getLogs');
+            this.clearCache('getSystemLogs');
+        } else if (endpoint.includes('extraction-jobs')) {
+            this.clearCache('extraction-jobs');
+            this.clearCache('getExtractionJobs');
+            this.clearCache('getExtractionHotels');
         }
     }
     
@@ -736,13 +752,367 @@ class AdminAPIClient {
         }
     }
     
-    // Logs
+    // ================================================================
+    // MÉTODOS ESPECÍFICOS PARA EXTERNAL APIS - HÍBRIDO Laravel/Legacy
+    // ================================================================
+    
+    async getExternalApis(filters = {}) {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.get('external-apis', filters);
+        } else {
+            return this.call('getApiProviders', filters, { cache: true });
+        }
+    }
+    
+    async getApiProviders() {
+        return this.getExternalApis(); // Alias para compatibilidad
+    }
+    
+    async saveExternalApi(apiData) {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            if (apiData.id) {
+                return this.put(`external-apis/${apiData.id}`, apiData);
+            } else {
+                return this.post('external-apis', apiData);
+            }
+        } else {
+            const result = await this.call('saveApiProvider', apiData);
+            if (result.success) {
+                this.clearCache('getApiProviders');
+            }
+            return result;
+        }
+    }
+    
+    async saveApiProvider(providerData) {
+        return this.saveExternalApi(providerData); // Alias para compatibilidad
+    }
+    
+    async deleteExternalApi(apiId) {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.delete(`external-apis/${apiId}`);
+        } else {
+            const result = await this.call('deleteApiProvider', { id: apiId });
+            if (result.success) {
+                this.clearCache('getApiProviders');
+            }
+            return result;
+        }
+    }
+    
+    async deleteApiProvider(providerId) {
+        return this.deleteExternalApi(providerId); // Alias para compatibilidad
+    }
+    
+    async testExternalApi(apiId, testData = {}) {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.post(`external-apis/${apiId}/test`, testData);
+        } else {
+            return this.call('testApiProvider', { id: apiId });
+        }
+    }
+    
+    async testApiProvider(providerId) {
+        return this.testExternalApi(providerId); // Alias para compatibilidad
+    }
+    
+    async toggleExternalApi(apiId, status) {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.post(`external-apis/${apiId}/toggle`);
+        } else {
+            const result = await this.call('toggleApiProvider', { id: apiId, active: status });
+            if (result.success) {
+                this.clearCache('getApiProviders');
+            }
+            return result;
+        }
+    }
+    
+    async getExternalApiDefaults() {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.get('external-apis/defaults');
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
+    }
+    
+    async getExternalApiStats() {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.get('external-apis/stats');
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
+    }
+    
+    async incrementExternalApiUsage(apiId) {
+        if (AdminConfig?.api?.laravel?.migrated?.externalApis) {
+            return this.post(`external-apis/${apiId}/usage`);
+        } else {
+            return { success: false, error: 'No disponible en versión legacy' };
+        }
+    }
+    
+    // ================================================================
+    // MÉTODOS ESPECÍFICOS PARA SYSTEM LOGS - HÍBRIDO Laravel/Legacy
+    // ================================================================
+    
     async getLogs(filters = {}) {
-        return this.call('getLogs', filters);
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.get('system-logs', filters);
+        } else {
+            return this.call('getLogs', filters);
+        }
+    }
+    
+    async getSystemLogs(filters = {}) {
+        return this.getLogs(filters); // Alias
+    }
+    
+    async createSystemLog(logData) {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.post('system-logs', logData);
+        } else {
+            return { success: false, error: 'Creación de logs no disponible en versión legacy' };
+        }
     }
     
     async clearLogs() {
-        return this.call('clearLogs');
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            // En Laravel usamos cleanup en lugar de clear
+            return this.post('system-logs/cleanup', { days: 1 });
+        } else {
+            return this.call('clearLogs');
+        }
+    }
+    
+    async resolveSystemLog(logId, notes = null) {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.post(`system-logs/${logId}/resolve`, { resolution_notes: notes });
+        } else {
+            return { success: false, error: 'Resolución de logs no disponible en versión legacy' };
+        }
+    }
+    
+    async getSystemLogsStats(period = '24h') {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.get('system-logs/stats', { period });
+        } else {
+            return { success: false, error: 'Estadísticas no disponibles en versión legacy' };
+        }
+    }
+    
+    async getSystemLogsTimeline(period = '24h', interval = '1h') {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.get('system-logs/timeline', { period, interval });
+        } else {
+            return { success: false, error: 'Timeline no disponible en versión legacy' };
+        }
+    }
+    
+    async getSystemLogsConfig() {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.get('system-logs/config');
+        } else {
+            return { success: false, error: 'Configuración no disponible en versión legacy' };
+        }
+    }
+    
+    async exportSystemLogs(filters = {}, format = 'json') {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.get('system-logs/export', { ...filters, format });
+        } else {
+            return { success: false, error: 'Exportación no disponible en versión legacy' };
+        }
+    }
+    
+    async cleanupSystemLogs(days = 90) {
+        if (AdminConfig?.api?.laravel?.migrated?.systemLogs) {
+            return this.post('system-logs/cleanup', { days });
+        } else {
+            return { success: false, error: 'Limpieza avanzada no disponible en versión legacy' };
+        }
+    }
+    
+    // ================================================================
+    // MÉTODOS ESPECÍFICOS PARA EXTRACTION JOBS - HÍBRIDO Laravel/Legacy
+    // ================================================================
+    
+    async getExtractionJobs(filters = {}) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            return this.get('extraction-jobs', filters);
+        } else {
+            return this.call('getExtractionJobs', filters, { cache: true });
+        }
+    }
+    
+    async createExtractionJob(jobData) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.post('extraction-jobs', jobData);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('createExtractionJob', jobData);
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async updateExtractionJob(jobData) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.put(`extraction-jobs/${jobData.id}`, jobData);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('updateExtractionJob', jobData);
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async deleteExtractionJob(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.delete(`extraction-jobs/${jobId}`);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('deleteExtractionJob', { id: jobId });
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async startExtractionJob(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.post(`extraction-jobs/${jobId}/start`);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('startExtractionJob', { id: jobId });
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async pauseExtractionJob(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.post(`extraction-jobs/${jobId}/pause`);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('pauseExtractionJob', { id: jobId });
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async cancelExtractionJob(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.post(`extraction-jobs/${jobId}/cancel`);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('cancelExtractionJob', { id: jobId });
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async retryExtractionJob(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.post(`extraction-jobs/${jobId}/retry`);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            const result = await this.call('retryExtractionJob', { id: jobId });
+            if (result.success) {
+                this.clearCache('getExtractionJobs');
+            }
+            return result;
+        }
+    }
+    
+    async cloneExtractionJob(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            const result = await this.post(`extraction-jobs/${jobId}/clone`);
+            if (result.success) {
+                this.clearCache('extraction-jobs');
+            }
+            return result;
+        } else {
+            return { success: false, error: 'Clonación no disponible en versión legacy' };
+        }
+    }
+    
+    async getExtractionJobStats(period = '30d') {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            return this.get('extraction-jobs/stats', { period });
+        } else {
+            return { success: false, error: 'Estadísticas no disponibles en versión legacy' };
+        }
+    }
+    
+    async getExtractionHotels() {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            return this.get('extraction-jobs/hotels');
+        } else {
+            return this.call('getExtractionHotels', {}, { cache: true });
+        }
+    }
+    
+    async getExtractionJobRuns(jobId) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            return this.get(`extraction-jobs/${jobId}/runs`);
+        } else {
+            return { success: false, error: 'Runs no disponibles en versión legacy' };
+        }
+    }
+    
+    async getExtractionJobLogs(jobId, filters = {}) {
+        if (AdminConfig?.api?.laravel?.migrated?.extractionJobs) {
+            return this.get(`extraction-jobs/${jobId}/logs`, filters);
+        } else {
+            return { success: false, error: 'Logs no disponibles en versión legacy' };
+        }
+    }
+    
+    // Alias methods for backward compatibility
+    async startExtraction(extractionData) {
+        return this.createExtractionJob(extractionData);
+    }
+    
+    async getExtractionStatus() {
+        return this.getExtractionJobStats();
+    }
+    
+    async getApifyStatus() {
+        // Check if Apify providers are configured
+        return this.call('getApifyStatus', {}, { cache: true });
     }
     
     // Herramientas
