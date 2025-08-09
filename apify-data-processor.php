@@ -868,28 +868,22 @@ class ApifyClient
             'enableAirbnb' => false,
         ];
 
+        // Merge config con defaults
+        $input = array_merge($defaultConfig, $config);
+
+        // CORRECCIÓN CRÍTICA: Respetar plataformas seleccionadas
         if (!empty($config['platforms']) && is_array($config['platforms'])) {
-            foreach ($config['platforms'] as $p) {
-                $p = strtolower($p);
-                if ($p === 'google') $defaultConfig['enableGoogleMaps'] = true;
-                if ($p === 'tripadvisor') $defaultConfig['enableTripadvisor'] = true;
-                if ($p === 'booking') $defaultConfig['enableBooking'] = true;
-                if ($p === 'expedia') $defaultConfig['enableExpedia'] = true;
-                if ($p === 'hotels' || $p === 'hotelscom' || $p === 'hotels.com') $defaultConfig['enableHotelsCom'] = true;
-                if ($p === 'yelp') $defaultConfig['enableYelp'] = true;
-                if ($p === 'airbnb') $defaultConfig['enableAirbnb'] = true;
-            }
+            $sel = array_map('strtolower', $config['platforms']);
+            $input['enableGoogleMaps']  = in_array('google', $sel, true);
+            $input['enableTripadvisor'] = in_array('tripadvisor', $sel, true);
+            $input['enableBooking']     = in_array('booking', $sel, true);
+            $input['enableExpedia']     = in_array('expedia', $sel, true);
+            $input['enableHotelsCom']   = in_array('hotels', $sel, true);
+            $input['enableYelp']        = in_array('yelp', $sel, true);
+            $input['enableAirbnb']      = in_array('airbnb', $sel, true);
         }
 
-        if (isset($config['hotelId'])) {
-            $defaultConfig['startIds'] = [$config['hotelId']];
-        }
-
-        if (isset($config['startUrls'])) {
-            $defaultConfig['startUrls'] = $config['startUrls'];
-        }
-
-        return array_merge($defaultConfig, $config);
+        return $input;
     }
     
     /**

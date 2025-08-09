@@ -5,7 +5,7 @@ ini_set('display_errors', 0);
 
 // Headers obligatorios antes de cualquier output
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: https://soporteclientes.net');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-Admin-Session, X-Requested-With');
 

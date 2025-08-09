@@ -5,7 +5,7 @@
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: https://soporteclientes.net');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 header('Access-Control-Allow-Credentials: true');
 
@@ -144,7 +144,7 @@ function handleSyncExtraction($input, $pdo) {
         $timeout = min($input['timeout'] ?? 300, 300); // Máximo 5 minutos
         
         // Verificar que el hotel existe y obtener su Place ID y URL de Booking
-        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id, url_booking FROM hoteles WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id, url_booking, destino FROM hoteles WHERE id = ?");
         $stmt->execute([$hotelId]);
         $hotel = $stmt->fetch();
         
@@ -248,7 +248,7 @@ function handleSyncExtraction($input, $pdo) {
                 
                 // Normalizar datos de la reseña
                 $reviewTitle = $review['reviewTitle'] ?? ($review['title'] ?? null);
-                $hotelDestination = $hotel['destino'] ?? $hotel['destination'] ?? null; // Usar campo real si existe
+                $hotelDestination = $hotel['destino'] ?? null; // Usar campo real de la BD
                 $platform = 'booking'; // Para sync siempre es booking
                 $normalizedRating = floatval($review['rating'] ?? 0);
                 
@@ -261,11 +261,11 @@ function handleSyncExtraction($input, $pdo) {
                     ($review['reviewId'] ?? ($review['id'] ?? uniqid('booking_'))) . '_' . $hotelId, // unique_id
                     $hotelId, // hotel_id
                     $hotelName, // hotel_name
-                    $hotelDestination, // hotel_destination (no hardcoded)
+                    $hotelDestination, // hotel_destination (de BD real)
                     $review['reviewerName'] ?? ($review['userName'] ?? 'Anónimo'), // user_name
                     $review['reviewDate'] ?? date('Y-m-d'), // review_date
                     $normalizedRating, // rating normalizado
-                    $reviewTitle ?? 'Reseña', // review_title (usar real o genérico)
+                    $reviewTitle, // review_title (NULL si no existe, no hardcoded)
                     $review['reviewText'] ?? ($review['reviewTextParts']['Liked'] ?? ''), // liked_text
                     $platform, // source_platform (unificado)
                     $review['reviewId'] ?? ($review['id'] ?? null), // platform_review_id
@@ -352,7 +352,7 @@ function handleStartExtraction($input, $pdo) {
         $languages = $input['languages'] ?? ['en', 'es'];
         
         // Verificar que el hotel existe y obtener su Place ID y URL de Booking
-        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id, url_booking FROM hoteles WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT nombre_hotel, google_place_id, url_booking, destino FROM hoteles WHERE id = ?");
         $stmt->execute([$hotelId]);
         $hotel = $stmt->fetch();
         
