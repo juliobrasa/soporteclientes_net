@@ -1,0 +1,23 @@
+# Protección adicional para herramientas de administración
+<Files "*.php">
+    Order allow,deny
+    Deny from all
+    # Solo permitir acceso desde localhost
+    Allow from 127.0.0.1
+    Allow from ::1
+</Files>
+
+# Proteger archivos sensibles
+<FilesMatch "\.(log|sql|bak|backup|dump)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Deshabilitar listado de directorio
+Options -Indexes
+
+# Headers de seguridad
+<IfModule mod_headers.c>
+    Header always set X-Robots-Tag "noindex, nofollow"
+    Header always set X-Frame-Options DENY
+</IfModule>

@@ -1,49 +1,18 @@
 <?php
 /**
- * Sistema de logging para debug
+ * ARCHIVO PROTEGIDO POR SEGURIDAD
+ * Script original movido a: /root/soporteclientes_net/admin-tools/debug-logger.php
+ * Fecha: 2025-08-09 00:41:48
  */
 
-class DebugLogger {
-    private static $logFile = 'debug.log';
-    
-    public static function log($message, $level = 'INFO', $context = []) {
-        $timestamp = date('Y-m-d H:i:s');
-        $contextStr = !empty($context) ? ' | Context: ' . json_encode($context) : '';
-        $logEntry = "[$timestamp] [$level] $message$contextStr" . PHP_EOL;
-        
-        // Escribir al archivo
-        file_put_contents(self::$logFile, $logEntry, FILE_APPEND | LOCK_EX);
-        
-        // También escribir al error log de PHP
-        error_log("DEBUG [$level] $message$contextStr");
-    }
-    
-    public static function error($message, $context = []) {
-        self::log($message, 'ERROR', $context);
-    }
-    
-    public static function info($message, $context = []) {
-        self::log($message, 'INFO', $context);
-    }
-    
-    public static function debug($message, $context = []) {
-        self::log($message, 'DEBUG', $context);
-    }
-    
-    public static function getLogs($lines = 50) {
-        if (!file_exists(self::$logFile)) {
-            return "No hay logs disponibles";
-        }
-        
-        $logs = file(self::$logFile);
-        $logs = array_slice($logs, -$lines);
-        return implode('', $logs);
-    }
-    
-    public static function clearLogs() {
-        if (file_exists(self::$logFile)) {
-            unlink(self::$logFile);
-        }
-    }
+session_start();
+if (!isset($_SESSION['admin_logged']) || $_SESSION['admin_logged'] !== true) {
+    http_response_code(403);
+    die('Acceso denegado. Se requiere autenticación de administrador.');
 }
+
+echo '<h1>🔒 Script Protegido</h1>';
+echo '<p>Este script ha sido movido por razones de seguridad.</p>';
+echo '<p>Ubicación segura: <code>/root/soporteclientes_net/admin-tools/debug-logger.php</code></p>';
+echo '<p>Para acceder, inicie sesión como administrador.</p>';
 ?>

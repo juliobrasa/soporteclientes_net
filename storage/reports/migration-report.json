@@ -1,0 +1,94 @@
+{
+    "timestamp": "2025-08-08T23:39:17+00:00",
+    "migration_time": "2025-08-08 23:33:06",
+    "hours_since_migration": 0.1,
+    "system_health": {
+        "api_status": "error",
+        "processor_status": "healthy",
+        "database_status": "healthy",
+        "schema_integrity": "healthy"
+    },
+    "performance": {
+        "api_response_time_ms": 1.02,
+        "api_performance": "good",
+        "database_queries": {
+            "simple_select": {
+                "time_ms": 51.16,
+                "status": "fast"
+            },
+            "unified_query": {
+                "time_ms": 50.47,
+                "status": "fast"
+            },
+            "complex_filter": {
+                "time_ms": 51.31,
+                "status": "fast"
+            }
+        }
+    },
+    "errors": {
+        "php_errors": [],
+        "api_errors": [],
+        "processor_errors": [
+            "[2025-08-08 23:28:44] [ERROR] No hay datos válidos para insertar"
+        ],
+        "database_errors": {
+            "log_error_enabled": true,
+            "error_log_path": "\/var\/lib\/mysql\/cph02.soltia.net.err"
+        }
+    },
+    "recommendations": [
+        {
+            "priority": "high",
+            "component": "api_status",
+            "issue": "Component api_status is showing errors",
+            "action": "Investigate and fix api_status immediately"
+        }
+    ],
+    "api_usage": {
+        "hours_monitored": 0.1,
+        "estimated_requests": 18.900000000000002,
+        "endpoints_used": {
+            "reviews.php": 12.600000000000001,
+            "reviews.php?action=stats": 0.6000000000000001,
+            "reviews.php?action=compatibility": 0.2
+        },
+        "error_rate": 0.02,
+        "avg_response_time": 220
+    },
+    "database_status": {
+        "extraction_sources": [
+            {
+                "source": "apify",
+                "count": 2,
+                "avg_rating": "8.350000",
+                "latest_entry": "2025-08-08 23:29:07"
+            },
+            {
+                "source": "manual",
+                "count": 1142,
+                "avg_rating": "7.731173",
+                "latest_entry": "2025-08-08 12:21:30"
+            }
+        ],
+        "triggers": {
+            "count": 2,
+            "active": "healthy"
+        },
+        "indexes": {
+            "count": 29,
+            "status": "good"
+        },
+        "data_integrity": {
+            "duplicate_unique_ids": {
+                "total_records": 1144,
+                "unique_records": 1144,
+                "has_duplicates": true
+            },
+            "field_synchronization": {
+                "unsynced_records": 1142,
+                "is_synchronized": false
+            }
+        }
+    }
+}

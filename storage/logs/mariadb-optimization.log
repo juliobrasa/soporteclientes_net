@@ -1,0 +1,27 @@
+[2025-08-08 23:49:02] 🚀 Creando índices optimizados para MariaDB...
+[2025-08-08 23:49:02] ⚠️  Índice ya existe: idx_rating
+[2025-08-08 23:49:02] ✅ Índice creado: idx_normalized_rating
+[2025-08-08 23:49:02] ✅ Índice creado: idx_extraction_source
+[2025-08-08 23:49:02] ⚠️  Índice ya existe: idx_source_platform
+[2025-08-08 23:49:02] ✅ Índice creado: idx_platform
+[2025-08-08 23:49:02] ⚠️  Índice ya existe: idx_scraped_at
+[2025-08-08 23:49:02] ✅ Índice creado: idx_hotel_scraped
+[2025-08-08 23:49:02] ✅ Índice creado: idx_hotel_rating
+[2025-08-08 23:49:02] ✅ Índice creado: idx_platform_date
+[2025-08-08 23:49:02] ✅ Índice creado: idx_source_date
+[2025-08-08 23:49:02] ✅ Índice creado: idx_property_response
+[2025-08-08 23:49:02] ✅ Índice creado: idx_response_from_owner
+[2025-08-08 23:49:02] 📊 Índices - Creados: 9, Omitidos: 3
+[2025-08-08 23:49:02] 📋 Creando vistas optimizadas...
+[2025-08-08 23:49:02] ✅ Vista creada: reviews_stats_summary
+[2025-08-08 23:49:02] ✅ Vista creada: reviews_recent_activity
+[2025-08-08 23:49:02] ⚡ Optimizando consultas de API...
+[2025-08-08 23:49:02] ✅ Procedure creado: get_stats_summary
+[2025-08-08 23:49:02] ✅ Procedure creado: get_recent_activity
+[2025-08-08 23:49:02] ✅ Procedure creado: get_reviews_optimized
+[2025-08-08 23:49:02] 🧪 Testing performance post-optimización...
+[2025-08-08 23:49:02] 🟡 Vista stats: 57.14ms (3 rows)
+[2025-08-08 23:49:03] 🟡 Vista actividad: 54.5ms (4 rows)
+[2025-08-08 23:49:03] 🟡 Query básica con índices: 52.55ms (92 rows)
+[2025-08-08 23:49:03] ❌ Error en Búsqueda de texto optimizada: SQLSTATE[HY000]: General error: 1191 Can't find FULLTEXT index matching the column list
+[2025-08-08 23:49:03] 🟡 Unificado con vistas: 53.71ms (10 rows)

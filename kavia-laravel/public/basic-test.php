@@ -1,36 +1,18 @@
 <?php
-echo "<h1>🔍 Test Básico Laravel</h1>";
+/**
+ * ARCHIVO PROTEGIDO POR SEGURIDAD
+ * Script original movido a: /root/soporteclientes_net/admin-tools/basic-test.php
+ * Fecha: 2025-08-09 00:41:48
+ */
 
-echo "<h2>1. Verificación de Archivos:</h2>";
-
-// Verificar vendor/autoload.php
-if (file_exists('../vendor/autoload.php')) {
-    echo "✅ vendor/autoload.php existe<br>";
-} else {
-    echo "❌ vendor/autoload.php NO EXISTE<br>";
+session_start();
+if (!isset($_SESSION['admin_logged']) || $_SESSION['admin_logged'] !== true) {
+    http_response_code(403);
+    die('Acceso denegado. Se requiere autenticación de administrador.');
 }
 
-// Verificar .env
-if (file_exists('../.env')) {
-    echo "✅ .env existe<br>";
-} else {
-    echo "❌ .env NO existe<br>";
-}
-
-// Verificar composer.phar
-if (file_exists('../composer.phar')) {
-    echo "✅ composer.phar existe<br>";
-} else {
-    echo "❌ composer.phar NO existe<br>";
-}
-
-echo "<h2>2. Estado:</h2>";
-if (file_exists('../vendor/autoload.php')) {
-    echo "✅ Laravel puede funcionar<br>";
-    echo "<a href='login'>Probar Login</a><br>";
-} else {
-    echo "❌ Necesitas ejecutar: <a href='../install-composer-fixed.php'>install-composer-fixed.php</a><br>";
-}
-
-echo "<p>Directorio: " . getcwd() . "</p>";
+echo '<h1>🔒 Script Protegido</h1>';
+echo '<p>Este script ha sido movido por razones de seguridad.</p>';
+echo '<p>Ubicación segura: <code>/root/soporteclientes_net/admin-tools/basic-test.php</code></p>';
+echo '<p>Para acceder, inicie sesión como administrador.</p>';
 ?>

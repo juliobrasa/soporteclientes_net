@@ -1,0 +1,6 @@
+[2025-08-09 00:01:55] [INFO] 🔧 Verificando compatibilidad de base de datos...
+[2025-08-09 00:01:55] [INFO] 📋 Versión detectada: 10.3.39-MariaDB-cll-lve
+[2025-08-09 00:01:55] [INFO] ✅ MariaDB 10.3 - JSON soportado
+[2025-08-09 00:01:55] [INFO] 🔍 Analizando tablas problemáticas...
+[2025-08-09 00:01:55] [INFO] ⚠️  system_logs requiere corrección
+[2025-08-09 00:01:55] [INFO] 📊 Tablas problemáticas encontradas: 1

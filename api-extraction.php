@@ -4,9 +4,10 @@
  */
 
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: https://soporteclientes.net');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Admin-Session');
+header('Access-Control-Allow-Credentials: true');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
@@ -34,40 +35,32 @@ DebugLogger::info("Nueva petición de extracción", [
     'referer' => $_SERVER['HTTP_REFERER'] ?? null
 ]);
 
-// Verificar autenticación
+// Verificar autenticación - CORREGIDO: Sin bypass vulnerable
 session_start();
 
-// Método principal: verificar sesión normal
-$isAuthenticated = isset($_SESSION['admin_logged']) && $_SESSION['admin_logged'];
+// SOLO verificar sesión normal - NO hay fallback vulnerable
+$isAuthenticated = isset($_SESSION['admin_logged']) && $_SESSION['admin_logged'] === true;
 
-// Método alternativo: verificar header de sesión para problemas de cookies
-if (!$isAuthenticated && isset($_SERVER['HTTP_X_ADMIN_SESSION'])) {
-    $sessionId = $_SERVER['HTTP_X_ADMIN_SESSION'];
-    if ($sessionId && strlen($sessionId) > 10) { // Validación básica de session ID
-        // Aceptar como autenticado si viene con header de sesión válido
-        $isAuthenticated = true;
-    }
-}
-
-DebugLogger::debug("Verificación de autenticación", [
-    'session_logged' => isset($_SESSION['admin_logged']),
-    'session_value' => $_SESSION['admin_logged'] ?? null,
+// Log de intento de acceso
+DebugLogger::info("Intento de acceso a API", [
+    'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
     'session_id' => session_id(),
-    'header_session' => $_SERVER['HTTP_X_ADMIN_SESSION'] ?? null,
-    'cookies_count' => count($_COOKIE),
-    'is_authenticated' => $isAuthenticated
+    'has_session' => isset($_SESSION['admin_logged']),
+    'session_value' => $_SESSION['admin_logged'] ?? null,
+    'header_session' => isset($_SERVER['HTTP_X_ADMIN_SESSION']) ? 'presente' : 'ausente'
 ]);
 
 if (!$isAuthenticated) {
-    DebugLogger::error("Autenticación fallida");
+    DebugLogger::warning("Acceso no autorizado denegado", [
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'session_id' => session_id(),
+        'attempted_endpoint' => $_SERVER['REQUEST_URI'] ?? 'unknown'
+    ]);
+    
     response([
-        'error' => 'No autorizado',
-        'debug' => [
-            'session_logged' => isset($_SESSION['admin_logged']),
-            'session_id' => session_id(),
-            'header_session' => $_SERVER['HTTP_X_ADMIN_SESSION'] ?? null,
-            'cookies' => !empty($_COOKIE)
-        ]
+        'error' => 'Acceso no autorizado',
+        'message' => 'Sesión de administrador requerida'
     ], 401);
 }
 

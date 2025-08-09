@@ -1,33 +1,18 @@
 <?php
-// Test básico para verificar que PHP funciona
-echo "✅ PHP está funcionando correctamente<br>";
-echo "📅 Fecha: " . date('Y-m-d H:i:s') . "<br>";
-echo "🔧 Versión PHP: " . PHP_VERSION . "<br>";
-echo "📁 Directorio actual: " . __DIR__ . "<br>";
+/**
+ * ARCHIVO PROTEGIDO POR SEGURIDAD
+ * Script original movido a: /root/soporteclientes_net/admin-tools/test.php
+ * Fecha: 2025-08-09 00:41:48
+ */
 
-// Test de permisos
-if (is_writable('../storage')) {
-    echo "✅ Directorio storage tiene permisos de escritura<br>";
-} else {
-    echo "❌ Directorio storage NO tiene permisos de escritura<br>";
+session_start();
+if (!isset($_SESSION['admin_logged']) || $_SESSION['admin_logged'] !== true) {
+    http_response_code(403);
+    die('Acceso denegado. Se requiere autenticación de administrador.');
 }
 
-// Test de base de datos (intentar conectar)
-try {
-    // Leer configuración
-    $envFile = '../.env';
-    if (file_exists($envFile)) {
-        echo "✅ Archivo .env encontrado<br>";
-        $env = file_get_contents($envFile);
-        if (strpos($env, 'DB_HOST') !== false) {
-            echo "✅ Configuración de base de datos encontrada en .env<br>";
-        }
-    } else {
-        echo "❌ Archivo .env NO encontrado<br>";
-    }
-} catch (Exception $e) {
-    echo "❌ Error: " . $e->getMessage() . "<br>";
-}
-
-echo "<br>🚀 <a href='/kavia-laravel/public/login'>Ir al Login de Laravel</a>";
+echo '<h1>🔒 Script Protegido</h1>';
+echo '<p>Este script ha sido movido por razones de seguridad.</p>';
+echo '<p>Ubicación segura: <code>/root/soporteclientes_net/admin-tools/test.php</code></p>';
+echo '<p>Para acceder, inicie sesión como administrador.</p>';
 ?>

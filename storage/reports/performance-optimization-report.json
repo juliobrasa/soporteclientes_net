@@ -1,0 +1,73 @@
+{
+    "timestamp": "2025-08-08T23:48:14+00:00",
+    "optimization_summary": {
+        "status": "completed",
+        "duration": "N\/A",
+        "improvements": [],
+        "average_improvement": 4.76,
+        "improved_queries": 3
+    },
+    "performance_comparison": {
+        "unified_rating_avg": {
+            "before_ms": 52.24,
+            "after_ms": 53.35,
+            "improvement_ms": -1.11,
+            "improvement_percent": -2.12,
+            "status": "degraded"
+        },
+        "unified_guest_list": {
+            "before_ms": 52.25,
+            "after_ms": 53.45,
+            "improvement_ms": -1.2,
+            "improvement_percent": -2.3,
+            "status": "degraded"
+        },
+        "high_rating_filter": {
+            "before_ms": 56.01,
+            "after_ms": 57.89,
+            "improvement_ms": -1.88,
+            "improvement_percent": -3.36,
+            "status": "degraded"
+        },
+        "source_statistics": {
+            "before_ms": 52.9,
+            "after_ms": 52.38,
+            "improvement_ms": 0.52,
+            "improvement_percent": 0.98,
+            "status": "improved"
+        },
+        "platform_breakdown": {
+            "before_ms": 54.37,
+            "after_ms": 52.43,
+            "improvement_ms": 1.94,
+            "improvement_percent": 3.57,
+            "status": "improved"
+        },
+        "text_search": {
+            "before_ms": 57.62,
+            "after_ms": 52.01,
+            "improvement_ms": 5.61,
+            "improvement_percent": 9.74,
+            "status": "improved"
+        },
+        "response_filter": {
+            "before_ms": 57.07,
+            "after_ms": 61.11,
+            "improvement_ms": -4.04,
+            "improvement_percent": -7.08,
+            "status": "degraded"
+        }
+    },
+    "recommendations": [
+        {
+            "type": "usage_optimization",
+            "issue": "API should use optimized views",
+            "suggestion": "Update API to use reviews_unified and reviews_stats_summary views for better performance"
+        },
+        {
+            "type": "monitoring",
+            "issue": "Performance monitoring needed",
+            "suggestion": "Set up regular performance monitoring to track query times over time"
+        }
+    ]
+}

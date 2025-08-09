@@ -1,0 +1,116 @@
+{
+    "timestamp": "2025-08-09T00:09:53+00:00",
+    "total_issues_found": 7,
+    "total_fixes_applied": 7,
+    "issues": [
+        {
+            "type": "async_job_updates",
+            "table": "apify_extraction_runs",
+            "description": "Tabla apify_extraction_runs no tiene job_id para relacionar con extraction_jobs",
+            "severity": "critical",
+            "impact": "Jobs async no actualizan extraction_jobs, panel muestra estados incorrectos"
+        },
+        {
+            "type": "incomplete_cors_headers",
+            "file": "\/root\/soporteclientes_net\/admin_api.php",
+            "description": "Headers CORS no incluyen X-Admin-Session y X-Requested-With",
+            "severity": "medium",
+            "impact": "Preflight CORS falla en entornos cross-origin"
+        },
+        {
+            "type": "incomplete_cors_headers",
+            "file": "\/root\/soporteclientes_net\/api\/config.php",
+            "description": "Headers CORS no incluyen X-Admin-Session y X-Requested-With",
+            "severity": "medium",
+            "impact": "Preflight CORS falla en entornos cross-origin"
+        },
+        {
+            "type": "incomplete_cors_headers",
+            "file": "\/root\/soporteclientes_net\/api\/ia_response.php",
+            "description": "Headers CORS no incluyen X-Admin-Session y X-Requested-With",
+            "severity": "medium",
+            "impact": "Preflight CORS falla en entornos cross-origin"
+        },
+        {
+            "type": "incomplete_cors_headers",
+            "file": "\/root\/soporteclientes_net\/api\/reviews-unified.php",
+            "description": "Headers CORS no incluyen X-Admin-Session y X-Requested-With",
+            "severity": "medium",
+            "impact": "Preflight CORS falla en entornos cross-origin"
+        },
+        {
+            "type": "incomplete_cors_headers",
+            "file": "\/root\/soporteclientes_net\/api\/reviews.php",
+            "description": "Headers CORS no incluyen X-Admin-Session y X-Requested-With",
+            "severity": "medium",
+            "impact": "Preflight CORS falla en entornos cross-origin"
+        },
+        {
+            "type": "duplicate_js_functions",
+            "file": "\/root\/soporteclientes_net\/usuarios\/admin\/admin_main.php",
+            "description": "Funciones JS duplicadas: editHotel",
+            "severity": "medium",
+            "impact": "Funciones se sobrescriben, comportamiento impredecible"
+        }
+    ],
+    "fixes": [
+        {
+            "type": "async_job_updates",
+            "description": "Agregada relación job_id a apify_extraction_runs",
+            "status": "completed"
+        },
+        {
+            "type": "incomplete_cors_headers",
+            "description": "Corregidos headers CORS en \/root\/soporteclientes_net\/admin_api.php",
+            "status": "completed",
+            "note": "Archivo guardado como .cors-fixed"
+        },
+        {
+            "type": "incomplete_cors_headers",
+            "description": "Corregidos headers CORS en \/root\/soporteclientes_net\/api\/config.php",
+            "status": "completed",
+            "note": "Archivo guardado como .cors-fixed"
+        },
+        {
+            "type": "incomplete_cors_headers",
+            "description": "Corregidos headers CORS en \/root\/soporteclientes_net\/api\/ia_response.php",
+            "status": "completed",
+            "note": "Archivo guardado como .cors-fixed"
+        },
+        {
+            "type": "incomplete_cors_headers",
+            "description": "Corregidos headers CORS en \/root\/soporteclientes_net\/api\/reviews-unified.php",
+            "status": "completed",
+            "note": "Archivo guardado como .cors-fixed"
+        },
+        {
+            "type": "incomplete_cors_headers",
+            "description": "Corregidos headers CORS en \/root\/soporteclientes_net\/api\/reviews.php",
+            "status": "completed",
+            "note": "Archivo guardado como .cors-fixed"
+        },
+        {
+            "type": "duplicate_js_functions",
+            "description": "Funciones JS duplicadas en \/root\/soporteclientes_net\/usuarios\/admin\/admin_main.php - REQUIERE REVISIÓN MANUAL",
+            "status": "manual_required",
+            "recommendation": "Consolidar funciones duplicadas en una sola implementación"
+        }
+    ],
+    "recommendations": {
+        "critico": [
+            "Revisar archivos .fixed generados antes de aplicar cambios",
+            "Implementar tests para prevenir regresiones",
+            "Configurar linting para detectar errores similares automáticamente"
+        ],
+        "mejoras": [
+            "Usar TypeScript para prevenir errores de tipos",
+            "Implementar pipeline CI\/CD con validaciones automáticas",
+            "Crear documentación de API actualizada"
+        ],
+        "monitoreo": [
+            "Configurar alertas para errores 500",
+            "Monitorear performance de queries después de correcciones",
+            "Revisar logs regularmente por nuevos problemas"
+        ]
+    }
+}

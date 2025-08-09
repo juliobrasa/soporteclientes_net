@@ -1,0 +1,36 @@
+[2025-08-08 23:48:12] 🚀 Iniciando optimización de performance...
+[2025-08-08 23:48:12] 📊 Midiendo performance inicial...
+[2025-08-08 23:48:13] 🔍 Analizando índices existentes...
+[2025-08-08 23:48:13] 📊 Índices actuales: 29
+[2025-08-08 23:48:13] ⚡ Creando índices optimizados...
+[2025-08-08 23:48:13] ❌ Error creando índice idx_unified_rating: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '(COALESCE(rating, normalized_rating))
+            )' at line 2
+[2025-08-08 23:48:13] ❌ Error creando índice idx_hotel_rating_date: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '(COALESCE(rating, normalized_rating)), 
+                scraped_at
+        ...' at line 3
+[2025-08-08 23:48:13] ❌ Error creando índice idx_extraction_source_unified: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '(COALESCE(extraction_source, "legacy")),
+                scraped_at
+       ...' at line 2
+[2025-08-08 23:48:13] ❌ Error creando índice idx_platform_unified: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '(COALESCE(source_platform, platform))
+            )' at line 2
+[2025-08-08 23:48:13] ✅ Índice creado: idx_review_text_search
+[2025-08-08 23:48:13] ❌ Error creando índice idx_has_response: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '(CASE WHEN COALESCE(property_response, response_from_owner) IS NOT NULL THEN ...' at line 2
+[2025-08-08 23:48:13] ⚠️  Índice ya existe: idx_unique_id
+[2025-08-08 23:48:13] ✅ Índice creado: idx_api_pagination
+[2025-08-08 23:48:13] 📊 Índices creados: 2, omitidos: 1
+[2025-08-08 23:48:13] 📋 Creando vistas para queries frecuentes...
+[2025-08-08 23:48:13] ✅ Vista creada: reviews_unified
+[2025-08-08 23:48:13] ❌ Error creando vista reviews_stats_summary: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'DAYS) THEN 1 END) as recent_reviews
+                FROM reviews
+          ...' at line 11
+[2025-08-08 23:48:13] ❌ Error creando vista reviews_recent_activity: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'DAYS)
+                GROUP BY DATE(scraped_at), COALESCE(extraction_source,...' at line 8
+[2025-08-08 23:48:13] ✅ Vista creada: reviews_high_quality
+[2025-08-08 23:48:13] 📋 Vistas creadas: 2
+[2025-08-08 23:48:13] 🔧 Aplicando configuraciones de MySQL...
+[2025-08-08 23:48:14] ⚠️  No se pudo aplicar query_cache_optimization: SQLSTATE[42000]: Syntax error or access violation: 1227 Access denied; you need (at least one of) the SUPER privilege(s) for this operation
+[2025-08-08 23:48:14] ✅ Optimización aplicada: join_buffer_optimization
+[2025-08-08 23:48:14] ✅ Optimización aplicada: sort_buffer_optimization
+[2025-08-08 23:48:14] 📈 Midiendo performance post-optimización...
+[2025-08-08 23:48:14] 📄 Reporte guardado: /root/soporteclientes_net/storage/reports/performance-optimization-report.json
+[2025-08-08 23:48:14] ✅ Optimización completada - Ver reporte detallado

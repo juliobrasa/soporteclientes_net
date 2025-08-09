@@ -1,30 +1,16 @@
 <?php
-// Configuración de base de datos
-$db_config = [
-    'host' => 'soporteclientes.net',
-    'database' => 'soporteia_bookingkavia',
-    'username' => 'soporteia_admin',
-    'password' => 'QCF8RhS*}.Oj0u(v'
-];
+// admin-config.php - VERSIÓN SEGURA CORREGIDA
 
-// Función para conectar a la base de datos
+// SEGURIDAD: Cargar configuración desde variables de entorno
+require_once 'env-loader.php';
+
+// Función para conectar a la base de datos de forma segura
 function getDBConnection() {
-    global $db_config;
-    
     try {
-        $pdo = new PDO(
-            "mysql:host={$db_config['host']};dbname={$db_config['database']};charset=utf8mb4",
-            $db_config['username'],
-            $db_config['password'],
-            [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false
-            ]
-        );
-        return $pdo;
-    } catch (PDOException $e) {
-        error_log("Error de conexión BD: " . $e->getMessage());
+        // Usar EnvironmentLoader para obtener credenciales seguras
+        return EnvironmentLoader::createDatabaseConnection();
+    } catch (Exception $e) {
+        error_log("Error de conexión BD (admin-config): " . $e->getMessage());
         return null;
     }
 }
@@ -101,4 +87,33 @@ function getTodayExtractions() {
         return 0;
     }
 }
+
+// Función para verificar autenticación de admin
+function verifyAdminAuth() {
+    session_start();
+    if (!isset($_SESSION['admin_logged']) || $_SESSION['admin_logged'] !== true) {
+        http_response_code(401);
+        if (headers_sent()) {
+            echo '<script>alert("Sesión expirada. Redirigiendo..."); window.location="/admin-login.php";</script>';
+        } else {
+            header('Location: /admin-login.php');
+        }
+        exit;
+    }
+}
+
+// Función para log de seguridad
+function logSecurityEvent($event, $details = []) {
+    $logData = [
+        'timestamp' => date('Y-m-d H:i:s'),
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+        'event' => $event,
+        'details' => $details,
+        'session_id' => session_id()
+    ];
+    
+    error_log("SECURITY_EVENT: " . json_encode($logData));
+}
+
 ?>

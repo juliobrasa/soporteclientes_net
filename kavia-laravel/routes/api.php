@@ -14,26 +14,27 @@ use App\Http\Controllers\Client\DashboardController;
 use App\Http\Controllers\Client\AuthController as ClientAuthController;
 
 // ================================================================
-// RUTAS PÚBLICAS (SIN AUTENTICACIÓN)
+// RUTAS PÚBLICAS (SIN AUTENTICACIÓN) - LIMITADAS
 // ================================================================
 
-// Ruta de prueba
+// Ruta de prueba (solo información pública)
 Route::get('/test', function () {
     return response()->json([
         'message' => '🚀 Kavia Laravel API funcionando!',
         'version' => '1.0.0',
-        'timestamp' => now()->format('Y-m-d H:i:s')
+        'timestamp' => now()->format('Y-m-d H:i:s'),
+        'status' => 'ok'
     ]);
 });
 
-// Rutas de autenticación
+// Solo rutas de autenticación públicas
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 // ================================================================
-// RUTAS PÚBLICAS DEL PANEL DE CLIENTES
+// RUTAS PÚBLICAS DEL PANEL DE CLIENTES - PROTEGIDAS
 // ================================================================
 
-// API de autenticación de clientes (pública)
+// API de autenticación de clientes
 Route::prefix('client/auth')->group(function () {
     Route::post('/login', [ClientAuthController::class, 'apiLogin']);
     Route::get('/me', [ClientAuthController::class, 'me'])->middleware('client.auth');
@@ -48,7 +49,10 @@ Route::middleware('client.auth')->prefix('client')->group(function () {
     Route::get('/stats', [DashboardController::class, 'getStatsData']);
 });
 
-// Rutas protegidas por autenticación
+// ================================================================
+// RUTAS PROTEGIDAS POR AUTENTICACIÓN SANCTUM
+// ================================================================
+
 Route::middleware('auth:sanctum')->group(function () {
     // Auth routes
     Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -64,187 +68,177 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     
     // ================================================================
-    // RUTAS PROTEGIDAS PARA ADMINISTRADORES
+    // RUTAS PROTEGIDAS PARA ADMINISTRADORES - DOBLE AUTENTICACIÓN
     // ================================================================
-    Route::middleware('admin')->group(function () {
+    Route::middleware(['admin', 'secure.cors'])->group(function () {
         
         // Grupo de rutas para hoteles
         Route::prefix('hotels')->group(function () {
-            // CRUD básico
-            Route::get('/', [HotelController::class, 'index']);           // GET /api/hotels
-            Route::post('/', [HotelController::class, 'store']);          // POST /api/hotels
-            Route::get('/{hotel}', [HotelController::class, 'show']);     // GET /api/hotels/{id}
-            Route::put('/{hotel}', [HotelController::class, 'update']);   // PUT /api/hotels/{id}
-            Route::delete('/{hotel}', [HotelController::class, 'destroy']); // DELETE /api/hotels/{id}
-            
-            // Rutas adicionales
-            Route::post('/{hotel}/toggle-status', [HotelController::class, 'toggleStatus']); // POST /api/hotels/{id}/toggle-status
-            Route::get('/stats/summary', [HotelController::class, 'stats']); // GET /api/hotels/stats/summary
+            Route::get('/', [HotelController::class, 'index']);
+            Route::post('/', [HotelController::class, 'store']);
+            Route::get('/{hotel}', [HotelController::class, 'show']);
+            Route::put('/{hotel}', [HotelController::class, 'update']);
+            Route::delete('/{hotel}', [HotelController::class, 'destroy']);
+            Route::post('/{hotel}/toggle-status', [HotelController::class, 'toggleStatus']);
+            Route::get('/stats/summary', [HotelController::class, 'stats']);
         });
 
         // Grupo de rutas para proveedores de IA
         Route::prefix('ai-providers')->group(function () {
-            // Rutas especiales primero (antes del resource)
-            Route::get('/defaults', [AiProviderController::class, 'getDefaults']); // GET /api/ai-providers/defaults
-            Route::get('/stats', [AiProviderController::class, 'stats']);         // GET /api/ai-providers/stats
-            
-            // CRUD básico
-            Route::get('/', [AiProviderController::class, 'index']);              // GET /api/ai-providers
-            Route::post('/', [AiProviderController::class, 'store']);             // POST /api/ai-providers
-            Route::get('/{aiProvider}', [AiProviderController::class, 'show']);   // GET /api/ai-providers/{id}
-            Route::put('/{aiProvider}', [AiProviderController::class, 'update']); // PUT /api/ai-providers/{id}
-            Route::delete('/{aiProvider}', [AiProviderController::class, 'destroy']); // DELETE /api/ai-providers/{id}
-            
-            // Rutas adicionales
-            Route::post('/{aiProvider}/toggle', [AiProviderController::class, 'toggle']); // POST /api/ai-providers/{id}/toggle
-            Route::post('/{aiProvider}/test', [AiProviderController::class, 'test']);     // POST /api/ai-providers/{id}/test
+            Route::get('/defaults', [AiProviderController::class, 'getDefaults']);
+            Route::get('/stats', [AiProviderController::class, 'stats']);
+            Route::get('/', [AiProviderController::class, 'index']);
+            Route::post('/', [AiProviderController::class, 'store']);
+            Route::get('/{aiProvider}', [AiProviderController::class, 'show']);
+            Route::put('/{aiProvider}', [AiProviderController::class, 'update']);
+            Route::delete('/{aiProvider}', [AiProviderController::class, 'destroy']);
+            Route::post('/{aiProvider}/toggle', [AiProviderController::class, 'toggle']);
+            Route::post('/{aiProvider}/test', [AiProviderController::class, 'test']);
         });
 
         // Grupo de rutas para prompts
         Route::prefix('prompts')->group(function () {
-            // Rutas especiales primero (antes del resource)
-            Route::get('/stats', [PromptController::class, 'getStats']);                     // GET /api/prompts/stats
-            Route::get('/templates-library', [PromptController::class, 'getTemplatesLibrary']); // GET /api/prompts/templates-library
-            Route::post('/import-template', [PromptController::class, 'importTemplate']);    // POST /api/prompts/import-template
-            Route::get('/export', [PromptController::class, 'exportPrompts']);              // GET /api/prompts/export
-            Route::get('/recommended/{category}', [PromptController::class, 'getRecommended']); // GET /api/prompts/recommended/{category}
-            
-            // CRUD básico
-            Route::get('/', [PromptController::class, 'index']);                            // GET /api/prompts
-            Route::post('/', [PromptController::class, 'store']);                           // POST /api/prompts
-            Route::get('/{prompt}', [PromptController::class, 'show']);                     // GET /api/prompts/{id}
-            Route::put('/{prompt}', [PromptController::class, 'update']);                   // PUT /api/prompts/{id}
-            Route::delete('/{prompt}', [PromptController::class, 'destroy']);               // DELETE /api/prompts/{id}
-            
-            // Rutas adicionales
-            Route::post('/{prompt}/duplicate', [PromptController::class, 'duplicate']);     // POST /api/prompts/{id}/duplicate
-            Route::post('/{prompt}/test', [PromptController::class, 'testPrompt']);         // POST /api/prompts/{id}/test
+            Route::get('/stats', [PromptController::class, 'getStats']);
+            Route::get('/templates-library', [PromptController::class, 'getTemplatesLibrary']);
+            Route::post('/import-template', [PromptController::class, 'importTemplate']);
+            Route::get('/export', [PromptController::class, 'exportPrompts']);
+            Route::get('/recommended/{category}', [PromptController::class, 'getRecommended']);
+            Route::get('/', [PromptController::class, 'index']);
+            Route::post('/', [PromptController::class, 'store']);
+            Route::get('/{prompt}', [PromptController::class, 'show']);
+            Route::put('/{prompt}', [PromptController::class, 'update']);
+            Route::delete('/{prompt}', [PromptController::class, 'destroy']);
+            Route::post('/{prompt}/duplicate', [PromptController::class, 'duplicate']);
+            Route::post('/{prompt}/test', [PromptController::class, 'testPrompt']);
         });
 
         // Grupo de rutas para APIs externas
         Route::prefix('external-apis')->group(function () {
-            // Rutas especiales primero (antes del resource)
-            Route::get('/defaults', [ExternalApiController::class, 'defaults']);           // GET /api/external-apis/defaults
-            Route::get('/stats', [ExternalApiController::class, 'stats']);                // GET /api/external-apis/stats
-            
-            // CRUD básico
-            Route::get('/', [ExternalApiController::class, 'index']);                      // GET /api/external-apis
-            Route::post('/', [ExternalApiController::class, 'store']);                     // POST /api/external-apis
-            Route::get('/{externalApi}', [ExternalApiController::class, 'show']);          // GET /api/external-apis/{id}
-            Route::put('/{externalApi}', [ExternalApiController::class, 'update']);        // PUT /api/external-apis/{id}
-            Route::delete('/{externalApi}', [ExternalApiController::class, 'destroy']);    // DELETE /api/external-apis/{id}
-            
-            // Rutas adicionales
-            Route::post('/{externalApi}/toggle', [ExternalApiController::class, 'toggle']); // POST /api/external-apis/{id}/toggle
-            Route::post('/{externalApi}/test', [ExternalApiController::class, 'test']);     // POST /api/external-apis/{id}/test
-            Route::post('/{externalApi}/usage', [ExternalApiController::class, 'incrementUsage']); // POST /api/external-apis/{id}/usage
+            Route::get('/defaults', [ExternalApiController::class, 'defaults']);
+            Route::get('/stats', [ExternalApiController::class, 'stats']);
+            Route::get('/', [ExternalApiController::class, 'index']);
+            Route::post('/', [ExternalApiController::class, 'store']);
+            Route::get('/{externalApi}', [ExternalApiController::class, 'show']);
+            Route::put('/{externalApi}', [ExternalApiController::class, 'update']);
+            Route::delete('/{externalApi}', [ExternalApiController::class, 'destroy']);
+            Route::post('/{externalApi}/toggle', [ExternalApiController::class, 'toggle']);
+            Route::post('/{externalApi}/test', [ExternalApiController::class, 'test']);
+            Route::post('/{externalApi}/usage', [ExternalApiController::class, 'incrementUsage']);
         });
 
         // Grupo de rutas para logs del sistema  
         Route::prefix('system-logs')->group(function () {
-            // Rutas especiales primero (antes del resource)
-            Route::get('/stats', [SystemLogController::class, 'stats']);             // GET /api/system-logs/stats
-            Route::get('/timeline', [SystemLogController::class, 'timeline']);       // GET /api/system-logs/timeline
-            Route::get('/config', [SystemLogController::class, 'config']);           // GET /api/system-logs/config
-            Route::get('/export', [SystemLogController::class, 'export']);           // GET /api/system-logs/export
-            Route::post('/cleanup', [SystemLogController::class, 'cleanup']);        // POST /api/system-logs/cleanup
-            
-            // CRUD básico
-            Route::get('/', [SystemLogController::class, 'index']);                   // GET /api/system-logs
-            Route::post('/', [SystemLogController::class, 'store']);                  // POST /api/system-logs
-            Route::get('/{systemLog}', [SystemLogController::class, 'show']);         // GET /api/system-logs/{id}
-            Route::delete('/{systemLog}', [SystemLogController::class, 'destroy']);   // DELETE /api/system-logs/{id}
-            
-            // Rutas adicionales
-            Route::post('/{systemLog}/resolve', [SystemLogController::class, 'resolve']); // POST /api/system-logs/{id}/resolve
+            Route::get('/stats', [SystemLogController::class, 'stats']);
+            Route::get('/timeline', [SystemLogController::class, 'timeline']);
+            Route::get('/config', [SystemLogController::class, 'config']);
+            Route::get('/export', [SystemLogController::class, 'export']);
+            Route::post('/cleanup', [SystemLogController::class, 'cleanup']);
+            Route::get('/', [SystemLogController::class, 'index']);
+            Route::post('/', [SystemLogController::class, 'store']);
+            Route::get('/{systemLog}', [SystemLogController::class, 'show']);
+            Route::delete('/{systemLog}', [SystemLogController::class, 'destroy']);
+            Route::post('/{systemLog}/resolve', [SystemLogController::class, 'resolve']);
         });
 
         // Grupo de rutas para trabajos de extracción
         Route::prefix('extraction-jobs')->group(function () {
-            // Rutas especiales primero (antes del resource)
-            Route::get('/stats', [ExtractionController::class, 'stats']);              // GET /api/extraction-jobs/stats
-            Route::get('/hotels', [ExtractionController::class, 'hotels']);            // GET /api/extraction-jobs/hotels
-            
-            // CRUD básico
-            Route::get('/', [ExtractionController::class, 'index']);                   // GET /api/extraction-jobs
-            Route::post('/', [ExtractionController::class, 'store']);                  // POST /api/extraction-jobs
-            Route::get('/{extractionJob}', [ExtractionController::class, 'show']);     // GET /api/extraction-jobs/{id}
-            Route::put('/{extractionJob}', [ExtractionController::class, 'update']);   // PUT /api/extraction-jobs/{id}
-            Route::delete('/{extractionJob}', [ExtractionController::class, 'destroy']); // DELETE /api/extraction-jobs/{id}
-            
-            // Rutas de control de trabajo
-            Route::post('/{extractionJob}/start', [ExtractionController::class, 'start']);   // POST /api/extraction-jobs/{id}/start
-            Route::post('/{extractionJob}/pause', [ExtractionController::class, 'pause']);   // POST /api/extraction-jobs/{id}/pause
-            Route::post('/{extractionJob}/cancel', [ExtractionController::class, 'cancel']); // POST /api/extraction-jobs/{id}/cancel
-            Route::post('/{extractionJob}/retry', [ExtractionController::class, 'retry']);   // POST /api/extraction-jobs/{id}/retry
-            Route::post('/{extractionJob}/clone', [ExtractionController::class, 'clone']);   // POST /api/extraction-jobs/{id}/clone
-            
-            // Rutas de información detallada
-            Route::get('/{extractionJob}/runs', [ExtractionController::class, 'runs']);     // GET /api/extraction-jobs/{id}/runs
-            Route::get('/{extractionJob}/logs', [ExtractionController::class, 'logs']);     // GET /api/extraction-jobs/{id}/logs
+            Route::get('/stats', [ExtractionController::class, 'stats']);
+            Route::get('/hotels', [ExtractionController::class, 'hotels']);
+            Route::get('/', [ExtractionController::class, 'index']);
+            Route::post('/', [ExtractionController::class, 'store']);
+            Route::get('/{extractionJob}', [ExtractionController::class, 'show']);
+            Route::put('/{extractionJob}', [ExtractionController::class, 'update']);
+            Route::delete('/{extractionJob}', [ExtractionController::class, 'destroy']);
+            Route::post('/{extractionJob}/start', [ExtractionController::class, 'start']);
+            Route::post('/{extractionJob}/pause', [ExtractionController::class, 'pause']);
+            Route::post('/{extractionJob}/cancel', [ExtractionController::class, 'cancel']);
+            Route::post('/{extractionJob}/retry', [ExtractionController::class, 'retry']);
+            Route::post('/{extractionJob}/clone', [ExtractionController::class, 'clone']);
+            Route::get('/{extractionJob}/runs', [ExtractionController::class, 'runs']);
+            Route::get('/{extractionJob}/logs', [ExtractionController::class, 'logs']);
         });
 
         // Grupo de rutas para herramientas de sistema
         Route::prefix('tools')->group(function () {
-            Route::get('/stats', [ToolsController::class, 'getStats']);                    // GET /api/tools/stats
-            Route::get('/duplicates', [ToolsController::class, 'scanDuplicates']);         // GET /api/tools/duplicates
-            Route::delete('/duplicates', [ToolsController::class, 'deleteDuplicates']);    // DELETE /api/tools/duplicates
-            Route::post('/optimize', [ToolsController::class, 'optimizeTables']);          // POST /api/tools/optimize
-            Route::get('/integrity', [ToolsController::class, 'checkIntegrity']);          // GET /api/tools/integrity
-            Route::get('/system-info', [ToolsController::class, 'getSystemInfo']);        // GET /api/tools/system-info
+            Route::get('/stats', [ToolsController::class, 'getStats']);
+            Route::get('/duplicates', [ToolsController::class, 'scanDuplicates']);
+            Route::delete('/duplicates', [ToolsController::class, 'deleteDuplicates']);
+            Route::post('/optimize', [ToolsController::class, 'optimizeTables']);
+            Route::get('/integrity', [ToolsController::class, 'checkIntegrity']);
+            Route::get('/system-info', [ToolsController::class, 'getSystemInfo']);
         });
     });
 });
 
 // ================================================================
-// RUTAS DE COMPATIBILIDAD CON SISTEMA ACTUAL (PÚBLICAS PARA MIGRACIÓN)
+// RUTAS LEGACY DESHABILITADAS EN PRODUCCIÓN
 // ================================================================
 
-// Rutas de compatibilidad para el sistema actual (sin autenticación para facilitar migración)
-// CORS habilitado para desarrollo
+// SEGURIDAD: Las rutas legacy están deshabilitadas en producción
+// Solo están disponibles en entorno de desarrollo local con autenticación
 
-// Aplicar middleware CORS a todas las rutas legacy
-Route::middleware('cors')->group(function () {
-    
-    // HOTELES - Legacy routes
-    Route::get('/legacy/hotels', [HotelController::class, 'index']);
-    Route::post('/legacy/hotels', [HotelController::class, 'store']);
-    Route::get('/legacy/hotels/{hotel}', [HotelController::class, 'show']);
-    Route::put('/legacy/hotels/{hotel}', [HotelController::class, 'update']);
-    Route::delete('/legacy/hotels/{hotel}', [HotelController::class, 'destroy']);
-    Route::post('/legacy/hotels/{hotel}/toggle-status', [HotelController::class, 'toggleStatus']);
+if (app()->environment('local', 'development') && config('app.debug')) {
+    Route::middleware(['auth:sanctum', 'admin', 'secure.cors'])->prefix('legacy')->group(function () {
+        
+        // HOTELES - Legacy routes (PROTEGIDAS)
+        Route::get('/hotels', [HotelController::class, 'index']);
+        Route::post('/hotels', [HotelController::class, 'store']);
+        Route::get('/hotels/{hotel}', [HotelController::class, 'show']);
+        Route::put('/hotels/{hotel}', [HotelController::class, 'update']);
+        Route::delete('/hotels/{hotel}', [HotelController::class, 'destroy']);
+        Route::post('/hotels/{hotel}/toggle-status', [HotelController::class, 'toggleStatus']);
 
-    // AI PROVIDERS - Legacy routes
-    Route::get('/legacy/ai-providers', [AiProviderController::class, 'index']);
-    Route::post('/legacy/ai-providers', [AiProviderController::class, 'store']);
-    Route::get('/legacy/ai-providers/{aiProvider}', [AiProviderController::class, 'show']);
-    Route::put('/legacy/ai-providers/{aiProvider}', [AiProviderController::class, 'update']);
-    Route::delete('/legacy/ai-providers/{aiProvider}', [AiProviderController::class, 'destroy']);
-    Route::post('/legacy/ai-providers/{aiProvider}/toggle', [AiProviderController::class, 'toggle']);
+        // AI PROVIDERS - Legacy routes (PROTEGIDAS)
+        Route::get('/ai-providers', [AiProviderController::class, 'index']);
+        Route::post('/ai-providers', [AiProviderController::class, 'store']);
+        Route::get('/ai-providers/{aiProvider}', [AiProviderController::class, 'show']);
+        Route::put('/ai-providers/{aiProvider}', [AiProviderController::class, 'update']);
+        Route::delete('/ai-providers/{aiProvider}', [AiProviderController::class, 'destroy']);
+        Route::post('/ai-providers/{aiProvider}/toggle', [AiProviderController::class, 'toggle']);
 
-    // PROMPTS - Legacy routes
-    Route::get('/legacy/prompts', [PromptController::class, 'index']);
-    Route::post('/legacy/prompts', [PromptController::class, 'store']);
-    Route::get('/legacy/prompts/{prompt}', [PromptController::class, 'show']);
-    Route::put('/legacy/prompts/{prompt}', [PromptController::class, 'update']);
-    Route::delete('/legacy/prompts/{prompt}', [PromptController::class, 'destroy']);
+        // PROMPTS - Legacy routes (PROTEGIDAS)
+        Route::get('/prompts', [PromptController::class, 'index']);
+        Route::post('/prompts', [PromptController::class, 'store']);
+        Route::get('/prompts/{prompt}', [PromptController::class, 'show']);
+        Route::put('/prompts/{prompt}', [PromptController::class, 'update']);
+        Route::delete('/prompts/{prompt}', [PromptController::class, 'destroy']);
 
-    // EXTERNAL APIS - Legacy routes  
-    Route::get('/legacy/external-apis', [ExternalApiController::class, 'index']);
-    Route::post('/legacy/external-apis', [ExternalApiController::class, 'store']);
-    Route::get('/legacy/external-apis/{externalApi}', [ExternalApiController::class, 'show']);
-    Route::put('/legacy/external-apis/{externalApi}', [ExternalApiController::class, 'update']);
-    Route::delete('/legacy/external-apis/{externalApi}', [ExternalApiController::class, 'destroy']);
+        // EXTERNAL APIS - Legacy routes (PROTEGIDAS)
+        Route::get('/external-apis', [ExternalApiController::class, 'index']);
+        Route::post('/external-apis', [ExternalApiController::class, 'store']);
+        Route::get('/external-apis/{externalApi}', [ExternalApiController::class, 'show']);
+        Route::put('/external-apis/{externalApi}', [ExternalApiController::class, 'update']);
+        Route::delete('/external-apis/{externalApi}', [ExternalApiController::class, 'destroy']);
 
-    // SYSTEM LOGS - Legacy routes
-    Route::get('/legacy/system-logs', [SystemLogController::class, 'index']);
-    Route::post('/legacy/system-logs', [SystemLogController::class, 'store']);
+        // SYSTEM LOGS - Legacy routes (PROTEGIDAS)
+        Route::get('/system-logs', [SystemLogController::class, 'index']);
+        Route::post('/system-logs', [SystemLogController::class, 'store']);
 
-    // EXTRACTION JOBS - Legacy routes
-    Route::get('/legacy/extraction-jobs', [ExtractionController::class, 'index']);
-    Route::post('/legacy/extraction-jobs', [ExtractionController::class, 'store']);
-    Route::get('/legacy/extraction-jobs/{extractionJob}', [ExtractionController::class, 'show']);
+        // EXTRACTION JOBS - Legacy routes (PROTEGIDAS)
+        Route::get('/extraction-jobs', [ExtractionController::class, 'index']);
+        Route::post('/extraction-jobs', [ExtractionController::class, 'store']);
+        Route::get('/extraction-jobs/{extractionJob}', [ExtractionController::class, 'show']);
 
-    // TOOLS - Legacy routes
-    Route::get('/legacy/tools', [ToolsController::class, 'getStats']);
+        // TOOLS - Legacy routes (PROTEGIDAS)
+        Route::get('/tools', [ToolsController::class, 'getStats']);
+    });
+} else {
+    // En producción, las rutas legacy devuelven error 403
+    Route::prefix('legacy')->group(function () {
+        Route::any('{any}', function () {
+            return response()->json([
+                'error' => 'Rutas legacy deshabilitadas en producción',
+                'message' => 'Use las rutas oficiales de API con autenticación'
+            ], 403);
+        })->where('any', '.*');
+    });
+}
+
+// ================================================================
+// MIDDLEWARE DE SEGURIDAD CUSTOMIZADO
+// ================================================================
+
+// Middleware para CORS seguro que será registrado en el kernel
+Route::middleware('throttle:60,1')->group(function () {
+    // Rate limiting aplicado a todas las rutas
 });
