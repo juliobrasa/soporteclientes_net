@@ -521,7 +521,7 @@ class ApifyClient
     private $baseUrl = 'https://api.apify.com/v2';
     
     // CORRECCIÓN: Actor ID correcto para Booking (reviews)
-    private $bookingActorId = 'PbMHke3jW25J6hSOA'; // Actor de reviews de Booking
+    private $bookingActorId = 'voyager/booking-reviews-scraper'; // PbMHke3jW25J6hSOA
     private $multiOtaActorId = 'dSCLg0C3YEZ83HzYX'; // Actor multi-OTA
     
     public function __construct() {
@@ -532,140 +532,93 @@ class ApifyClient
     }
     
     /**
-     * CORRECCIÓN: runBookingExtractionSync con try/catch y formato correcto
+     * Obtener URL de Booking para un hotel desde la base de datos
      */
-    public function runBookingExtractionSync($config, $timeout = 300) {
+    private function getBookingUrlForHotel($hotelId) {
+        if (!$hotelId) {
+            return null;
+        }
+        
         try {
-            // Verificar que tenemos url_booking
-            $hotelId = $config['hotel_id'];
-            if (!$hotelId) {
-                throw new Exception("hotel_id requerido para extracción de Booking");
-            }
-            
-            // Obtener URL de Booking desde BD
             $pdo = EnvironmentLoader::createDatabaseConnection();
             $stmt = $pdo->prepare("SELECT url_booking FROM hoteles WHERE id = ?");
             $stmt->execute([$hotelId]);
             $hotel = $stmt->fetch();
             
-            if (!$hotel || empty($hotel['url_booking'])) {
-                // CORRECCIÓN: Devolver error estructurado en lugar de excepción
-                return [
-                    'success' => false,
-                    'error' => 'Hotel no tiene URL de Booking configurada',
-                    'data' => []
-                ];
-            }
-            
-            $bookingUrl = $hotel['url_booking'];
-            
-            // CORRECCIÓN: Formato de input unificado para PbMHke3jW25J6hSOA con configuración anti-bloqueo
-            $input = [
-                'startUrls' => [
-                    ['url' => $bookingUrl]
-                ],
-                'includeReviewText' => true,
-                'includeReviewerInfo' => true,
-                'maxItems' => $config['maxReviews'] ?? 200,
-                'proxyConfiguration' => [
-                    'useApifyProxy' => true,
-                    'apifyProxyGroups' => ['RESIDENTIAL'],
-                    'apifyProxyCountry' => 'US'
-                ],
-                'maxRequestRetries' => 5,
-                'requestHandlerTimeoutSecs' => 180,
-                'maxConcurrency' => 1, // Reducir concurrencia para evitar detección
-                'requestIntervalMillis' => 5000, // 5 segundos entre requests
-                'ignoreSslErrors' => true
-            ];
-            
-            $queryParams = http_build_query([
-                'timeout' => $timeout,
-                'memory' => 2048
-            ]);
-            
-            $response = $this->makeRequest(
-                'POST',
-                "/acts/{$this->bookingActorId}/run-sync-get-dataset-items?{$queryParams}",
-                $input
-            );
-            
-            if ($response && is_array($response)) {
-                return [
-                    'success' => true,
-                    'data' => $response,
-                    'stats' => ['total_reviews' => count($response)]
-                ];
-            } else {
-                return [
-                    'success' => false,
-                    'error' => 'No se obtuvieron resultados de Apify',
-                    'data' => []
-                ];
-            }
-            
+            return $hotel ? $hotel['url_booking'] : null;
         } catch (Exception $e) {
-            // CORRECCIÓN: No dejar que la excepción termine en 500
-            error_log("Error en runBookingExtractionSync: " . $e->getMessage());
-            return [
-                'success' => false,
-                'error' => 'Error en extracción de Booking: ' . $e->getMessage(),
-                'data' => []
-            ];
+            error_log("Error obteniendo URL de Booking: " . $e->getMessage());
+            return null;
         }
     }
     
     /**
-     * Extracción asíncrona de Booking con formato correcto
+     * CORRECCIÓN: runBookingExtractionSync unificado con voyager/booking-reviews-scraper
      */
-    public function startBookingExtractionAsync($config) {
+    public function runBookingExtractionSync($config, $timeout = 300) {
         try {
-            $hotelId = $config['hotel_id'];
-            
-            // Obtener URL de Booking desde BD
-            $pdo = EnvironmentLoader::createDatabaseConnection();
-            $stmt = $pdo->prepare("SELECT url_booking FROM hoteles WHERE id = ?");
-            $stmt->execute([$hotelId]);
-            $hotel = $stmt->fetch();
-            
-            if (!$hotel || empty($hotel['url_booking'])) {
-                throw new Exception("Hotel no tiene URL de Booking configurada");
+            $bookingUrl = $this->getBookingUrlForHotel($config['hotel_id'] ?? null);
+            if (!$bookingUrl) {
+                throw new Exception("No se encontró URL de Booking para el hotel");
             }
-            
-            // CORRECCIÓN: Mismo formato que sync con configuración anti-bloqueo
+
             $input = [
                 'startUrls' => [
-                    ['url' => $hotel['url_booking']]
+                    ['url' => $bookingUrl]
                 ],
+                'maxItems' => $config['maxReviews'] ?? 50,
                 'includeReviewText' => true,
                 'includeReviewerInfo' => true,
-                'maxItems' => $config['maxReviews'] ?? 200,
                 'proxyConfiguration' => [
                     'useApifyProxy' => true,
-                    'apifyProxyGroups' => ['RESIDENTIAL'],
-                    'apifyProxyCountry' => 'US'
-                ],
-                'maxRequestRetries' => 5,
-                'requestHandlerTimeoutSecs' => 180,
-                'maxConcurrency' => 1,
-                'requestIntervalMillis' => 5000,
-                'ignoreSslErrors' => true
+                    'apifyProxyGroups' => ['RESIDENTIAL']
+                ]
             ];
-            
-            $response = $this->makeRequest('POST', "/acts/{$this->bookingActorId}/runs", $input);
-            
+
+            $queryParams = http_build_query([
+                'timeout' => $timeout,
+                'memory' => 2048,
+                'format' => 'json'
+            ]);
+
+            $response = $this->makeRequest('POST', "/acts/{$this->bookingActorId}/run-sync-get-dataset-items?{$queryParams}", $input);
+
             return [
                 'success' => true,
-                'data' => $response
+                'data' => $response ?? [],
+                'execution_time' => 0,
+                'reviews_count' => is_array($response) ? count($response) : 0
             ];
-            
         } catch (Exception $e) {
-            return [
-                'success' => false,
-                'error' => $e->getMessage(),
-                'data' => null
-            ];
+            return ['success' => false, 'error' => $e->getMessage()];
         }
+    }
+    
+    /**
+     * CORRECCIÓN: startBookingExtractionAsync unificado con voyager/booking-reviews-scraper
+     */
+    public function startBookingExtractionAsync($config) {
+        $bookingUrl = $this->getBookingUrlForHotel($config['hotel_id'] ?? ($config['hotelId'] ?? null));
+        if (!$bookingUrl) {
+            throw new Exception("No se encontró URL de Booking para el hotel");
+        }
+
+        $input = [
+            'startUrls' => [
+                ['url' => $bookingUrl]
+            ],
+            'maxItems' => $config['maxReviews'] ?? 50,
+            'includeReviewText' => true,
+            'includeReviewerInfo' => true,
+            'proxyConfiguration' => [
+                'useApifyProxy' => true,
+                'apifyProxyGroups' => ['RESIDENTIAL']
+            ]
+        ];
+
+        return $this->makeRequest('POST', "/acts/{$this->bookingActorId}/runs", [
+            'input' => $input
+        ]);
     }
     
     /**
@@ -733,37 +686,47 @@ class ApifyClient
     }
     
     /**
-     * CORRECCIÓN: buildExtractionInput con mapeo correcto de plataformas
+     * CORRECCIÓN: buildExtractionInput corregido para respetar plataformas seleccionadas
      */
     private function buildExtractionInput($config) {
-        // CORRECCIÓN: Inicializar todos los enables como false
-        $input = [
-            'enableBooking' => false,
+        $defaultConfig = [
+            'maxReviews' => 1000,
+            'reviewsFromDate' => date('Y-01-01'),
+            'scrapeReviewPictures' => false,
+            'scrapeReviewResponses' => true,
+
+            // Todos a false por defecto
             'enableGoogleMaps' => false,
             'enableTripadvisor' => false,
+            'enableBooking' => false,
             'enableExpedia' => false,
             'enableHotelsCom' => false,
             'enableYelp' => false,
             'enableAirbnb' => false,
-            'maxReviews' => $config['maxReviews'] ?? 100,
-            'languages' => $config['languages'] ?? ['en', 'es']
         ];
-        
-        // Si tenemos hotelId (Place ID), usarlo
-        if (!empty($config['hotelId'])) {
-            $input['hotelId'] = $config['hotelId'];
-        }
-        
-        // CORRECCIÓN: Activar solo las plataformas seleccionadas
-        $platforms = $config['platforms'] ?? [];
-        foreach ($platforms as $platform) {
-            $flag = ApifyConfig::getPlatformFlag(strtolower($platform));
-            if ($flag && array_key_exists($flag, $input)) {
-                $input[$flag] = true;
+
+        if (!empty($config['platforms']) && is_array($config['platforms'])) {
+            foreach ($config['platforms'] as $p) {
+                $p = strtolower($p);
+                if ($p === 'google') $defaultConfig['enableGoogleMaps'] = true;
+                if ($p === 'tripadvisor') $defaultConfig['enableTripadvisor'] = true;
+                if ($p === 'booking') $defaultConfig['enableBooking'] = true;
+                if ($p === 'expedia') $defaultConfig['enableExpedia'] = true;
+                if ($p === 'hotels' || $p === 'hotelscom' || $p === 'hotels.com') $defaultConfig['enableHotelsCom'] = true;
+                if ($p === 'yelp') $defaultConfig['enableYelp'] = true;
+                if ($p === 'airbnb') $defaultConfig['enableAirbnb'] = true;
             }
         }
-        
-        return $input;
+
+        if (isset($config['hotelId'])) {
+            $defaultConfig['startIds'] = [$config['hotelId']];
+        }
+
+        if (isset($config['startUrls'])) {
+            $defaultConfig['startUrls'] = $config['startUrls'];
+        }
+
+        return array_merge($defaultConfig, $config);
     }
     
     /**
