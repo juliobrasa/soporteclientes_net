@@ -1,9 +1,0 @@
-RewriteEngine On
-
-# Redirigir todas las peticiones /client/* a Laravel
-RewriteCond %{REQUEST_URI} ^/client/
-RewriteRule ^(.*)$ laravel-client.php [L,QSA]
-
-# Redirigir API de clientes
-RewriteCond %{REQUEST_URI} ^/api/client/
-RewriteRule ^(.*)$ laravel-client.php [L,QSA]
