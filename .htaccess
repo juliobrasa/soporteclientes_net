@@ -46,6 +46,22 @@ RedirectMatch 403 ^/node_modules
     Allow from all
 </Files>
 
+# Permitir archivos de debug temporal para diagnosticar problemas
+<Files "test-session-debug.php">
+    Order allow,deny
+    Allow from all
+</Files>
+
+<Files "test-extractor-real.html">
+    Order allow,deny
+    Allow from all
+</Files>
+
+<Files "test-extraction-api.php">
+    Order allow,deny
+    Allow from all
+</Files>
+
 # Headers de seguridad
 <IfModule mod_headers.c>
     # Prevenir XSS
