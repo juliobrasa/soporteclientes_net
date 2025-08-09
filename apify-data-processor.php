@@ -688,7 +688,7 @@ class ApifyClient
     private $baseUrl = 'https://api.apify.com/v2';
     
     // CORRECCIÓN: Actor ID correcto para Booking (reviews)
-    private $bookingActorId = 'voyager/booking-reviews-scraper'; // PbMHke3jW25J6hSOA
+    private $bookingActorId = 'PbMHke3jW25J6hSOA'; // Corrected: usar ID numérico
     private $multiOtaActorId = 'dSCLg0C3YEZ83HzYX'; // Actor multi-OTA
     
     public function __construct() {
@@ -703,6 +703,7 @@ class ApifyClient
      */
     private function getBookingUrlForHotel($hotelId) {
         if (!$hotelId) {
+            error_log("DEBUG: getBookingUrlForHotel - hotelId vacío");
             return null;
         }
         
@@ -712,7 +713,10 @@ class ApifyClient
             $stmt->execute([$hotelId]);
             $hotel = $stmt->fetch();
             
-            return $hotel ? $hotel['url_booking'] : null;
+            $url = $hotel ? $hotel['url_booking'] : null;
+            error_log("DEBUG: getBookingUrlForHotel - Hotel ID: $hotelId, URL: " . ($url ?: 'NULL/VACÍA'));
+            
+            return $url;
         } catch (Exception $e) {
             error_log("Error obteniendo URL de Booking: " . $e->getMessage());
             return null;
@@ -724,10 +728,37 @@ class ApifyClient
      */
     public function runBookingExtractionSync($config, $timeout = 300) {
         try {
-            $bookingUrl = $this->getBookingUrlForHotel($config['hotel_id'] ?? null);
+            $hotelId = $config['hotel_id'] ?? null;
+            
+            // Verificar que debug-logger existe
+            if (!class_exists('DebugLogger')) {
+                if (file_exists('admin-tools/debug-logger.php')) {
+                    require_once 'admin-tools/debug-logger.php';
+                } else {
+                    error_log("CRITICAL: debug-logger.php not found");
+                    return ['success' => false, 'error' => 'Debug logger not found'];
+                }
+            }
+            
+            DebugLogger::info("runBookingExtractionSync iniciado", ['hotel_id' => $hotelId]);
+            
+            $bookingUrl = $this->getBookingUrlForHotel($hotelId);
+            
+            DebugLogger::info("getBookingUrlForHotel resultado", [
+                'hotel_id' => $hotelId,
+                'url_obtenida' => $bookingUrl,
+                'tipo_url' => gettype($bookingUrl),
+                'empty_check' => empty($bookingUrl),
+                'is_null' => is_null($bookingUrl),
+                'strlen' => is_string($bookingUrl) ? strlen($bookingUrl) : 'N/A'
+            ]);
+            
             if (!$bookingUrl) {
+                DebugLogger::error("URL de Booking inválida", ['hotel_id' => $hotelId, 'url' => $bookingUrl]);
                 throw new Exception("No se encontró URL de Booking para el hotel");
             }
+            
+            DebugLogger::info("URL de Booking válida, continuando", ['url' => $bookingUrl]);
 
             $input = [
                 'startUrls' => [
@@ -746,7 +777,8 @@ class ApifyClient
                 'format' => 'json'
             ]);
 
-            $response = $this->makeRequest('POST', "/acts/{$this->bookingActorId}/run-sync-get-dataset-items?{$queryParams}", $input);
+            // CORRECCIÓN: Probar con endpoint básico de runs
+            $response = $this->makeRequest('POST', "/acts/{$this->bookingActorId}/runs?{$queryParams}", $input);
 
             return [
                 'success' => true,
@@ -755,6 +787,15 @@ class ApifyClient
                 'reviews_count' => is_array($response) ? count($response) : 0
             ];
         } catch (Exception $e) {
+            if (class_exists('DebugLogger')) {
+                DebugLogger::error("Exception en runBookingExtractionSync", [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]);
+            } else {
+                error_log("EXCEPTION in runBookingExtractionSync: " . $e->getMessage());
+            }
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
@@ -919,6 +960,15 @@ class ApifyClient
     private function makeRequest($method, $endpoint, $data = null) {
         $url = $this->baseUrl . $endpoint;
         
+        require_once 'admin-tools/debug-logger.php';
+        
+        DebugLogger::info("makeRequest iniciado", [
+            'url' => $url,
+            'method' => $method,
+            'has_data' => !is_null($data),
+            'data_preview' => $data ? substr(json_encode($data), 0, 200) : 'NULL'
+        ]);
+        
         $headers = [
             'Authorization: Bearer ' . $this->apiToken,
             'Content-Type: application/json'
@@ -941,6 +991,13 @@ class ApifyClient
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
         curl_close($ch);
+        
+        DebugLogger::info("makeRequest respuesta", [
+            'http_code' => $httpCode,
+            'curl_error' => $error ?: 'None',
+            'response_length' => strlen($response),
+            'response_preview' => substr($response, 0, 300)
+        ]);
         
         if ($error) {
             throw new Exception("cURL Error: $error");

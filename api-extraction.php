@@ -257,7 +257,8 @@ function handleSyncExtraction($input, $pdo) {
         DebugLogger::info("Respuesta síncrona de Apify", [
             'success' => $apifyResponse['success'] ?? false,
             'execution_time' => $executionTime,
-            'reviews_count' => count($apifyResponse['data'] ?? [])
+            'reviews_count' => count($apifyResponse['data'] ?? []),
+            'full_response' => $apifyResponse
         ]);
         
         if (!$apifyResponse['success']) {
