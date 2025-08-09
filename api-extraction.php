@@ -201,16 +201,55 @@ function handleSyncExtraction($input, $pdo) {
             $extractionConfig['hotelId'] = $hotel['google_place_id'];
         }
         
-        // Ejecutar extracción
-        $apifyClient = new ApifyClient();
+        // Ejecutar extracción - con debug detallado
+        DebugLogger::info("Instanciando ApifyClient para sync extraction", [
+            'class_exists_ApifyClient' => class_exists('ApifyClient'),
+            'apify_config_included' => in_array('/root/soporteclientes_net/apify-config.php', get_included_files()),
+            'extraction_config' => $extractionConfig
+        ]);
+        
+        try {
+            $apifyClient = new ApifyClient();
+            DebugLogger::info("ApifyClient instanciado correctamente");
+        } catch (Exception $e) {
+            DebugLogger::error("Error instanciando ApifyClient", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+        
         $startTime = time();
         
-        if (count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking') {
-            DebugLogger::info('Usando actor específico de Booking (sync)');
-            $apifyResponse = $apifyClient->runBookingExtractionSync($extractionConfig, $timeout);
-        } else {
-            DebugLogger::info('Usando actor multi-plataforma (sync)');
-            $apifyResponse = $apifyClient->runHotelExtractionSync($extractionConfig, $timeout);
+        DebugLogger::info("Iniciando extracción con configuración", [
+            'platforms' => $platforms,
+            'is_booking_only' => count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking',
+            'timeout' => $timeout,
+            'start_time' => $startTime
+        ]);
+        
+        try {
+            if (count(array_unique(array_map('strtolower', $platforms))) === 1 && strtolower($platforms[0]) === 'booking') {
+                DebugLogger::info('Llamando a runBookingExtractionSync');
+                $apifyResponse = $apifyClient->runBookingExtractionSync($extractionConfig, $timeout);
+            } else {
+                DebugLogger::info('Llamando a runHotelExtractionSync');
+                $apifyResponse = $apifyClient->runHotelExtractionSync($extractionConfig, $timeout);
+            }
+            
+            DebugLogger::info("Extracción Apify completada", [
+                'response_received' => !empty($apifyResponse),
+                'response_keys' => array_keys($apifyResponse ?? [])
+            ]);
+            
+        } catch (Exception $e) {
+            DebugLogger::error("Error ejecutando extracción Apify", [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
         
         $executionTime = time() - $startTime;
@@ -232,16 +271,34 @@ function handleSyncExtraction($input, $pdo) {
         $stats = $apifyResponse['stats'] ?? [];
         
         // Procesar y guardar reseñas inmediatamente
+        DebugLogger::info("Procesando reseñas para guardar", [
+            'total_reviews' => count($reviews),
+            'hotel_id' => $hotelId
+        ]);
+        
         $savedCount = 0;
-        foreach ($reviews as $review) {
+        foreach ($reviews as $reviewIndex => $review) {
             try {
+                DebugLogger::info("Procesando reseña", [
+                    'index' => $reviewIndex,
+                    'review_id' => $review['reviewId'] ?? ($review['id'] ?? 'unknown'),
+                    'has_reviewText' => !empty($review['reviewText']),
+                    'rating' => $review['rating'] ?? null
+                ]);
 
-
-                // Guardar reseña
-                $hotelNameStmt = $pdo->prepare("SELECT nombre_hotel FROM hoteles WHERE id = ?");
-                $hotelNameStmt->execute([$hotelId]);
-                $hotelData = $hotelNameStmt->fetch();
-                $hotelName = $hotelData['nombre_hotel'] ?? 'Hotel Desconocido';
+                // Guardar reseña - obtener nombre del hotel
+                try {
+                    $hotelNameStmt = $pdo->prepare("SELECT nombre_hotel FROM hoteles WHERE id = ?");
+                    $hotelNameStmt->execute([$hotelId]);
+                    $hotelData = $hotelNameStmt->fetch();
+                    $hotelName = $hotelData['nombre_hotel'] ?? 'Hotel Desconocido';
+                } catch (Exception $e) {
+                    DebugLogger::error("Error obteniendo nombre del hotel", [
+                        'hotel_id' => $hotelId,
+                        'error' => $e->getMessage()
+                    ]);
+                    $hotelName = 'Hotel Desconocido';
+                }
                 
                 $stmt = $pdo->prepare("
                     INSERT INTO reviews (
@@ -275,7 +332,7 @@ function handleSyncExtraction($input, $pdo) {
                     $normalizedRating = round(($normalizedRating / 10) * 5, 1);
                 }
                 
-                $stmt->execute([
+                $insertData = [
                     ($review['reviewId'] ?? ($review['id'] ?? uniqid('booking_'))) . '_' . $hotelId, // unique_id
                     $hotelId, // hotel_id
                     $hotelName, // hotel_name
@@ -292,9 +349,28 @@ function handleSyncExtraction($input, $pdo) {
                     $review['helpfulVotes'] ?? ($review['helpful'] ?? 0), // helpful_votes
                     $review['language'] ?? 'auto', // review_language
                     $originalRating // original_rating antes de normalizar
+                ];
+                
+                DebugLogger::info("Ejecutando INSERT de reseña", [
+                    'unique_id' => $insertData[0],
+                    'hotel_id' => $insertData[1],
+                    'hotel_name' => $insertData[2],
+                    'rating' => $insertData[6],
+                    'platform' => $insertData[9]
                 ]);
                 
-                $savedCount++;
+                try {
+                    $stmt->execute($insertData);
+                    $savedCount++;
+                    DebugLogger::info("Reseña guardada exitosamente", ['saved_count' => $savedCount]);
+                } catch (Exception $e) {
+                    DebugLogger::error("Error ejecutando INSERT de reseña", [
+                        'error' => $e->getMessage(),
+                        'code' => $e->getCode(),
+                        'unique_id' => $insertData[0]
+                    ]);
+                    throw $e;
+                }
             } catch (Exception $e) {
                 DebugLogger::error("Error guardando reseña", [
                     'review_id' => $review['reviewId'] ?? ($review['id'] ?? 'unknown'),
