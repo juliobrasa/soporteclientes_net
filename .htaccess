@@ -62,6 +62,16 @@ RedirectMatch 403 ^/node_modules
     Allow from all
 </Files>
 
+<Files "test-api-direct.php">
+    Order allow,deny
+    Allow from all
+</Files>
+
+<Files "debug-500-error.php">
+    Order allow,deny
+    Allow from all
+</Files>
+
 # Headers de seguridad
 <IfModule mod_headers.c>
     # Prevenir XSS
